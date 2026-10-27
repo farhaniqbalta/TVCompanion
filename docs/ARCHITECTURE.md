@@ -1,0 +1,45 @@
+# Architecture
+
+## Dependency direction
+
+```text
+app (composition + navigation)
+  -> features:smart-home (rendering and input)
+  -> features:notifications (settings UI + receiver composition)
+  -> integrations:tuya-lan (network protocol + encrypted device configuration)
+  -> core:designsystem (TV presentation primitives)
+
+features:smart-home -> core:domain, core:designsystem
+features:notifications -> core:domain, core:designsystem
+integrations:tuya-lan -> core:domain
+core:domain -> Kotlin/JDK only
+```
+
+The app chooses the concrete `LightGateway` and injects it into `LightController`. The light screen observes normalized `LightState` and sends `LightCommand`; it never receives Tuya DPS, JSON, keys, or sockets. Replacing the light UI requires no protocol changes.
+
+`core:domain` contains light commands, capabilities represented by validated light state, the gateway port, notification events/queue, and UI-independent light/notification controllers. The controller lives under `application/`, distinct from domain models. It uses one worker, accepts one operation at a time, and releases observers and work on close. Dispatch is injected; domain/application code does not import Android.
+
+The notification feature is a vertical module with separate presentation and infrastructure packages. Its UI-independent application controller and preference/runtime ports live in `core:domain`, with Android adapters supplied by the feature. Its JSON gate and HTTP listener are infrastructure; pure event/queue behavior is in the core. Android service lifecycle and overlay rendering remain outside the domain. The feature owns receiver permissions and service lifecycle; the dashboard does not need to know its transport implementation.
+
+Start with these few real boundaries. Split further only when dependencies, ownership, testing, or build time justify it. Gradle modules are not separate processes or automatically loaded runtime plugins.
+
+## Lifecycle and resource rules
+
+- No lamp polling, wake locks, automatic reconnect loop, or startup service.
+- Device access and encryption run on a single background worker while the light screen is active. Close connections after operations. Do not retry writes automatically.
+- Backgrounding the dashboard closes its controller and removes its view tree. Backgrounding settings releases its binding and pending UI callbacks too.
+- Only the explicitly started notification receiver stays active. One blocking listener thread sleeps awaiting a connection; one bounded input is processed at a time. Pause closes both listener and current connection.
+- Headers are capped at 8 KiB, bodies at 4 KiB, waiting notifications at ten, visible overlays at one, and remembered IDs at 256. Event acceptance is limited to twelve per eight seconds. Parsing uses one fixed header buffer.
+- Overlay timers exist only while showing an event; reduced motion is supported. No infinite animation or periodic status timer.
+- Drop network response failures without logging bodies or secrets. Surface command uncertainty and stale state explicitly.
+- Do not add a separate Android service for Apple remote commands unless a verified protocol requires one. Investigate the TV's existing paired remote service first.
+
+These are implementation rules, not measured CPU/RAM claims. No performance benchmark is required for this foundation.
+
+## Apple boundary
+
+The Apple app belongs in `ios/`, with presentation, application/domain, and protocol adapters kept separate. iPhone/iPad are intended targets; Mac availability and interaction need an explicit platform decision. Pairing, Keychain storage, connection lifecycle, and commands belong behind a remote-control port. No Android code or shared runtime is required. Do not claim compatibility before actual protocol work and device checks.
+
+## Migration boundary
+
+Original apps remain independent. Reuse source and tests, never private credentials, local files, signing keys, package identity, or deployment assumptions. Do not modify CleanYourTV. A launcher card may be added only as a separate, optional static launch integration; no embedded live controls are assumed.

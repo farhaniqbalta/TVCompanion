@@ -1,0 +1,36 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+local.properties
+*.keystore
+*.jks
+*.p12
+*.p8
+*.mobileprovision
+*.pem
+*.key
+
+# Android / Gradle
+.gradle/
+.kotlin/
+**/build/
+*.apk
+*.aab
+
+# Apple
+DerivedData/
+.build/
+**/xcuserdata/
+*.xcuserstate
+*.ipa
+*.xcarchive/
+
+# Local tools and OS
+.DS_Store
+.idea/
+.vscode/
+
+# Private lamp provisioning
+*.private.json
+provision.json
