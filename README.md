@@ -1,5 +1,7 @@
 # TVCompanion
 
+<img src="brand/banner.svg" width="320" alt="TVCompanion logo" />
+
 A local-first companion ecosystem for your TV and Apple devices. Control your room, receive quiet updates, and grow capabilities without coupling the UI to device protocols.
 
 ## Platforms
@@ -13,9 +15,10 @@ A local-first companion ecosystem for your TV and Apple devices. Control your ro
 
 `ios/` is the Apple application workspace name, not a claim of current macOS support. Android and Apple applications have independent builds, dependencies, signing, and releases. CleanYourTV remains an external launcher; TVCompanion does not depend on or modify it.
 
-## Android foundation
+## Android application
 
-- A D-pad dashboard with shared typography, spacing, surfaces and focus states.
+- A TV dashboard with two large feature cards, shared typography, focus states and native vector icons.
+- A compact light-control page and categorized notification settings with local previews, explicit appearance choices and masked pairing details. See the [UI/UX research](docs/UI_UX_RESEARCH.md).
 - Direct Tuya 3.5 LAN light status, power, and white brightness, adapted from the existing Bardi proof of concept. Writes require fresh state and readback; failures remain unconfirmed until refreshed.
 - Notification settings, source filtering, previews, transient non-interactive overlays, expiry, deduplication, and bounded queues, adapted from TVNotify.
 - No background lamp polling, dashboard animation loop, notification history, cloud bridge, analytics, automatic receiver restart, or boot service.
@@ -34,7 +37,7 @@ cd android
 ./gradlew :app:assembleDebug :core:domain:test :integrations:tuya-lan:testDebugUnitTest :features:notifications:testDebugUnitTest :app:lintDebug
 ```
 
-Requires JDK 17 and Android SDK 34. The APK is `android/app/build/outputs/apk/debug/app-debug.apk`. This is a development foundation, not a production release. TV interaction and overlay coexistence still require real-device validation; benchmark work is intentionally out of scope.
+Requires JDK 17 and Android SDK 34. The APK is `android/app/build/outputs/apk/debug/app-debug.apk`. This is a development foundation, not a production release. The app is installed and basic functionality is user-confirmed; broader lifecycle and overlay coexistence still require real-device validation; benchmark work is intentionally out of scope.
 
 ## Architecture and contribution
 

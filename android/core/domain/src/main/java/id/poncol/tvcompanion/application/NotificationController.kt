@@ -17,6 +17,14 @@ class NotificationController(val preferences: NotificationPreferences, val runti
     }
     fun rotatePin(): String { pause(); return runtime.rotatePin() }
     fun toggleSource(source: String) { preferences.setEnabled(source, !preferences.enabled(source)) }
+    fun selectMode(mode: String) {
+        require(mode in listOf("expanded", "compact", "privacy"))
+        preferences.mode = mode
+    }
+    fun selectDuration(seconds: Int) {
+        require(seconds in 3..30)
+        preferences.duration = seconds
+    }
     fun cycleMode() {
         val modes = listOf("expanded", "compact", "privacy")
         preferences.mode = modes[(modes.indexOf(preferences.mode) + 1) % modes.size]

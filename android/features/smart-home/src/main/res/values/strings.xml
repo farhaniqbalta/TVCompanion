@@ -1,0 +1,27 @@
+<resources>
+    <string name="light_eyebrow">TVCOMPANION / SMART HOME</string>
+    <string name="light_title">Make room for a little glow.</string>
+    <string name="light_back">← Home</string>
+    <string name="light_refresh">Refresh status</string>
+    <string name="light_reading">Reading…</string>
+    <string name="light_device">Bardi light</string>
+    <string name="light_unavailable">Status unavailable</string>
+    <string name="light_on">Light is on</string>
+    <string name="light_off">Light is off</string>
+    <string name="light_controls">Set the mood</string>
+    <string name="light_power_on">Turn on</string>
+    <string name="light_power_off">Turn off</string>
+    <string name="light_updating">Updating…</string>
+    <string name="light_brightness_label">WHITE BRIGHTNESS</string>
+    <string name="light_brightness_value">%1$d%%</string>
+    <string name="light_brightness_unknown">—</string>
+    <string name="light_dim" formatted="false">− 10%</string>
+    <string name="light_brighten" formatted="false">+ 10%</string>
+    <string name="light_dim_accessibility">Dim by ten percent</string>
+    <string name="light_brighten_accessibility">Brighten by ten percent</string>
+    <string name="light_white_hint" formatted="false">Adjust in 10% steps.</string>
+    <string name="light_off_hint">Turn the light on to adjust brightness.</string>
+    <string name="light_mode_hint">Brightness is available in white mode.</string>
+    <string name="light_setup_hint">Check the light and connection, then refresh.</string>
+    <string name="light_footer">Arrows to move   ·   OK to adjust   ·   Back to home</string>
+</resources>

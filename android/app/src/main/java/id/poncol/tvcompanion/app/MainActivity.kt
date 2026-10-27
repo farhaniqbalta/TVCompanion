@@ -17,6 +17,7 @@ class MainActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
     private var showingLight = false
     private var restoreLight = false
+    private var homeFocusNotifications = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (savedInstanceState?.getBoolean("light") == true ||
@@ -28,19 +29,29 @@ class MainActivity : Activity() {
         val ui = TvUi(this)
         val root = ui.page()
         val scroll = ScrollView(this).apply { isFillViewport = true; addView(root) }
-        ui.text(root, "TVCOMPANION", 13f)
-        ui.text(root, "Make yourself at home.", 36f, true)
-        ui.text(root, "Your room, connected. Your TV, uninterrupted.", 18f)
-        val home = ui.panel(root, "Smart home")
-        ui.text(home, "Control your Bardi light over your local network.")
-        val lights = ui.button(home, "Open light controls") { showLight() }
-        val alerts = ui.panel(root, "Quiet notifications")
-        ui.text(alerts, "Choose your sources, preview cards and manage the receiver.")
-        ui.button(alerts, "Open notification settings") {
+        ui.brandHeader(root, getString(R.string.home_eyebrow))
+        ui.spacer(root, 12)
+        ui.text(root, getString(R.string.home_title), 36f, true)
+        ui.text(root, getString(R.string.home_subtitle), 18f)
+        ui.spacer(root, 22)
+        val cards = ui.row().apply { gravity = android.view.Gravity.TOP; clipChildren = false }
+        root.addView(cards)
+        val lights = ui.featureCard(cards, id.poncol.tvcompanion.designsystem.R.drawable.ic_bulb, ui.warm,
+            getString(R.string.home_light_category), getString(R.string.home_light_title),
+            getString(R.string.home_light_description), getString(R.string.home_light_action)) { showLight() }
+        cards.addView(android.view.View(this), android.widget.LinearLayout.LayoutParams(ui.dp(20), 1))
+        val notifications = ui.featureCard(cards, id.poncol.tvcompanion.designsystem.R.drawable.ic_bell, ui.accent,
+            getString(R.string.home_notifications_category), getString(R.string.home_notifications_title),
+            getString(R.string.home_notifications_description), getString(R.string.home_notifications_action)) {
+            homeFocusNotifications = true
             startActivity(Intent(this, NotificationSettingsActivity::class.java))
         }
-        ui.text(root, "Use arrows to explore · OK to select · Back to return", 14f)
-        setContentView(scroll); lights.requestFocus()
+        lights.setOnFocusChangeListener { _, focused -> if (focused) homeFocusNotifications = false }
+        notifications.setOnFocusChangeListener { _, focused -> if (focused) homeFocusNotifications = true }
+        ui.spacer(root, 20)
+        ui.text(root, getString(R.string.home_hint), 13f)
+        setContentView(scroll)
+        (if (homeFocusNotifications) notifications else lights).requestFocus()
     }
     private fun showLight() {
         releaseLight(); showingLight = true

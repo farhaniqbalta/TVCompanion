@@ -79,4 +79,19 @@ class NotificationControllerTest {
         assertTrue(controller.preview("alert"))
         assertEquals(listOf("alert"), runtime.previews)
     }
+    @Test fun directAppearanceChoicesValidateBeforeChangingPreferences() {
+        val preferences = Preferences()
+        val runtime = Runtime()
+        val controller = NotificationController(preferences, runtime)
+        controller.selectMode("compact"); controller.selectDuration(12)
+        assertEquals("compact", preferences.mode)
+        assertEquals(12, preferences.duration)
+        try { controller.selectMode("unsupported"); fail("Invalid style accepted") }
+        catch (_: IllegalArgumentException) {}
+        try { controller.selectDuration(31); fail("Invalid duration accepted") }
+        catch (_: IllegalArgumentException) {}
+        assertEquals("compact", preferences.mode)
+        assertEquals(12, preferences.duration)
+        assertEquals(0, runtime.starts)
+    }
 }

@@ -34,3 +34,6 @@ DerivedData/
 # Private lamp provisioning
 *.private.json
 provision.json
+
+# Local device UI captures
+artifacts/ui/

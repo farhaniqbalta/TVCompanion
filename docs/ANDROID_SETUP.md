@@ -36,4 +36,4 @@ HTTP currently has no transport encryption and the six-digit PIN is prototype-le
 
 ## Status and limits
 
-The new app has not been deployed by this foundation work. Real D-pad behavior, bulb response, offline operation and overlays across players still need device validation. Build/test success does not establish these behaviors. No CPU/RAM benchmarking is requested.
+The app is installed and the user has confirmed basic functionality. The 0.2.0 UI preview has been visually reviewed on the TV; physical remote behavior, offline operation and overlays across players still need broader validation. Build/test success does not establish these behaviors. No CPU/RAM benchmarking is requested.

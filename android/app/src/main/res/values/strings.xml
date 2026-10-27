@@ -1,1 +1,17 @@
-<resources><string name="app_name">TVCompanion</string></resources>
+<resources>
+    <string name="app_name">TVCompanion</string>
+    <string name="home_eyebrow">TVCOMPANION / YOUR SPACE</string>
+    <string name="home_title">A calmer kind of connected.</string>
+    <string name="home_subtitle">Set the mood. Keep up with what matters.</string>
+    <string name="home_light_category">SMART HOME</string>
+    <string name="home_light_title">Your light</string>
+    <string name="home_light_description">A brighter room or a quieter evening.
+You set the mood.</string>
+    <string name="home_light_action">Open light controls →</string>
+    <string name="home_notifications_category">NOTIFICATIONS</string>
+    <string name="home_notifications_title">Quiet updates</string>
+    <string name="home_notifications_description">The updates you choose,
+without leaving what you’re watching.</string>
+    <string name="home_notifications_action">Manage notifications →</string>
+    <string name="home_hint">Arrows to move   ·   OK to open   ·   Back to return</string>
+</resources>

@@ -1,0 +1,54 @@
+<resources>
+    <string name="notifications_eyebrow">TVCOMPANION / NOTIFICATIONS</string>
+    <string name="notifications_title">Stay in the moment.</string>
+    <string name="notifications_subtitle">A few useful updates. Less interruption.</string>
+    <string name="notifications_receiver">Receiver</string>
+    <string name="notifications_appearance">Appearance</string>
+    <string name="notifications_sources">Sources</string>
+    <string name="notifications_connection">Connection</string>
+    <string name="notifications_home">← Home</string>
+    <string name="notifications_start">Start receiver</string>
+    <string name="notifications_pause">Pause receiver</string>
+    <string name="notifications_receiver_hint">Receive selected updates while you watch. Pause whenever you want some quiet.</string>
+    <string name="notifications_permission_needed">Allow TV overlays</string>
+    <string name="notifications_permission_hint">Allow notifications to appear over other apps. You can preview them here first.</string>
+    <string name="notifications_permission_allowed">✓ Overlay permission allowed</string>
+    <string name="notifications_permission_toast">Allow TV overlays first. Local previews are always available.</string>
+    <string name="notifications_style">Display style · %1$s ›</string>
+    <string name="notifications_style_title">Choose a display style</string>
+    <string name="notifications_style_privacy">Private</string>
+    <string name="notifications_style_compact">Compact</string>
+    <string name="notifications_style_expanded">Full</string>
+    <string name="notifications_style_hint">Private hides message content. Compact shows the title. Full includes the message.</string>
+    <plurals name="notifications_duration"><item quantity="one">Visible for %1$d second ›</item><item quantity="other">Visible for %1$d seconds ›</item></plurals>
+    <string name="notifications_duration_title">How long should updates stay?</string>
+    <plurals name="notifications_seconds"><item quantity="one">%1$d second</item><item quantity="other">%1$d seconds</item></plurals>
+    <string name="notifications_motion">Reduced motion · %1$s</string>
+    <string name="notifications_on">On</string>
+    <string name="notifications_off">Off</string>
+    <string name="notifications_source">%1$s · %2$s</string>
+    <string name="notifications_sources_hint">Choose which sources can appear on your TV. Muted updates are skipped.</string>
+    <string name="notifications_preview">Preview</string>
+    <string name="notifications_demo">EXAMPLE UPDATE</string>
+    <string name="notifications_preview_source">Preview %1$s</string>
+    <string name="notifications_preview_hint">Examples only. A running receiver also shows the card over your TV.</string>
+    <string name="notifications_local_preview">Preview shown here. Start the receiver and enable this source to test an overlay.</string>
+    <string name="notifications_pairing_hint">Enter the TV address and pairing PIN in your sender.</string>
+    <string name="notifications_pin_hidden">••••••</string>
+    <string name="notifications_pin_show">Show pairing PIN</string>
+    <string name="notifications_pin_hide">Hide pairing PIN</string>
+    <string name="notifications_pin_rotate">Reset pairing PIN</string>
+    <string name="notifications_pin_confirm_title">Reset the pairing PIN?</string>
+    <string name="notifications_pin_confirm_body">This pauses the receiver. Your senders will need the new PIN before you restart it.</string>
+    <string name="notifications_pin_reset">PIN reset. Update your sender before restarting.</string>
+    <string name="notifications_reset">Reset PIN</string>
+    <string name="notifications_cancel">Cancel</string>
+    <string name="notifications_port">Listening port · %1$d ›</string>
+    <string name="notifications_port_title">Listening port</string>
+    <string name="notifications_port_hint">Use 1024–65535. Changing this pauses the receiver; update your sender address.</string>
+    <string name="notifications_port_error">Enter a port from 1024 to 65535</string>
+    <string name="notifications_save">Save</string>
+    <string name="notifications_privacy_notice">Local HTTP is unencrypted. Use trusted Wi-Fi and non-sensitive messages. No history is saved.</string>
+    <string name="notifications_restart_hint">After a TV restart, open this app to start the receiver again.</string>
+    <string name="notifications_footer">Arrows to move   ·   OK to choose   ·   Back to home</string>
+</resources>

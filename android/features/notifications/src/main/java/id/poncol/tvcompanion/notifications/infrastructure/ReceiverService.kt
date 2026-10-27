@@ -39,7 +39,7 @@ class ReceiverService : Service() {
         manager.createNotificationChannel(NotificationChannel("receiver", "Local receiver", NotificationManager.IMPORTANCE_LOW))
         val open = PendingIntent.getActivity(this, 0, Intent(this, NotificationSettingsActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 1, Intent(this, ReceiverService::class.java).setAction("stop"), PendingIntent.FLAG_IMMUTABLE)
-        val notification = Notification.Builder(this, "receiver").setSmallIcon(R.drawable.ic_alert)
+        val notification = Notification.Builder(this, "receiver").setSmallIcon(id.poncol.tvcompanion.designsystem.R.drawable.ic_companion_notification)
             .setContentTitle("TVCompanion is listening").setContentText("Local notifications · port ${settings.port}")
             .setContentIntent(open).setOngoing(true).addAction(Notification.Action.Builder(null, "Pause", stop).build()).build()
         try {

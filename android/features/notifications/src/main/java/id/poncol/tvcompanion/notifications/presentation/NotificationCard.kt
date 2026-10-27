@@ -28,6 +28,8 @@ object NotificationThemes {
     }
 }
 
+// Constructed programmatically with feature state; intentionally not XML-inflatable.
+@android.annotation.SuppressLint("ViewConstructor")
 class NotificationCard(context: Context, event: NotificationEvent, mode: String) : LinearLayout(context) {
     init {
         val theme = NotificationThemes.all.getValue(event.source)

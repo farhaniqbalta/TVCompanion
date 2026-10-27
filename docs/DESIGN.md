@@ -1,13 +1,27 @@
 # TV design direction
 
-Use a quiet dark surface, mint accent, generous spacing, and clear typography. Focus must be visible through an outline and filled background, not color alone. Focus and pressed state belong to input handling, not decorative background animation.
+The UI refresh is grounded in [Android TV UI/UX research](UI_UX_RESEARCH.md). Use quiet charcoal surfaces, a mint focus accent, warm light accents, generous spacing, and a consistent system typeface. Important content stays within 48dp horizontal / 27dp vertical safe margins.
 
-Shared native primitives live in `core:designsystem`. The foundation uses Android Views to reuse the small existing notification renderer and avoid an additional UI runtime. This is a presentation choice; a future Compose screen can use the same domain and controller without changing Tuya behavior.
+## Screen structure
 
-The home screen exposes only working entry points: Smart home and Notifications. Apple remote control belongs on Apple devices; do not display an inoperative TV remote tile. New features receive their own capability and navigation decision before joining the dashboard.
+Home contains two large whole-card targets: Your light and Quiet updates. Each has one action and concise supporting copy. Returning from notification settings restores that home card's focus. No placeholder remote-control tile is shown on Android TV.
 
-The light screen shows confirmed status, pending work, and explicit uncertainty after failures. Power and brightness are enabled only from valid current state. Brightness is restricted to the verified white-mode capability. A refresh never changes the lamp.
+The light page keeps device status beside its primary power action and white-brightness step controls. Status, pending work, unsupported modes and unconfirmed errors are explicit. A displayed value only changes after the controller receives confirmed device state. There is no automatic command on entry and no lamp polling.
 
-Keep controls scrollable with clear D-pad order, useful initial focus, and consistent Back behavior. Avoid custom key interception and touch-only controls. Notification overlays must remain non-focusable and non-touchable, never interrupt video or steal navigation by design; actual protected-player compatibility remains a hardware check.
+Notifications use Receiver, Appearance, Sources and Connection sections, with a persistent local preview at normal TV width. On narrow/large-text layouts the preview sits below the section in the scroll flow. Advanced connection details do not compete with everyday settings. PINs are hidden by default and a destructive reset is confirmed.
 
-UI strings currently live in native screen builders. English is the foundation language; extraction to localized resources is required before localized releases. The icon and vector banner are provisional project-authored assets.
+The existing small popup renderer remains shared by the local sample and overlay. Overlay dimensions and non-focusable/non-touchable behavior are preserved.
+
+## Components and architecture
+
+Shared tokens, vector icons, text, focus surfaces, cards and buttons live in `core:designsystem`. The UI uses native Android Views without an additional framework runtime. Domain/application code remains independent of Android UI and vendor protocols. Presentation can be replaced again without rewriting device adapters.
+
+Distinguish focus with a clear border and filled surface. Selection is a quieter tint. Disabled actions have lower contrast and are skipped by directional navigation. Preserve focus while asynchronous work completes; repeated actions are rejected by the existing controller instead of building a command queue.
+
+Use natural D-pad navigation, with Back returning to the preceding screen. Controls are scrollable when screen size or font scale needs it. Text for the refreshed screens is stored in resource XML; English is currently the only translation.
+
+No looping animation, blur, bitmap background, polling, or recurring UI refresh is needed. Render in response to user actions and state events. New illustration or transitions must respect these resource constraints.
+
+## Brand identity
+
+The [TVCompanion identity](../brand/README.md) uses a rounded mint TV frame and amber companion dot. Adaptive launcher artwork, the wordmark banner, in-app headers and service notification icon derive from one generator. All artwork is vector-based, with no runtime animation or bitmap loading. Delivery-source icons retain their own meaning.
