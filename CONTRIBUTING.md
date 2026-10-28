@@ -7,3 +7,5 @@ Build and run the tasks documented in the README. Add meaningful regression test
 Never commit credentials, local device addresses/IDs, signing keys, private configuration, or notification content. Do not attach unredacted logs or configuration dumps. Keep platform builds independent and document changes to external contracts. Do not change or deploy sibling projects as an incidental part of a TVCompanion contribution.
 
 UI changes should preserve D-pad focus, Back navigation, readable text and an idle static screen. Keep polling, retry, queue and allocation behavior bounded. Repository visibility does not grant a license; licensing is still to be selected.
+
+Pull requests receive an automatic metadata summary after the description workflow is merged into the default branch. Keep purpose, rationale and validation notes outside its marked section. See [repository automation](docs/REPOSITORY_AUTOMATION.md) for opt-out, permissions, manual refresh and optional GitHub Copilot summaries.
