@@ -1,6 +1,26 @@
 # Verification — 2026-10-28
 
-## Current build: 0.2.1-brand-preview
+## Phase 1 local candidate: 0.3.0-phase1-preview
+
+Branch: `review/phase-1-architecture`. The user approved implementation after assessment. The refactor is committed in focused product-role, Tuya and notification steps; see [implementation changelog](phase-1/IMPLEMENTATION_CHANGELOG.md).
+
+Executed locally after the relevant implementation steps:
+
+```sh
+cd android
+./gradlew --offline --no-daemon :app:assembleDebug :core:domain:test :integrations:tuya-lan:testDebugUnitTest :features:notifications:testDebugUnitTest :app:lintDebug
+```
+
+- Assembly succeeded for version code 4 / `0.3.0-phase1-preview`.
+- **59 tests passed, zero failures/errors.** Existing 33 cases remain, with four absolute-deadline/fragment tests, seven gateway orchestration/cancellation tests and fifteen receiver-session lifecycle tests added. The existing controller-close test now also verifies gateway ownership and idempotent cleanup.
+- Android app/library lint: **zero findings**. Existing compiler/SDK tooling notices remain distinct from lint findings.
+- Rechecked pure Kotlin/JDK domain imports, unchanged module dependency direction, source XML/doc links, whitespace and the absence of new always-on workers, scheduled polling, command endpoints, Binder/AIDL/native media code or workflow changes.
+- Notification tests include a real ephemeral loopback listener with incomplete input and port release on session stop. All lamp tests use synthetic sessions/input; no real lamp command or private configuration is accessed.
+- New command and external receiver contracts are documents only. They are not live APIs and do not provide AirPlay feasibility evidence.
+
+**Pending device acceptance:** this Phase 1 candidate was not installed, and no ADB session, power/brightness change, overlay-permission change, device trace or benchmark was performed. Previously recorded hardware/user confirmation below applies to the installed pre-refactor build. Android foreground-service/WindowManager behavior, real remote navigation and bulb response need fresh validation after an explicitly authorized installation. The exact pending steps remain in the migration plan. No Phase 2 work has begun; GitHub Actions remains postponed.
+
+## Previously installed build: 0.2.1-brand-preview
 
 - Gradle debug APK assembly succeeded with JDK 17 and Android SDK 34.
 - All 33 functional/regression tests passed: six light-controller tests, five notification-controller tests, two queue tests, nine event-validation tests, three HTTP transport/lifecycle tests, and eight Tuya protocol tests.

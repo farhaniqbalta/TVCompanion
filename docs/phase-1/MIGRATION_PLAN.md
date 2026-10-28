@@ -1,8 +1,8 @@
 # Phase 1 preparation and migration plan
 
-Branch: `review/phase-1-architecture`, based on `555d4be`. Status: **assessment ready; application-code changes await approval**.
+Branch: `review/phase-1-architecture`, based on `555d4be`. Status: **user-approved Phase 1 implemented; local verification complete; new device acceptance pending**.
 
-The handoff asks for proposed changes, affected files, rationale, regression risks and a test plan before implementation. The user requested preparation/review and a separate branch before any change. This branch therefore contains documentation only. Main, CI configuration, application sources and the TV remain unchanged by the assessment.
+The handoff asks for proposed changes, affected files, rationale, regression risks and a test plan before implementation. The user requested preparation/review and a separate branch before any change. The assessment commit `8b975de` contained documentation only. The user subsequently approved implementation on this branch. See [implementation changelog](IMPLEMENTATION_CHANGELOG.md) for the separate product-role, Tuya and notification commits. Main, CI configuration and the TV are unchanged by this implementation.
 
 ## Preparation completed
 
@@ -56,6 +56,6 @@ These are instructions, **not checks executed in this assessment**. Use only the
 
 ## Approval and stop points
 
-Approve P1.1–P1.3 before modifying application/documentation behavior beyond this assessment. P1.4 is documentation of future consumers; implementing an endpoint needs its own concrete security/lifecycle decision. Phase 1 is not complete merely because these plans exist: the approved changes must pass verification and the baseline must be accepted.
+The user approved and implementation completed P1.1–P1.3 on this branch. P1.4 contract documentation is also prepared. P1.4 is documentation of future consumers; implementing an endpoint needs its own concrete security/lifecycle decision. Phase 1 is not complete merely because these plans exist: the approved changes must pass verification and the baseline must be accepted.
 
 AirPlay/UxPlay source research, receiver porting and AIDL implementation remain Phase 2. Independent extended-desktop feasibility must be demonstrated before significant Android porting, and a working standalone receiver must precede TVCompanion IPC. GitHub Actions remains postponed; no workflow edits or reruns are included here.

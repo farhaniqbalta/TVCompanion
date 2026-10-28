@@ -1,6 +1,6 @@
-# Minimal target architecture — proposal for approval
+# Minimal target architecture and future boundaries
 
-Baseline: `555d4be`. This document proposes boundaries; it is not a statement that new command/IPC features exist.
+Baseline: `555d4be`. The user approved the Phase 1 changes after review; see [implementation changelog](IMPLEMENTATION_CHANGELOG.md). Current light cancellation and typed notification lifecycle are implemented. Command/IPC boundaries remain design-only; no new command/IPC features exist.
 
 ## Product roles
 

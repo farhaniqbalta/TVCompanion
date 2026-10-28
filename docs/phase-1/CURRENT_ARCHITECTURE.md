@@ -2,6 +2,8 @@
 
 Date: 2026-10-28. Source baseline: `555d4be`. Review branch: `review/phase-1-architecture`.
 
+This document preserves the pre-refactor baseline. For the approved changes see [implementation changelog](IMPLEMENTATION_CHANGELOG.md).
+
 This is a code-level assessment against the user-provided `TVCOMPANION_ARCHITECTURE_HANDOFF.md` in the parent workspace. That handoff is not a repository dependency. Findings below are observed in source; failure scenarios not exercised are explicitly described as risks. No implementation changes are included in this review.
 
 ## Verdict
