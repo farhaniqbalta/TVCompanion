@@ -20,6 +20,8 @@ class LightControllerTest {
     }
     private class Lamp : LightGateway {
         var state = LightState(true, true, 40)
+        var closes = 0
+        override fun close() { closes++ }
         var reads = 0
         var writes = 0
         var failWrite = false
@@ -89,6 +91,9 @@ class LightControllerTest {
         callbacks.removeFirst().invoke()
         controller.refresh()
         assertEquals(before, renders)
+        assertEquals(1, lamp.closes)
+        controller.close()
+        assertEquals(1, lamp.closes)
         assertTrue(worker.isShutdown)
         assertTrue(worker.tasks.isEmpty())
     }

@@ -9,9 +9,8 @@ interface NotificationPreferences {
     fun setEnabled(source: String, enabled: Boolean)
 }
 interface NotificationRuntime {
-    val running: Boolean
-    val state: String
-    val lastReceipt: String
+    val snapshot: ReceiverSnapshot
+    val running: Boolean get() = snapshot.running
     val overlayAllowed: Boolean
     val pin: String
     val addresses: String

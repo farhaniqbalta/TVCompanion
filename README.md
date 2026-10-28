@@ -2,7 +2,7 @@
 
 <img src="brand/banner.svg" width="320" alt="TVCompanion logo" />
 
-A local-first companion ecosystem for your TV and Apple devices. Control your room, receive quiet updates, and grow capabilities without coupling the UI to device protocols.
+A local-first Google TV hub with Apple-device clients. Control your room, receive quiet updates, and grow capabilities without coupling the UI to device protocols.
 
 ## Platforms
 
@@ -12,6 +12,8 @@ A local-first companion ecosystem for your TV and Apple devices. Control your ro
 | [`ios/`](ios/) | **iPhone and iPad** companion, with **Mac support planned for evaluation** | Architecture placeholder; remote pairing and control are not implemented yet |
 | [`contracts/`](contracts/) | Integration documentation and synthetic examples | Notification HTTP v1 contract |
 | [`docs/`](docs/) | Architecture, design, development and decisions | Foundation documentation |
+
+Google TV is the primary orchestration host; iPhone, iPad and future Mac software are clients, not peer hubs. A planned independent AirPlay receiver will own media discovery, decoding and rendering; Mac media will go directly to that APK, never through TVCompanion or its control IPC. AirPlay and true extended desktop are not implemented or verified.
 
 `ios/` is the Apple application workspace name, not a claim of current macOS support. Android and Apple applications have independent builds, dependencies, signing, and releases. CleanYourTV remains an external launcher; TVCompanion does not depend on or modify it.
 
@@ -27,6 +29,10 @@ A local-first companion ecosystem for your TV and Apple devices. Control your ro
 The new application identity is `id.poncol.tvcompanion`. It does not replace existing apps or inherit their private settings. Notification reception is opt-in and defaults to port **8766**, so it can coexist with TVNotify's 8765 during development. Use one receiver for normal operation to avoid duplicate overlays and resident processes.
 
 The receiver currently uses authenticated **unencrypted LAN HTTP** inherited from the prototype. Use non-sensitive demo messages on a trusted LAN. Encrypted transport and stronger pairing remain release work. Automatic capture of other iPhone apps' notifications is not implemented or established by this receiver.
+
+## Phase 1 refactor
+
+The `review/phase-1-architecture` branch contains a targeted refactor: owned Tuya cancellation and fragmented-read deadlines, typed notification lifecycle state, and testable listener/overlay session coordination. The current local candidate is `0.3.0-phase1-preview`; it has 59 passing tests and zero lint findings, with installation and lamp/notification functionality now user-confirmed. See [implementation details](docs/phase-1/IMPLEMENTATION_CHANGELOG.md). Future command and external receiver contracts are design-only; no AirPlay or command endpoint is implemented.
 
 ## Get started
 

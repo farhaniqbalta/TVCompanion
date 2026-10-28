@@ -29,7 +29,7 @@ IDs are optional generated strings, or nonblank strings up to 128 characters. Ti
 | 410 | Expired or future timestamp |
 | 413 / 415 / 431 | Invalid body length, content type, or header size |
 | 429 | Rate limit or waiting queue full |
-| 503 | Overlay permission unavailable |
+| 503 | Overlay permission unavailable, or `receiver_paused` while a request races shutdown |
 
 Responses contain a JSON `status` string. `GET /health` is unauthenticated and returns `{"status":"ok","app":"TVCompanion"}` without PIN, content, or device state. No history or durable queue is provided.
 

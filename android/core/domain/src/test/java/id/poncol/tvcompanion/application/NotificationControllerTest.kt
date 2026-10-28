@@ -15,9 +15,10 @@ class NotificationControllerTest {
         override fun setEnabled(source: String, enabled: Boolean) { sources[source] = enabled }
     }
     private class Runtime : NotificationRuntime {
-        override var running = false
-        override val state = "Paused"
-        override val lastReceipt = "No test"
+        override var snapshot = ReceiverSnapshot()
+        override var running: Boolean
+            get() = snapshot.running
+            set(value) { snapshot = snapshot.copy(phase = if (value) ReceiverPhase.LISTENING else ReceiverPhase.PAUSED) }
         override var overlayAllowed = false
         override var pin = "012345"
         override val addresses = "Synthetic address"

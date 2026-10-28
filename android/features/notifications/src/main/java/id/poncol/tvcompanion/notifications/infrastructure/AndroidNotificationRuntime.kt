@@ -8,9 +8,7 @@ import java.net.NetworkInterface
 
 class AndroidNotificationRuntime(context: Context, private val settings: ReceiverSettings) : NotificationRuntime {
     private val context = context.applicationContext
-    override val running get() = ReceiverService.running
-    override val state get() = ReceiverService.state
-    override val lastReceipt get() = ReceiverService.lastReceipt
+    override val snapshot get() = ReceiverStatusStore.snapshot
     override val overlayAllowed get() = Settings.canDrawOverlays(context)
     override val pin get() = pairingPin(context)
     override val addresses: String get() = try {

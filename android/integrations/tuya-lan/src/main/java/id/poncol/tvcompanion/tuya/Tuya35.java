@@ -14,9 +14,10 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 
 /** Single-lamp Tuya 3.5 LAN client. No cloud, discovery, or automatic write retries. */
-final class Tuya35 implements AutoCloseable {
+final class Tuya35 implements LampSession {
     private final Socket socket = new Socket();
     private byte[] key;
+    private final String ip;
     private int sequence = 1;
     private final long deadline = System.nanoTime() + 12_000_000_000L;
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -58,8 +59,11 @@ final class Tuya35 implements AutoCloseable {
     }
     Tuya35(String ip, byte[] localKey) throws Exception {
         if(localKey.length!=16)throw new IOException("Invalid local key");
-        key=localKey.clone();
+        key=localKey.clone(); this.ip=ip;
+    }
+    @Override public void connect() throws Exception {
         try {
+            DeadlineInput.check(deadline, System::nanoTime);
             socket.connect(new InetSocketAddress(address(ip),6668),4000);
             socket.setSoTimeout(4000); socket.setTcpNoDelay(true);
             byte[] local=random(16); send(3,local);
@@ -72,7 +76,7 @@ final class Tuya35 implements AutoCloseable {
         } catch(Exception e){close();throw e;}
     }
     private void send(int cmd,byte[] data) throws Exception {
-        if(System.nanoTime()>deadline)throw new IOException("Request deadline");
+        DeadlineInput.check(deadline, System::nanoTime);
         socket.getOutputStream().write(frame(sequence++,cmd,data,key,random(12)));
     }
     private static final class Packet {
@@ -80,19 +84,16 @@ final class Tuya35 implements AutoCloseable {
         Packet(int cmd,byte[] payload){this.cmd=cmd;this.payload=payload;}
     }
     private Packet receive() throws Exception {
-        long left=(deadline-System.nanoTime())/1_000_000;
-        if(left<=0)throw new IOException("Request deadline");
-        socket.setSoTimeout((int)Math.min(4000,left));
-        DataInputStream in=new DataInputStream(socket.getInputStream());
-        byte[] header=new byte[18]; in.readFully(header);
+        InputStream in=socket.getInputStream();
+        byte[] header=new byte[18]; DeadlineInput.readFully(socket,in,header,deadline,System::nanoTime);
         int length=ByteBuffer.wrap(header).getInt(14);
         if(length<28 || length>65536)throw new IOException("Invalid frame size");
-        byte[] body=new byte[length+4];in.readFully(body);
+        byte[] body=new byte[length+4]; DeadlineInput.readFully(socket,in,body,deadline,System::nanoTime);
         byte[] payload=decode(header,body,key);
         if(payload.length<4 || ByteBuffer.wrap(payload).getInt()!=0)throw new IOException("Lamp rejected request");
         return new Packet(ByteBuffer.wrap(header).getInt(10),Arrays.copyOfRange(payload,4,payload.length));
     }
-    JSONObject status() throws Exception {
+    @Override public JSONObject status() throws Exception {
         send(16,"{}".getBytes(StandardCharsets.UTF_8));
         for(int i=0;i<12;i++) {
             Packet p=receive(); byte[] data=p.payload;
@@ -106,7 +107,7 @@ final class Tuya35 implements AutoCloseable {
         }
         throw new IOException("No power status returned");
     }
-    void write(String dp,Object value) throws Exception {
+    @Override public void write(String dp,Object value) throws Exception {
         if(!dp.equals("20") && !dp.equals("22"))throw new IOException("Unsupported control");
         if(dp.equals("20") && !(value instanceof Boolean))throw new IOException("Invalid power");
         if(dp.equals("22") && (!(value instanceof Integer) || (int)value<10 || (int)value>1000))throw new IOException("Invalid brightness");

@@ -9,3 +9,7 @@
 7. **Honest platform status.** Apple remote is planned; no placeholder connection claims. Mac support requires evaluation. No automatic iPhone notification capture is promised.
 8. **Public repository hygiene.** Synthetic fixtures only, no signing secrets or private setup dumps, and no telemetry. A release license remains undecided.
 9. **Verification scope.** Build, lint, and meaningful regression checks; no device deployment or benchmarking as part of the foundation.
+
+10. **TV host and Apple clients.** Google TV is the primary orchestration host, while Apple devices are clients. Independent builds do not make them peer hubs. Protocol-specific direct connections remain possible where verified.
+11. **Standalone media provider.** A future AirPlay receiver will be a separate APK/process, independently usable. It owns discovery, decode and rendering. TVCompanion may control/status it via a future versioned Android IPC adapter; no media frames/audio pass through that adapter. True Mac extended desktop remains a Phase 2 feasibility gate.
+12. **Targeted Phase 1.** Preserve module names, package/signing identity, private settings, notification v1 and the current UI. Correct proven lifecycle/I/O weaknesses and document future client-command security before exposing any new endpoint. Actions repair and benchmarks remain deferred.

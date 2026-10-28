@@ -10,7 +10,9 @@ sealed class LightCommand {
     }
 }
 /** Blocking port. Call from a worker; successful writes require readback. */
-interface LightGateway {
+interface LightGateway : AutoCloseable {
+    /** The screen owns this gateway. Closing aborts active I/O and prevents further work. */
+    override fun close() {}
     fun read(): LightState
     fun execute(command: LightCommand): LightState
 }
