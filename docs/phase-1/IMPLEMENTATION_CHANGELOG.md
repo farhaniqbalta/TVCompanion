@@ -36,7 +36,7 @@ Commit: `e0bbff5`.
 
 ## P1.5 — Verification and acceptance
 
-See [verification](../VERIFICATION.md) for actual task/test results, warnings and pending device checks. The pre-refactor audit remains in `CURRENT_ARCHITECTURE.md` with its baseline clearly identified. The implementation is ready for review against the migration plan; new hardware acceptance is still explicitly pending. Do not begin Phase 2 merely because this code compiles.
+See [verification](../VERIFICATION.md) for actual task/test results, warnings and pending device checks. The pre-refactor audit remains in `CURRENT_ARCHITECTURE.md` with its baseline clearly identified. The implementation is ready for review against the migration plan; installation/native status and receiver/dashboard smoke checks are now recorded, while broader hardware acceptance is still explicitly pending. Do not begin Phase 2 merely because this code compiles.
 
 ## Rollback
 
