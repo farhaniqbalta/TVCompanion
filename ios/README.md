@@ -1,6 +1,6 @@
 # Apple companion workspace
 
-Apple devices are clients of the Google TV host, not peer hubs. Mac AirPlay media, if feasibility is proven, goes directly to an independent TV receiver APK. This workspace does not implement or proxy that media pipeline.
+Apple devices are clients of the Google TV host, not peer hubs. Mac AirPlay media, if feasibility is proven, goes directly to the receiver in TVCompanion's dedicated `:airplay` process. The receiver ships inside the single TVCompanion APK; a second production receiver app is not required. This workspace does not implement or proxy that media pipeline.
 
 Intended targets: **iPhone and iPad**. **Mac support** is planned for evaluation, not implemented. The directory is named `ios/` for continuity with the agreed repository layout.
 

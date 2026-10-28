@@ -1,5 +1,7 @@
 # Minimal target architecture and future boundaries
 
+> Historical Phase 1 record. Its separate-production-receiver APK assumptions are superseded by [decision 13](../DECISIONS.md#phase-2-packaging-correction--2026-10-28) and the [Phase 2 plan](../phase-2/PLAN.md). The production target is one TVCompanion APK with a dedicated `:airplay` process. Original findings and implementation history below are preserved.
+
 Baseline: `555d4be`. The user approved the Phase 1 changes after review; see [implementation changelog](IMPLEMENTATION_CHANGELOG.md). Current light cancellation and typed notification lifecycle are implemented. Command/IPC boundaries remain design-only; no new command/IPC features exist.
 
 ## Product roles

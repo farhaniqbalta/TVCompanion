@@ -13,7 +13,7 @@ A local-first Google TV hub with Apple-device clients. Control your room, receiv
 | [`contracts/`](contracts/) | Integration documentation and synthetic examples | Notification HTTP v1 contract |
 | [`docs/`](docs/) | Architecture, design, development and decisions | Foundation documentation |
 
-Google TV is the primary orchestration host; iPhone, iPad and future Mac software are clients, not peer hubs. A planned independent AirPlay receiver will own media discovery, decoding and rendering; Mac media will go directly to that APK, never through TVCompanion or its control IPC. AirPlay and true extended desktop are not implemented or verified.
+Google TV is the primary orchestration host; iPhone, iPad and future Mac software are clients, not peer hubs. The planned AirPlay receiver will be bundled in the single TVCompanion APK and run in a dedicated `:airplay` process, owning discovery, decoding and rendering. Mac media will go directly to that receiver; Binder/AIDL carries control, status and lifecycle events only. Production AirPlay integration is not implemented. A development-only [TV experiment](docs/phase-2/TV_RECEIVER_EXPERIMENT.md) now has user-confirmed Mac extended desktop; audio remains outside that experiment.
 
 `ios/` is the Apple application workspace name, not a claim of current macOS support. Android and Apple applications have independent builds, dependencies, signing, and releases. CleanYourTV remains an external launcher; TVCompanion does not depend on or modify it.
 
@@ -32,7 +32,11 @@ The receiver currently uses authenticated **unencrypted LAN HTTP** inherited fro
 
 ## Phase 1 refactor
 
-The `review/phase-1-architecture` branch contains a targeted refactor: owned Tuya cancellation and fragmented-read deadlines, typed notification lifecycle state, and testable listener/overlay session coordination. The current local candidate is `0.3.0-phase1-preview`; it has 59 passing tests and zero lint findings, with installation and lamp/notification functionality now user-confirmed. See [implementation details](docs/phase-1/IMPLEMENTATION_CHANGELOG.md). Future command and external receiver contracts are design-only; no AirPlay or command endpoint is implemented.
+The `review/phase-1-architecture` branch contains a targeted refactor: owned Tuya cancellation and fragmented-read deadlines, typed notification lifecycle state, and testable listener/overlay session coordination. The current local candidate is `0.3.0-phase1-preview`; it has 59 passing tests and zero lint findings, with installation and lamp/notification functionality now user-confirmed. See [implementation details](docs/phase-1/IMPLEMENTATION_CHANGELOG.md). Future command and external receiver contracts are design-only; no AirPlay or command endpoint is implemented in the production app.
+
+## Phase 2 direction
+
+One production Android APK, with a private AirPlay runtime process; no separately installed receiver is required. Independent native development and an optional development-only harness do not change that packaging decision. See the [gated Phase 2 plan](docs/phase-2/PLAN.md) and [superseding decision](docs/DECISIONS.md#phase-2-packaging-correction--2026-10-28). An opt-in, development-only [video receiver harness](experiments/airplay-lab/README.md) now exists; it is excluded from production builds. See [actual experiment evidence](docs/phase-2/TV_RECEIVER_EXPERIMENT.md). Production AirPlay integration is not implemented.
 
 ## Get started
 
@@ -50,3 +54,5 @@ Requires JDK 17 and Android SDK 34. The APK is `android/app/build/outputs/apk/de
 Read [architecture](docs/ARCHITECTURE.md), [design](docs/DESIGN.md), [decisions](docs/DECISIONS.md), and [contribution guidelines](CONTRIBUTING.md). Keep UI replaceable, normalize vendor state behind adapters, and introduce abstractions only at real boundaries.
 
 No repository license has been selected yet. See [source provenance](docs/PROVENANCE.md) for reused components. Do not assume an open-source license from repository visibility alone.
+
+The [licensing assessment](docs/LICENSE_COMPLIANCE.md) records proposed release obligations and unresolved ownership/dependency checks; the [receiver boundary review](docs/phase-2/RECEIVER_BOUNDARY_REVIEW.md) proposes build-time replacement of the native receiver. Neither document adopts a license or implements AirPlay.

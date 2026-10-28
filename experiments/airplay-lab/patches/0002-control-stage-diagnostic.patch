@@ -1,0 +1,11 @@
+--- a/lib/raop.c
++++ b/lib/raop.c
+@@ -401,7 +401,7 @@
+         assert(!strcmp(client_session_id, conn->client_session_id));
+     }
+ 
+-    logger_log(raop->logger, LOGGER_DEBUG, "Handling request %s with URL %s", method, url);
++    logger_log(raop->logger, LOGGER_INFO, "Handling request %s with URL %s", method, url);
+     raop_handler_t handler = NULL;
+     if (!hls_request && !strcmp(protocol, "RTSP/1.0")) {
+         if (!strcmp(method, "POST")) {

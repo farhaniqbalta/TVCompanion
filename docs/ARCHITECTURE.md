@@ -2,7 +2,7 @@
 
 ## Host and client roles
 
-Google TV hosts TVCompanion orchestration, notification presentation and supported smart-device use cases. Apple devices are clients. Independently built applications are not peer hubs. A future AirPlay receiver remains a separate, independently usable APK/process and owns its media pipeline. Mac media goes directly to it; TVCompanion only controls availability/status through a future adapter. No frames/audio traverse TVCompanion or Binder.
+Google TV hosts TVCompanion orchestration, notification presentation and supported smart-device use cases. Apple devices are clients. Independently built applications are not peer hubs. The future AirPlay receiver is packaged inside the single TVCompanion APK and runs in a private `:airplay` process. It owns AirPlay networking, decoding and rendering. Mac media goes directly to that process; the main process exchanges only receiver commands, status and lifecycle events over Binder/AIDL. No media frames or decoded audio cross that control connection.
 
 A platform remote client can still use a separately validated stock TV remote service. Host/client roles do not require routing every Apple protocol through one generic server.
 
@@ -52,4 +52,26 @@ Original apps remain independent. Reuse source and tests, never private credenti
 
 ## Future integration contracts
 
-The [client-command draft](../contracts/client-commands-draft.md) is distinct from notification v1 and requires secure, scoped authorization before exposing physical commands. The [external receiver control draft](../contracts/external-receiver-control-draft.md) keeps future Binder/AIDL types in an Android adapter and all media in the independently usable receiver APK. These are design boundaries, not implemented endpoints/ports. See the [Phase 1 implementation record](phase-1/IMPLEMENTATION_CHANGELOG.md).
+The [client-command draft](../contracts/client-commands-draft.md) is distinct from notification v1 and requires secure, scoped authorization before exposing physical commands. The [external receiver control draft](../contracts/external-receiver-control-draft.md) keeps future Binder/AIDL types outside the pure domain and all media processing in the same APK's dedicated receiver process. These are design boundaries, not implemented endpoints/ports. See the [Phase 1 implementation record](phase-1/IMPLEMENTATION_CHANGELOG.md).
+
+## Planned AirPlay process boundary
+
+This is a target, not an implemented module graph. See the [Phase 2 plan](phase-2/PLAN.md) for gates and evidence requirements.
+
+```text
+TVCompanion.apk
+  main process: existing features + AirPlay UI/controller + control adapter
+       | Binder/AIDL: commands, status, lifecycle only
+  :airplay: private service + playback Activity/surface + JNI + UxPlay + decode/render
+       ^ direct AirPlay network connection from the Mac
+```
+
+The proposed focused modules are `features:airplay`, `ipc:airplay-contract`, `integrations:airplay-runtime` and `integrations:uxplay-native`. The [receiver boundary review](phase-2/RECEIVER_BOUNDARY_REVIEW.md) separates the reusable Android service/playback host from the build-time-selected engine; the pure control contract contains no UxPlay types. The app composes them into one artifact. Existing notification and smart-home modules must not depend on the native integration. A focused pure application port is added only when a real receiver consumer needs it; Android Binder types remain outside `core:domain`.
+
+The receiver service owns native initialization, sessions and deterministic cleanup. The proposed playback Activity lives in `:airplay` too, so its surface stays local to the renderer. Final service/Activity lifecycle, foreground-service declarations and launch behavior require Android validation. Do not load native libraries or initialize main-process features through receiver-process startup. Notification process-local state is not a cross-process AirPlay status store.
+
+Use `android:process=":airplay"` and private components (`exported=false`); do not conflate this with Android's permission-restricted `isolatedProcess` setting. Separate processes share device resource limits and do not constitute a licensing conclusion. No permanent native process, boot startup, dashboard polling, plugin registry or event bus is introduced. An optional standalone feasibility harness is development-only, never a second production installation.
+
+## Development-only receiver experiment
+
+The [direct-TV video harness](../experiments/airplay-lab/README.md) is enabled only with `-PairplayLab=true` and has a separate development identity. It is not a production dependency or a required second installation. Its foreground Activity/Surface and native receiver live in `:airplay`; it does not implement the proposed production service, pure receiver port or Binder control adapter. See [experiment evidence](phase-2/TV_RECEIVER_EXPERIMENT.md).

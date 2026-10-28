@@ -1,5 +1,7 @@
 # Phase 1 preparation and migration plan
 
+> Historical Phase 1 record. Its separate-production-receiver APK assumptions are superseded by [decision 13](../DECISIONS.md#phase-2-packaging-correction--2026-10-28) and the [Phase 2 plan](../phase-2/PLAN.md). The production target is one TVCompanion APK with a dedicated `:airplay` process. Original findings and implementation history below are preserved.
+
 Branch: `review/phase-1-architecture`, based on `555d4be`. Status: **Phase 1 implemented, locally verified, installed and user-accepted for lamp/notification functionality**.
 
 The handoff asks for proposed changes, affected files, rationale, regression risks and a test plan before implementation. The user requested preparation/review and a separate branch before any change. The assessment commit `8b975de` contained documentation only. The user subsequently approved implementation on this branch. See [implementation changelog](IMPLEMENTATION_CHANGELOG.md) for the separate product-role, Tuya and notification commits. Main, CI configuration and the TV are unchanged by this implementation.

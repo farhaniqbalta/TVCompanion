@@ -37,3 +37,7 @@ provision.json
 
 # Local device UI captures
 artifacts/ui/
+
+# Development-only native receiver sources and outputs
+experiments/airplay-lab/.native/
+**/.cxx/

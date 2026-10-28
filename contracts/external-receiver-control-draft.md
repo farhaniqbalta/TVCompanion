@@ -1,37 +1,40 @@
-# External media receiver control — Phase 2 design boundary
+# AirPlay receiver control — Phase 2 design boundary
 
-Status: documented in Phase 1; no AIDL, Binder, native dependency, receiver APK or domain port implementation is introduced here.
+Status: design only; no AIDL, Binder, JNI, native dependency or receiver implementation exists. This document supersedes its Phase 1 external-APK proposal under [decision 13](../docs/DECISIONS.md#phase-2-packaging-correction--2026-10-28). The filename is retained for existing links; “external” no longer describes production packaging.
 
-## Ownership
+## Ownership and packaging
 
-The standalone receiver APK owns AirPlay discovery/session networking, decoding, audio/video synchronization and TV rendering. It must be independently usable with TVCompanion absent. TVCompanion orchestrates optional availability, start/stop requests, status and UI entry points.
+Production ships one TVCompanion APK. Its private `:airplay` process owns AirPlay discovery/networking, native sessions, decoding, synchronization and rendering. Main-process UI/application orchestration controls it through a focused Android adapter. Mac media goes directly to the receiver networking stack. No frames, decoded audio, surfaces, buffers or native pipeline handles travel over the control contract.
 
-Mac AirPlay media goes directly to that APK. Media frames, decoded audio and native pipeline objects never flow through TVCompanion or the control IPC. A separate process is a resource/lifecycle boundary, not a guarantee of protocol compatibility or a licensing conclusion.
+Independent native development/testing and an optional standalone development-only harness are allowed. Users do not install a second production receiver app. A separate Android process is a lifecycle/failure boundary, not a resource or licensing guarantee.
 
 ## Proposed focused port
 
-Once a real provider exists, a pure domain port may expose:
+Add a pure application port only when an actual receiver consumer needs it. Conceptual responsibilities, not final method/type names:
 
-- Availability/capabilities: absent, incompatible version, control denied, disconnected, supported.
-- Receiver state: stopped/starting/available/session active/failed, with normalized failure categories.
-- Start and stop requests with explicit asynchronous acknowledgement; accepted is not proof of discovery/rendering.
-- Scoped status observation with deterministic unsubscription.
+- Availability: supported, unavailable on this build/device, initialization failed or disconnected.
+- State: stopped, starting, discoverable, session active, stopping or failed; advertise ready only after receiver initialization succeeds.
+- Explicit start/stop requests with bounded asynchronous acknowledgement. Acceptance does not prove discovery or visible playback.
+- Scoped status observation with deterministic unsubscription and normalized failures.
 
-These are responsibilities, not final method/type names. No Android `IBinder`, AIDL interface, JNI handle, surface or buffer belongs in `core:domain`. Do not force notifications, lights and media into one generic capability interface.
+Keep Android Binder/AIDL, JNI, surfaces and native types outside `core:domain`. Do not reuse notification `ReceiverSnapshot` or introduce a generic capability API. Pairing secrets and notification content are excluded from ordinary status callbacks.
 
-## Future Android adapter
+## Android adapter and service
 
-Use an explicitly identified provider, version negotiation, authenticated caller control and bounded IPC. Do not trust caller-supplied package names alone. Define the signing/permission arrangement deliberately: independently deployed APKs do not imply shared signing keys. Permission denial and provider absence/death must be normal outcomes, not app-start failures.
+Use explicit same-application binding to a non-exported service in `:airplay`; no external package discovery or independently signed provider is required. Keep a small versioned contract for maintainability, but independent APK update compatibility is not a production requirement. Never expose the service merely to simplify a harness.
 
-The adapter owns service binding/death handling, callback threading/cleanup, deadlines and any reconnect policy. Bind/subscription scope must be explicit. No unbounded retries, polling or automatic permanent receiver startup merely to show a tile. Provider launch/start rules must respect the actual platform foreground restrictions and user interaction model; finalize those after the standalone receiver works.
+The main-process adapter owns binding/death handling, bounded pending requests, callback threading, stale-callback rejection and cleanup. Do not perform blocking native work on Binder threads. The receiver service serializes lifecycle transitions and owns native initialization, session shutdown and resource release. Repeated stop and start-during-stop behavior must be defined and tested. Process death cancels pending requests and invalidates cached state; recovery is explicit or narrowly bounded, never an infinite reconnect loop.
 
-Private notification content and pairing secrets are not part of status/control IPC. Version incompatibility must degrade to an unavailable explanation rather than an undocumented fallback or bypass.
+The proposed private playback Activity/surface also lives in `:airplay`. Surface creation/destruction is local to the renderer, not an extension of the control IPC. Validate foreground service type/permissions, user-initiated launch, background restrictions, audio focus, surface recreation and shutdown before finalizing the manifest. Native loading and initializers must not start notifications or Tuya in the receiver process, or UxPlay in the main process.
+
+No dashboard-triggered receiver startup, boot receiver, permanent native worker or polling is required. Desired discoverable lifetime must be decided explicitly; stopping AirPlay releases sockets, discovery registration, decoder/audio resources and callbacks. Android may retain a cached process; do not use process killing as normal cleanup.
 
 ## Gates and tests
 
-1. Prove true extended desktop with the current Mac and a compatible receiver; screen mirroring is insufficient.
-2. Verify upstream source, Android portability/dependencies and distribution obligations at implementation time.
-3. Build and validate an independent receiver APK before TVCompanion IPC work.
-4. Only then implement the port/adapter and tests for missing/old/denied/crashed provider, delayed calls, stale callbacks, unsubscription and independent operation.
+See the [Phase 2 plan](../docs/phase-2/PLAN.md). True extended desktop, Android portability, target-TV media behavior and licensing remain unresolved. A standalone harness is optional development tooling, not a mandatory production dependency.
 
-Phase 1 does not satisfy any AirPlay feasibility or hardware gate. Performance measurements for the media receiver belong to its later, separately scoped feasibility work; no benchmark is added to this refactor.
+When implemented, test initialization failure, process death, delayed replies, stale callbacks, unsubscribe/unbind, repeated start/stop, surface loss and complete native cleanup. Verify existing notification and lamp behavior independently of receiver availability. These are planned checks, not executed evidence.
+
+## Interchangeable implementation proposal
+
+The [receiver boundary review](../docs/phase-2/RECEIVER_BOUNDARY_REVIEW.md) defines proposed neutral models, request/observation semantics and distinct adapter-versus-engine cleanup ownership. It refines the module plan into an Android runtime host and a replaceable engine selected by app composition at build time. No runtime plugin mechanism is proposed. See [license compliance](../docs/LICENSE_COMPLIANCE.md) for why implementation separation does not exempt a combined release from GPL obligations.

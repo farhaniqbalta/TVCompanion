@@ -1,5 +1,7 @@
 # Current architecture — Phase 1 assessment
 
+> Historical Phase 1 record. Its separate-production-receiver APK assumptions are superseded by [decision 13](../DECISIONS.md#phase-2-packaging-correction--2026-10-28) and the [Phase 2 plan](../phase-2/PLAN.md). The production target is one TVCompanion APK with a dedicated `:airplay` process. Original findings and implementation history below are preserved.
+
 Date: 2026-10-28. Source baseline: `555d4be`. Review branch: `review/phase-1-architecture`.
 
 This document preserves the pre-refactor baseline. For the approved changes see [implementation changelog](IMPLEMENTATION_CHANGELOG.md).

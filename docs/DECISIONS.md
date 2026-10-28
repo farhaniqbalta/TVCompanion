@@ -11,5 +11,13 @@
 9. **Verification scope.** Build, lint, and meaningful regression checks; no device deployment or benchmarking as part of the foundation.
 
 10. **TV host and Apple clients.** Google TV is the primary orchestration host, while Apple devices are clients. Independent builds do not make them peer hubs. Protocol-specific direct connections remain possible where verified.
-11. **Standalone media provider.** A future AirPlay receiver will be a separate APK/process, independently usable. It owns discovery, decode and rendering. TVCompanion may control/status it via a future versioned Android IPC adapter; no media frames/audio pass through that adapter. True Mac extended desktop remains a Phase 2 feasibility gate.
+11. **Standalone media provider — superseded by decision 13 below.** A future AirPlay receiver will be a separate APK/process, independently usable. It owns discovery, decode and rendering. TVCompanion may control/status it via a future versioned Android IPC adapter; no media frames/audio pass through that adapter. True Mac extended desktop remains a Phase 2 feasibility gate.
 12. **Targeted Phase 1.** Preserve module names, package/signing identity, private settings, notification v1 and the current UI. Correct proven lifecycle/I/O weaknesses and document future client-command security before exposing any new endpoint. Actions repair and benchmarks remain deferred.
+
+## Phase 2 packaging correction — 2026-10-28
+
+13. **One production TV APK; dedicated AirPlay process.** Supersedes decision 11. TVCompanion is the Google TV integration host. Bundle the future UxPlay integration in TVCompanion's APK, with a private `:airplay` Android process owning its service, JNI/native core, sessions, decoder and audio/video rendering. Main-process UI/orchestration uses control/status/lifecycle Binder/AIDL only; Mac media connects directly to the receiver stack. No frames/audio cross IPC. Android IPC types remain outside the pure Kotlin domain. Notifications and smart home have no dependency on UxPlay. No universal plugin framework, registry or event bus is justified.
+
+Independent native development/testing and an optional standalone development harness are permitted; neither implies a separately distributed production APK. The service owns explicit start/stop/cleanup, native loading stays in the receiver process, and idle dashboard display does not start it. Process separation is not `isolatedProcess=true`, a resource guarantee or a license exemption.
+
+True extended desktop from the selected Mac, Android NDK portability, discovery/pairing, target-TV decode/rendering, stability/latency and distribution licensing remain gates. This decision changes the target architecture; it does not assert feasibility or add runtime code. Preserve Phase 1 historical records with superseding notices. See the [migration and feasibility plan](phase-2/PLAN.md).
