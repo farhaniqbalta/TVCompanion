@@ -41,5 +41,11 @@ class LightController(
             }
         } catch (_: RejectedExecutionException) { publish(State(message = "Connection closed")) }
     }
-    override fun close() { closed = true; observer = null; worker.shutdownNow() }
+    override fun close() {
+        if (closed) return
+        closed = true; observer = null
+        worker.shutdownNow()
+        // Interrupting a worker alone does not release its active socket.
+        try { gateway.close() } catch (_: Exception) { /* Cleanup must not crash the screen. */ }
+    }
 }
