@@ -6,14 +6,14 @@ import java.net.Socket
 import java.security.MessageDigest
 
 /** One worker, bounded input, short timeouts; no body logging and no unbounded queue. */
-class LocalServer(private val token: String, private val receive: (String) -> EventGate.Result,
-                  private val failure: () -> Unit, private val port: Int = 8766) {
+internal class LocalServer(private val token: String, private val receive: (String) -> EventGate.Result,
+                  private val failure: () -> Unit, private val port: Int = 8766) : NotificationListener {
     private val server = ServerSocket()
     val boundPort: Int get() = server.localPort
     @Volatile private var running = true
     private val connectionLock = Any()
     private var active: Socket? = null
-    fun start() {
+    override fun start() {
         server.reuseAddress = true
         server.bind(InetSocketAddress(port), 4)
         Thread({
@@ -29,7 +29,7 @@ class LocalServer(private val token: String, private val receive: (String) -> Ev
             } catch (_: Exception) { if (running) failure() }
         }, "tvcompanion-notifications").start()
     }
-    fun close() {
+    override fun close() {
         running = false
         server.close()
         synchronized(connectionLock) { active?.close(); active = null }

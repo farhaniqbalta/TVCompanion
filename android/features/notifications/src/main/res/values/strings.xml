@@ -51,4 +51,14 @@
     <string name="notifications_privacy_notice">Local HTTP is unencrypted. Use trusted Wi-Fi and non-sensitive messages. No history is saved.</string>
     <string name="notifications_restart_hint">After a TV restart, open this app to start the receiver again.</string>
     <string name="notifications_footer">Arrows to move   ·   OK to choose   ·   Back to home</string>
+    <string name="receiver_status_paused">Paused</string>
+    <string name="receiver_status_starting">Starting receiver…</string>
+    <string name="receiver_status_stopping">Pausing receiver…</string>
+    <string name="receiver_status_listening">Listening on port %1$d</string>
+    <string name="receiver_status_permission">Overlay permission needed; preview available in settings</string>
+    <string name="receiver_status_overlay_failed">Overlay unavailable; use the local preview in settings</string>
+    <string name="receiver_status_listener_failed">Listener failed; restart required</string>
+    <string name="receiver_status_start_failed">Start failed; check overlay permission and listening port</string>
+    <string name="receiver_status_receipt">Network event accepted at %1$s</string>
+    <string name="receiver_status_no_receipt">No network test received this session</string>
 </resources>

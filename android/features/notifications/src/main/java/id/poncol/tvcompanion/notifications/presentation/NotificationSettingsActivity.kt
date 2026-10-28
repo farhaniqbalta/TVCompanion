@@ -11,8 +11,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
 import android.text.InputType
 import android.view.Gravity
@@ -29,7 +27,6 @@ class NotificationSettingsActivity : Activity() {
     private val settings get() = controller.preferences
     private val runtime get() = controller.runtime
     private val ui by lazy { TvUi(this) }
-    private val updates = Handler(Looper.getMainLooper())
     private var selectedSection = R.string.notifications_receiver
     private var previewSource = "grab"
     private var pinVisible = false
@@ -101,7 +98,7 @@ class NotificationSettingsActivity : Activity() {
         val panel = ui.panel(binding.content, getString(section))
         when (section) {
             R.string.notifications_receiver -> {
-                binding.status = ui.text(panel, runtime.state, 22f, true)
+                binding.status = ui.text(panel, ReceiverStatusText.status(this, runtime.snapshot), 22f, true)
                 ui.text(panel, getString(R.string.notifications_receiver_hint), 16f)
                 binding.receiverAction = ui.button(panel, "") { if (runtime.running) pause() else startReceiver() }
                 if (!runtime.overlayAllowed) {
@@ -109,7 +106,7 @@ class NotificationSettingsActivity : Activity() {
                     ui.text(panel, getString(R.string.notifications_permission_hint), 14f)
                 } else ui.text(panel, getString(R.string.notifications_permission_allowed), 14f).setTextColor(ui.accent)
                 ui.spacer(panel, 12)
-                binding.receipt = ui.text(panel, runtime.lastReceipt, 14f)
+                binding.receipt = ui.text(panel, ReceiverStatusText.receipt(this, runtime.snapshot), 14f)
                 ui.text(panel, getString(R.string.notifications_restart_hint), 14f)
             }
             R.string.notifications_appearance -> {
@@ -221,16 +218,15 @@ class NotificationSettingsActivity : Activity() {
         if (!runtime.overlayAllowed) { Toast.makeText(this, R.string.notifications_permission_toast, Toast.LENGTH_LONG).show(); return }
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
-        controller.start(); updates.postDelayed({ refresh() }, 700)
+        controller.start()
     }
-    private fun pause() { controller.pause(); updates.postDelayed({ refresh() }, 300) }
+    private fun pause() { controller.pause() }
     private fun confirmPinReset() {
         dialog = AlertDialog.Builder(this).setTitle(R.string.notifications_pin_confirm_title)
             .setMessage(R.string.notifications_pin_confirm_body).setNegativeButton(R.string.notifications_cancel, null)
             .setPositiveButton(R.string.notifications_reset) { _, _ ->
                 controller.rotatePin(); pinVisible = false; refresh()
                 Toast.makeText(this, R.string.notifications_pin_reset, Toast.LENGTH_LONG).show()
-                updates.postDelayed({ refresh() }, 300)
             }.create().also { it.show() }
     }
     private fun editPort() {
@@ -242,15 +238,14 @@ class NotificationSettingsActivity : Activity() {
             if (value == null || value !in 1024..65535) input.error = getString(R.string.notifications_port_error)
             else {
                 controller.changePort(value); editor.dismiss(); showSection(selectedSection)
-                updates.postDelayed({ refresh() }, 300)
             }
         } }
         dialog = editor; editor.show()
     }
     private fun refresh() {
         val binding = screen ?: return
-        binding.status?.text = runtime.state
-        binding.receipt?.text = runtime.lastReceipt
+        binding.status?.text = ReceiverStatusText.status(this, runtime.snapshot)
+        binding.receipt?.text = ReceiverStatusText.receipt(this, runtime.snapshot)
         binding.receiverAction?.setText(if (runtime.running) R.string.notifications_pause else R.string.notifications_start)
         binding.address?.text = runtime.addresses
         binding.pin?.text = if (pinVisible) runtime.pin else getString(R.string.notifications_pin_hidden)
@@ -267,7 +262,7 @@ class NotificationSettingsActivity : Activity() {
         refresh()
     }
     override fun onStop() {
-        unregisterReceiver(changes); updates.removeCallbacksAndMessages(null)
+        unregisterReceiver(changes)
         dialog?.dismiss(); dialog = null; pinVisible = false
         screen = null; setContentView(FrameLayout(this)); super.onStop()
     }
