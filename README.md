@@ -32,7 +32,7 @@ The receiver currently uses authenticated **unencrypted LAN HTTP** inherited fro
 
 ## Phase 1 refactor
 
-The `review/phase-1-architecture` branch contains a targeted refactor: owned Tuya cancellation and fragmented-read deadlines, typed notification lifecycle state, and testable listener/overlay session coordination. The current local candidate is `0.3.0-phase1-preview`; it has 59 passing tests and zero lint findings, with new device acceptance still pending. See [implementation details](docs/phase-1/IMPLEMENTATION_CHANGELOG.md). Future command and external receiver contracts are design-only; no AirPlay or command endpoint is implemented.
+The `review/phase-1-architecture` branch contains a targeted refactor: owned Tuya cancellation and fragmented-read deadlines, typed notification lifecycle state, and testable listener/overlay session coordination. The current local candidate is `0.3.0-phase1-preview`; it has 59 passing tests and zero lint findings, with installation and lamp/notification functionality now user-confirmed. See [implementation details](docs/phase-1/IMPLEMENTATION_CHANGELOG.md). Future command and external receiver contracts are design-only; no AirPlay or command endpoint is implemented.
 
 ## Get started
 

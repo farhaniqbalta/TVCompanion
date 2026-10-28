@@ -1,6 +1,6 @@
 # Phase 1 preparation and migration plan
 
-Branch: `review/phase-1-architecture`, based on `555d4be`. Status: **user-approved Phase 1 implemented; local verification complete; new device acceptance pending**.
+Branch: `review/phase-1-architecture`, based on `555d4be`. Status: **Phase 1 implemented, locally verified, installed and user-accepted for lamp/notification functionality**.
 
 The handoff asks for proposed changes, affected files, rationale, regression risks and a test plan before implementation. The user requested preparation/review and a separate branch before any change. The assessment commit `8b975de` contained documentation only. The user subsequently approved implementation on this branch. See [implementation changelog](IMPLEMENTATION_CHANGELOG.md) for the separate product-role, Tuya and notification commits. Main, CI configuration and the TV are unchanged by this implementation.
 

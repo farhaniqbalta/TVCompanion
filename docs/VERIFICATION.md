@@ -1,6 +1,6 @@
 # Verification — 2026-10-28
 
-## Phase 1 local candidate: 0.3.0-phase1-preview
+## Phase 1 installed and user-verified: 0.3.0-phase1-preview
 
 Branch: `review/phase-1-architecture`. The user approved implementation after assessment. The refactor is committed in focused product-role, Tuya and notification steps; see [implementation changelog](phase-1/IMPLEMENTATION_CHANGELOG.md).
 
@@ -20,7 +20,9 @@ cd android
 
 **Device installation smoke check — 2026-10-28:** at the user’s request, updated the existing TV application to version code 4 / `0.3.0-phase1-preview` with `adb install -r`. Android confirmed installation and package metadata confirmed the version. The existing encrypted lamp setup was present before and after; the one-time plaintext import was absent. Native authenticated lamp status was confirmed on screen, reporting the light off. The notification receiver was active and its settings UI showed the Pause action. The dashboard was verified and left open. Verification used read-only UI dumps and explicit app entry intents; no power/brightness input, overlay-permission change or benchmark was performed. Temporary device UI dumps were removed. No private endpoint, PIN or device identifier is recorded here.
 
-**Still pending:** physical remote navigation and observed bulb changes, overlay queue/dedup/expiry behavior on the new candidate, offline/standby recovery and broader WindowManager/player coexistence. The smoke check is not full hardware acceptance. ADB closure remains pending after the user finishes testing. No Phase 2 work has begun; GitHub Actions remains postponed.
+**User acceptance — 2026-10-28:** after installation, the user confirmed that the lamp and notifications work and that all is good. This accepts the Phase 1 baseline for the tested everyday functionality.
+
+**Still pending:** dedicated queue/dedup/expiry fault checks on the TV, offline/standby recovery and broader WindowManager/player coexistence. User confirmation of working features is not evidence of those separate failure scenarios. ADB closure remains pending after the user finishes testing. No Phase 2 work has begun; GitHub Actions remains postponed.
 
 ## Previously installed build: 0.2.1-brand-preview
 
