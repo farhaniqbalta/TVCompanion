@@ -1,5 +1,11 @@
 # Architecture
 
+## Host and client roles
+
+Google TV hosts TVCompanion orchestration, notification presentation and supported smart-device use cases. Apple devices are clients. Independently built applications are not peer hubs. A future AirPlay receiver remains a separate, independently usable APK/process and owns its media pipeline. Mac media goes directly to it; TVCompanion only controls availability/status through a future adapter. No frames/audio traverse TVCompanion or Binder.
+
+A platform remote client can still use a separately validated stock TV remote service. Host/client roles do not require routing every Apple protocol through one generic server.
+
 ## Dependency direction
 
 ```text
