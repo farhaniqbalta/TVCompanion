@@ -108,14 +108,31 @@ final class Tuya35 implements LampSession {
         throw new IOException("No power status returned");
     }
     @Override public void write(String dp,Object value) throws Exception {
-        if(!dp.equals("20") && !dp.equals("22"))throw new IOException("Unsupported control");
-        if(dp.equals("20") && !(value instanceof Boolean))throw new IOException("Invalid power");
-        if(dp.equals("22") && (!(value instanceof Integer) || (int)value<10 || (int)value>1000))throw new IOException("Invalid brightness");
+        writeValues(java.util.Collections.singletonMap(dp,value));
+    }
+    @Override public void writeValues(java.util.Map<String,? extends Object> values) throws Exception {
+        JSONObject dps = controlValues(values);
         JSONObject root=new JSONObject().put("protocol",5).put("t",System.currentTimeMillis()/1000)
-            .put("data",new JSONObject().put("dps",new JSONObject().put(dp,value)));
+            .put("data",new JSONObject().put("dps",dps));
         byte[] json=root.toString().getBytes(StandardCharsets.UTF_8);
         byte[] payload=new byte[15+json.length];System.arraycopy("3.5".getBytes(StandardCharsets.US_ASCII),0,payload,0,3);System.arraycopy(json,0,payload,15,json.length);
         send(13,payload);
+    }
+    /** Validate the narrow lamp profile before serialization or socket output. */
+    static JSONObject controlValues(java.util.Map<String,? extends Object> values) throws IOException {
+        boolean color = values.size()==2 && "colour".equals(values.get("21")) && values.containsKey("24");
+        if(values.isEmpty() || (!color && values.size()!=1))throw new IOException("Unsupported control group");
+        JSONObject dps=new JSONObject();
+        for(java.util.Map.Entry<String,? extends Object> item:values.entrySet()) {
+            String dp=item.getKey(); Object value=item.getValue();
+            if(dp.equals("20")) { if(!(value instanceof Boolean))throw new IOException("Invalid power"); }
+            else if(dp.equals("22")) { if(!(value instanceof Integer) || (int)value<10 || (int)value>1000)throw new IOException("Invalid brightness"); }
+            else if(dp.equals("21")) { if(!"white".equals(value) && !(color && "colour".equals(value)))throw new IOException("Invalid mode"); }
+            else if(dp.equals("24")) { if(!color || TuyaColorCodec.INSTANCE.decode(value)==null)throw new IOException("Invalid color"); }
+            else throw new IOException("Unsupported control");
+            try { dps.put(dp,value); } catch(org.json.JSONException error) { throw new IOException("Invalid control value",error); }
+        }
+        return dps;
     }
     @Override public void close(){try{socket.close();}catch(IOException ignored){}if(key!=null)Arrays.fill(key,(byte)0);}
 }

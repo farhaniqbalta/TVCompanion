@@ -1,0 +1,7 @@
+--- a/lib/raop.c
++++ b/lib/raop.c
+@@ -843 +843,3 @@
+-    httpd_stop(raop->httpd);
++    if (raop->httpd) {
++        httpd_stop(raop->httpd);
++    }

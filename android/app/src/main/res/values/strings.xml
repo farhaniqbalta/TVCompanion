@@ -14,4 +14,9 @@ You set the mood.</string>
 without leaving what you’re watching.</string>
     <string name="home_notifications_action">Manage notifications →</string>
     <string name="home_hint">Arrows to move   ·   OK to open   ·   Back to return</string>
+    <string name="home_airplay_category">AIRPLAY PREVIEW</string>
+    <string name="home_airplay_title">More space</string>
+    <string name="home_airplay_description">Extend your Mac desktop.
+Mirror a screen to your TV.</string>
+    <string name="home_airplay_action">Open AirPlay →</string>
 </resources>

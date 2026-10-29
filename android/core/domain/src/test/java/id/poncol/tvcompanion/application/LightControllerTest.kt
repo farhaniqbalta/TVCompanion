@@ -32,6 +32,8 @@ class LightControllerTest {
             state = when (command) {
                 is LightCommand.Power -> state.copy(on = command.on)
                 is LightCommand.Brightness -> state.copy(brightness = command.percent)
+                is LightCommand.Color -> state.copy(whiteMode = false, colorMode = true, color = command.color)
+                LightCommand.WhiteMode -> state.copy(whiteMode = true, colorMode = false)
             }
             return state
         }
@@ -111,4 +113,19 @@ class LightControllerTest {
     }
     @Test(expected = IllegalArgumentException::class)
     fun brightnessRejectsOutOfRangeInput() { LightCommand.Brightness(101) }
+
+    @Test fun colorCommandsRequireConfirmedSupportedStateAndDoNotPublishOptimisticColor() {
+        val worker = Worker(); val lamp = Lamp(); val controller = LightController(lamp, { it() }, worker)
+        controller.refresh(); worker.complete()
+        val requested = LightColor(240, 1000, 500)
+        controller.execute(LightCommand.Color(requested)); assertTrue(worker.tasks.isEmpty())
+        lamp.state = LightState(true, true, 40, LightColor(0, 1000, 400))
+        controller.refresh(); worker.complete()
+        controller.execute(LightCommand.Color(requested)); controller.execute(LightCommand.Color(LightColor(120,1000,500)))
+        assertEquals(1, worker.tasks.size); assertEquals(0, controller.state.light?.color?.hue)
+        worker.complete(); assertEquals(requested, controller.state.light?.color); assertEquals(1, lamp.writes)
+        controller.execute(LightCommand.WhiteMode); worker.complete()
+        assertTrue(controller.state.light!!.whiteMode); assertEquals(40, controller.state.light?.brightness)
+        controller.close()
+    }
 }

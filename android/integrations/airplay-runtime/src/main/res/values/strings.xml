@@ -1,0 +1,29 @@
+<resources>
+    <string name="airplay_runtime_receiver_name">TVCompanion</string>
+    <string name="airplay_runtime_eyebrow">AIRPLAY / PREVIEW</string>
+    <string name="airplay_runtime_waiting">Starting AirPlay…</string>
+    <string name="airplay_runtime_ready">Ready to connect</string>
+    <string name="airplay_runtime_instructions">Mac / iPhone / iPad: Control Center → Screen Mirroring → TVCompanion. For music, choose TVCompanion in the AirPlay audio picker. During video, press OK to show controls. Back leaves playback.</string>
+    <string name="airplay_runtime_connecting">Connected · waiting for video</string>
+    <string name="airplay_runtime_video_playing">Displaying video</string>
+    <string name="airplay_runtime_audio_playing">Playing audio</string>
+    <string name="airplay_runtime_audio_only_help">Audio can play without video. To share a screen, use Screen Mirroring. If you already shared a screen but the picture is missing, reconnect from your Apple device.</string>
+    <string name="airplay_runtime_video_wait_help">Video has not reached the display yet. If it stays blank, reconnect Screen Mirroring from your Apple device.</string>
+    <string name="airplay_runtime_failed">AirPlay could not continue</string>
+    <string name="airplay_runtime_recovery">Choose Retry playback. If it fails again, reconnect from your Apple device. Back returns to AirPlay settings.</string>
+    <string name="airplay_runtime_stopping">Stopping AirPlay…</string>
+    <string name="airplay_runtime_stopped">AirPlay stopped</string>
+    <string name="airplay_runtime_retry">Retry playback</string>
+    <string name="airplay_runtime_return">Leave playback</string>
+    <string name="airplay_runtime_stop_action">Stop AirPlay</string>
+    <string name="airplay_runtime_leave_stops">Back leaves playback and ends this session. Background listening can remain on.</string>
+    <string name="airplay_runtime_leave_connected">Back leaves playback. If connected, the session stays connected; hidden audio is off.</string>
+    <string name="airplay_runtime_leave_audio">Back leaves playback. If connected, the session and audio can continue in the background.</string>
+    <string name="airplay_runtime_channel">AirPlay availability</string>
+    <string name="airplay_runtime_notification_title">TVCompanion AirPlay</string>
+    <string name="airplay_runtime_notification_idle">Listening for Screen Mirroring and audio</string>
+    <string name="airplay_runtime_notification_stream">AirPlay connected · Open playback or Stop</string>
+    <string name="airplay_runtime_notification_open">Open playback</string>
+    <string name="airplay_runtime_notification_stop">Stop</string>
+    <string name="airplay_runtime_audio_unavailable">Sound is unavailable or held by another app. Video can continue; Back leaves playback.</string>
+</resources>

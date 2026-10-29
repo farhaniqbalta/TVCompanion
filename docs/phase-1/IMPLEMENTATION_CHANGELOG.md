@@ -1,5 +1,7 @@
 # Phase 1 implementation — 2026-10-28
 
+> Historical Phase 1 record. Its separate-production-receiver APK assumptions are superseded by [decision 13](../DECISIONS.md#phase-2-packaging-correction--2026-10-28) and the [Phase 2 plan](../phase-2/PLAN.md). The production target is one TVCompanion APK with a dedicated `:airplay` process. Original findings and implementation history below are preserved.
+
 Branch: `review/phase-1-architecture`. Based on audit of `555d4be`; approved by the user after the assessment. The application/module identities, settings keys, notification JSON v1, port 8766 and TV layout are preserved. No workflow or media implementation is included.
 
 ## P1.1 — Product roles

@@ -1,0 +1,5 @@
+--- a/lib/raop.c
++++ b/lib/raop.c
+@@ -404 +404 @@
+-    logger_log(raop->logger, LOGGER_DEBUG, "Handling request %s with URL %s", method, url);
++    logger_log(raop->logger, LOGGER_INFO, "Handling request %s with URL %s", method, url);

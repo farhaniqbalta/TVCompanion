@@ -9,4 +9,11 @@ pluginManagement {
 }
 dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
 rootProject.name = 'TVCompanion'
+include ':features:airplay', ':ipc:airplay-contract', ':integrations:airplay-runtime', ':integrations:uxplay-native'
 include ':app', ':core:domain', ':core:designsystem', ':integrations:tuya-lan', ':features:smart-home', ':features:notifications'
+
+// Explicit opt-in only: never part of the production app or default CI build.
+if (providers.gradleProperty('airplayLab').orNull == 'true') {
+    include ':experiments:airplay-lab'
+    project(':experiments:airplay-lab').projectDir = file('../experiments/airplay-lab/app')
+}

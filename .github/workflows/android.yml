@@ -1,9 +1,9 @@
 name: Android TV
 on:
   push:
-    paths: ['android/**', '.github/workflows/android.yml']
+    paths: ['android/**', 'scripts/prepare-airplay-native.py', 'scripts/check-airplay-native.py', '.github/workflows/android.yml']
   pull_request:
-    paths: ['android/**', '.github/workflows/android.yml']
+    paths: ['android/**', 'scripts/prepare-airplay-native.py', 'scripts/check-airplay-native.py', '.github/workflows/android.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -27,10 +27,18 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           # Override v3's legacy `tools` package, which is no longer available.
-          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0 ndk;27.2.12479018 cmake;3.22.1'
           log-accepted-android-sdk-licenses: false
+      - uses: actions/cache@v4
+        with:
+          path: android/integrations/uxplay-native/.native
+          key: ${{ runner.os }}-airplay-native-${{ hashFiles('scripts/prepare-airplay-native.py', 'scripts/check-airplay-native.py', 'android/integrations/uxplay-native/patches/**') }}
+      - name: Prepare pinned native receiver dependencies
+        run: python3 ../scripts/prepare-airplay-native.py
+      - name: Check native media helpers
+        run: python3 ../scripts/check-airplay-native.py
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew --no-daemon :app:assembleDebug :core:domain:test :integrations:tuya-lan:testDebugUnitTest :features:notifications:testDebugUnitTest :app:lintDebug
+      - run: ./gradlew --no-daemon :app:assembleDebug :core:domain:test :features:airplay:testDebugUnitTest :features:smart-home:testDebugUnitTest :integrations:airplay-runtime:testDebugUnitTest :ipc:airplay-contract:testDebugUnitTest :integrations:tuya-lan:testDebugUnitTest :features:notifications:testDebugUnitTest :app:lintDebug
       - uses: actions/upload-artifact@v4
         if: always()
         with:

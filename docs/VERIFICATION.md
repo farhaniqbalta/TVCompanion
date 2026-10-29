@@ -69,3 +69,29 @@ Current tests cover six light-controller cases, five notification-controller cas
 No deployment, ADB session, real-lamp command, credential read, device trace or CPU/RAM benchmark was performed. Previously recorded hardware/user confirmation is historical evidence rather than a new assessment result. The GitHub Actions issue remains explicitly postponed and the workflow is unchanged.
 
 See [current architecture](phase-1/CURRENT_ARCHITECTURE.md), [target proposal](phase-1/TARGET_ARCHITECTURE.md), and [migration plan](phase-1/MIGRATION_PLAN.md). Application implementation awaits approval of the proposed changes, as requested by the handoff.
+
+## Phase 2 integrated video preview — 2026-10-29
+
+See the [single-APK integration record](phase-2/SINGLE_APK_INTEGRATION.md): 73 passing tests, successful main/lab builds, main lint with zero errors and one target-ABI warning, update with existing preferences preserved byte-for-byte, and user acceptance of the integrated preview. No further testing was performed after the user requested stopping checks. Audio, idle background availability, broader device compatibility and distribution licensing remain open.
+
+## Audio and background candidate — 2026-10-29
+
+The [0.5 candidate](phase-2/AUDIO_AND_BACKGROUND.md) builds with 81 passing JVM tests and passing native clock/H.264/ALAC round-trip checks. Lint: zero errors, one known ChromeOS/ABI warning. No automated TV session, audio listening, background-mode test or benchmark was run; the user requested installation and will provide device review.
+
+The audio/background candidate was subsequently installed at the user’s explicit request. Existing preference files were preserved byte-for-byte; no notification receiver was running before the update. The dashboard was opened without starting AirPlay. Audible output, lip-sync and idle/background behavior remain pending user review.
+
+## 0.5.2 local lifecycle/video correction
+
+Built versionCode 8 with the four separate background/presentation controls, protocol v3 and bounded startup-video recovery. All 89 JVM tests pass, including the Phase 1 suites; native helper checks pass; lint has zero errors and the known ChromeOS ABI warning. Spotify AirPlay source/implementation review and deferred manual checks are recorded in [AUDIO_AND_BACKGROUND.md](phase-2/AUDIO_AND_BACKGROUND.md). The user has no TV access: this candidate was not installed and neither the video fix nor Spotify playback is hardware-verified. No commit/push is included.
+
+## 0.5.3 AirPlay UI/UX candidate
+
+VersionCode 9 adds grouped responsive settings, connection instructions, independent status facts, background-audio dependency feedback, explicit leave/stop behavior, focused retry paths and an on-demand video toolbar. Build and 95 JVM tests pass; lint has zero errors and the known ChromeOS ABI warning. New tests distinguish audio from video and retained sessions from discovery, verify stale display issues clear on reattachment, and round-trip the v4 status flags. Phase 1 suites passed during this change. No TV installation/connection or visual acceptance testing was performed because the user is away from the TV. Home testing remains pending.
+
+## 0.6.0 Bardi color-control preview
+
+Branch `feature/bardi-color-control` starts from pushed AirPlay UI commit `1f60f7d`. VersionCode 10 builds, all 105 JVM tests pass, and lint reports zero errors plus the existing ChromeOS ABI warning. New coverage checks bounded HSV16 parsing, atomic mode/color group validation, separate mode-and-color readback, unsupported/off states, white-mode restoration and pure/controller adjustment behavior. No TV connection, lamp write, installation or benchmark was performed. Physical color and remote navigation remain pending; see [BARDI_COLOR_CONTROL.md](BARDI_COLOR_CONTROL.md).
+
+The user subsequently authorized installation after returning home. The 0.6.0 APK update succeeded; all pre-existing preference files were preserved byte-for-byte and the dashboard opened. The notification receiver was not previously running. No lamp write or AirPlay session was initiated; user hardware review and eventual ADB closure remain pending.
+
+The user subsequently reported “all works” after the requested Bardi color-control test sequence. Presets, HSV adjustments and returning to white mode are accepted by user report; exhaustive edge cases and fully offline operation are not claimed. This acceptance does not resolve pending AirPlay video/Spotify checks or verify ADB closure.

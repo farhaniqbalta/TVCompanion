@@ -37,3 +37,10 @@ provision.json
 
 # Local device UI captures
 artifacts/ui/
+
+# Development-only native receiver sources and outputs
+experiments/airplay-lab/.native/
+**/.cxx/
+
+# Shared native engine cache (downloaded sources, notices, binaries)
+android/integrations/uxplay-native/.native/

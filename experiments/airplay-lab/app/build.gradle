@@ -1,0 +1,14 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'id.poncol.tvcompanion.airplaylab'
+    compileSdk 34
+    ndkVersion '27.2.12479018'
+    defaultConfig { applicationId 'id.poncol.tvcompanion.airplaylab'; minSdk 26; targetSdk 34; versionCode 2; versionName '0.2.0-shared-runtime' }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies {
+    implementation project(':core:domain')
+    implementation project(':ipc:airplay-contract')
+    implementation project(':integrations:airplay-runtime')
+    implementation project(':integrations:uxplay-native')
+}

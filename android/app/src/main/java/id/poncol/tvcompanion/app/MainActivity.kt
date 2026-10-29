@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.ScrollView
+import id.poncol.tvcompanion.airplay.feature.AirPlaySettingsActivity
 import id.poncol.tvcompanion.application.LightController
 import id.poncol.tvcompanion.designsystem.TvUi
 import id.poncol.tvcompanion.notifications.presentation.NotificationSettingsActivity
@@ -17,7 +18,7 @@ class MainActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
     private var showingLight = false
     private var restoreLight = false
-    private var homeFocusNotifications = false
+    private var homeFocus = 0
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (savedInstanceState?.getBoolean("light") == true ||
@@ -43,15 +44,24 @@ class MainActivity : Activity() {
         val notifications = ui.featureCard(cards, id.poncol.tvcompanion.designsystem.R.drawable.ic_bell, ui.accent,
             getString(R.string.home_notifications_category), getString(R.string.home_notifications_title),
             getString(R.string.home_notifications_description), getString(R.string.home_notifications_action)) {
-            homeFocusNotifications = true
+            homeFocus = 1
             startActivity(Intent(this, NotificationSettingsActivity::class.java))
         }
-        lights.setOnFocusChangeListener { _, focused -> if (focused) homeFocusNotifications = false }
-        notifications.setOnFocusChangeListener { _, focused -> if (focused) homeFocusNotifications = true }
+        lights.setOnFocusChangeListener { _, focused -> if (focused) homeFocus = 0 }
+        notifications.setOnFocusChangeListener { _, focused -> if (focused) homeFocus = 1 }
+        cards.addView(android.view.View(this), android.widget.LinearLayout.LayoutParams(ui.dp(20), 1))
+        val airplay = ui.featureCard(cards, R.drawable.ic_airplay, ui.accent,
+            getString(R.string.home_airplay_category), getString(R.string.home_airplay_title),
+            getString(R.string.home_airplay_description), getString(R.string.home_airplay_action)) {
+            homeFocus = 2
+            startActivity(Intent(this, AirPlaySettingsActivity::class.java))
+        }
+        airplay.setOnFocusChangeListener { _, focused -> if (focused) homeFocus = 2 }
         ui.spacer(root, 20)
         ui.text(root, getString(R.string.home_hint), 13f)
+        val initialFocus = homeFocus
         setContentView(scroll)
-        (if (homeFocusNotifications) notifications else lights).requestFocus()
+        (when (initialFocus) { 1 -> notifications; 2 -> airplay; else -> lights }).requestFocus()
     }
     private fun showLight() {
         releaseLight(); showingLight = true
