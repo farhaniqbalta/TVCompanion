@@ -184,4 +184,20 @@ class ReceiverSessionTest {
         assertFalse(session.heldInBackground); assertFalse(session.audioAllowed)
         assertEquals(AirPlayIssue.DISPLAY_REQUIRED, session.start(false) { fail("idle policy must not start engine"); Engine() }.issue)
     }
+
+    @Test fun displayAndDiscoveryFactsDoNotConflateAudioWithRenderedVideo() {
+        val session = ReceiverSession {}; lateinit var emit: (ReceiverSession.Signal) -> Unit
+        session.start(true) { emit = it; Engine() }; emit(ReceiverSession.Signal.READY)
+        assertTrue(session.snapshot.discoverable); assertFalse(session.snapshot.videoActive)
+        emit(ReceiverSession.Signal.AUDIO)
+        assertTrue(session.snapshot.audioActive); assertFalse(session.snapshot.videoActive)
+        emit(ReceiverSession.Signal.VIDEO); assertTrue(session.snapshot.videoActive)
+        session.detachDisplay()
+        assertFalse(session.snapshot.discoverable); assertFalse(session.snapshot.videoActive)
+        session.attachDisplay()
+        assertTrue(session.snapshot.discoverable); assertFalse(session.snapshot.videoActive)
+        assertNull(session.snapshot.issue)
+        emit(ReceiverSession.Signal.VIDEO); assertTrue(session.snapshot.videoActive)
+        session.stop(); assertFalse(session.snapshot.videoActive); assertFalse(session.snapshot.discoverable)
+    }
 }

@@ -16,8 +16,13 @@ internal class ReceiverSession(private val capabilities: AirPlayCapabilities = A
     val heldInBackground: Boolean get() = snapshot.keepAvailable || (snapshot.keepSession && connected)
     val discoverable: Boolean get() = displayAttached || snapshot.keepAvailable
     val audioAllowed: Boolean get() = displayAttached || (snapshot.keepSession && connected && snapshot.backgroundAudio)
+    private fun publishSnapshot() {
+        snapshot = snapshot.copy(discoverable = snapshot.phase == AirPlayPhase.READY && discoverable,
+            videoActive = snapshot.phase == AirPlayPhase.READY && displayAttached && videoPlaying)
+        publish(snapshot)
+    }
     private fun state(phase: AirPlayPhase, connection: AirPlayConnection = AirPlayConnection.NONE, issue: AirPlayIssue? = null, audio: Boolean = phase == AirPlayPhase.READY && snapshot.audioActive) {
-        snapshot = snapshot.copy(phase = phase, connection = connection, issue = issue, audioActive = audio); publish(snapshot)
+        snapshot = snapshot.copy(phase = phase, connection = connection, issue = issue, audioActive = audio); publishSnapshot()
     }
     fun start(displayAvailable: Boolean, create: ((Signal) -> Unit) -> Lease): AirPlayResult {
         if (closed) return AirPlayResult(false, AirPlayIssue.CLOSED)
@@ -57,7 +62,11 @@ internal class ReceiverSession(private val capabilities: AirPlayCapabilities = A
         } catch (_: Exception) { ++generation; state(AirPlayPhase.FAILED, issue = AirPlayIssue.START_FAILED); return AirPlayResult(false, AirPlayIssue.START_FAILED) }
         return AirPlayResult(true)
     }
-    fun attachDisplay() { displayAttached = true; publish(snapshot) }
+    fun attachDisplay() {
+        displayAttached = true
+        if (snapshot.issue == AirPlayIssue.DISPLAY_REQUIRED) snapshot = snapshot.copy(issue = null)
+        publishSnapshot()
+    }
     fun detachDisplay() {
         displayAttached = false
         val needsDisplay = videoPlaying || snapshot.connection == AirPlayConnection.CONNECTING
@@ -70,7 +79,7 @@ internal class ReceiverSession(private val capabilities: AirPlayCapabilities = A
     fun setKeepAvailable(enabled: Boolean): AirPlayResult {
         if (closed) return AirPlayResult(false, AirPlayIssue.CLOSED)
         if (snapshot.phase == AirPlayPhase.STOPPING && enabled) return AirPlayResult(false, AirPlayIssue.BUSY)
-        snapshot = snapshot.copy(keepAvailable = enabled); publish(snapshot)
+        snapshot = snapshot.copy(keepAvailable = enabled); publishSnapshot()
         if (!enabled && !displayAttached && !heldInBackground) stop()
         return AirPlayResult(true)
     }
@@ -85,7 +94,7 @@ internal class ReceiverSession(private val capabilities: AirPlayCapabilities = A
         if (closed) return AirPlayResult(false, AirPlayIssue.CLOSED)
         snapshot = snapshot.copy(keepAvailable = preserveListening && snapshot.keepAvailable)
         connected = false; videoPlaying = false
-        if (snapshot.phase == AirPlayPhase.STOPPING) { publish(snapshot); return AirPlayResult(true) }
+        if (snapshot.phase == AirPlayPhase.STOPPING) { publishSnapshot(); return AirPlayResult(true) }
         val token = ++generation
         val owned = lease; lease = null
         if (owned == null) { state(if (failure == null) AirPlayPhase.STOPPED else AirPlayPhase.FAILED, issue = failure); return AirPlayResult(true) }

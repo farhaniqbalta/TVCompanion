@@ -15,7 +15,9 @@ data class AirPlaySnapshot(
     val audioActive: Boolean = false,
     val keepSession: Boolean = true,
     val backgroundAudio: Boolean = false,
-    val autoOpenVideo: Boolean = true
+    val autoOpenVideo: Boolean = true,
+    val discoverable: Boolean = false,
+    val videoActive: Boolean = false
 )
 data class AirPlayOptions(val receiverName: String) {
     init { require(receiverName.length in 1..40 && receiverName.all { it in ' '..'~' }) }

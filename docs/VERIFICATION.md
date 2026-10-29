@@ -83,3 +83,7 @@ The audio/background candidate was subsequently installed at the user’s explic
 ## 0.5.2 local lifecycle/video correction
 
 Built versionCode 8 with the four separate background/presentation controls, protocol v3 and bounded startup-video recovery. All 89 JVM tests pass, including the Phase 1 suites; native helper checks pass; lint has zero errors and the known ChromeOS ABI warning. Spotify AirPlay source/implementation review and deferred manual checks are recorded in [AUDIO_AND_BACKGROUND.md](phase-2/AUDIO_AND_BACKGROUND.md). The user has no TV access: this candidate was not installed and neither the video fix nor Spotify playback is hardware-verified. No commit/push is included.
+
+## 0.5.3 AirPlay UI/UX candidate
+
+VersionCode 9 adds grouped responsive settings, connection instructions, independent status facts, background-audio dependency feedback, explicit leave/stop behavior, focused retry paths and an on-demand video toolbar. Build and 95 JVM tests pass; lint has zero errors and the known ChromeOS ABI warning. New tests distinguish audio from video and retained sessions from discovery, verify stale display issues clear on reattachment, and round-trip the v4 status flags. Phase 1 suites passed during this change. No TV installation/connection or visual acceptance testing was performed because the user is away from the TV. Home testing remains pending.

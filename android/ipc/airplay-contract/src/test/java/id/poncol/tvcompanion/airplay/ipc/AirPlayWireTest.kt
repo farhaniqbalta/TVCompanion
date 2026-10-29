@@ -25,18 +25,20 @@ class AirPlayWireTest {
     @Test fun availabilityAndAudioFlagsAreControlMetadataOnly() {
         val state = AirPlayWire.snapshot(2, 2, 0, 3, 1280, 720, 30, 3)!!
         assertTrue(state.keepAvailable); assertTrue(state.audioActive)
-        assertNull(AirPlayWire.snapshot(2, 2, 0, flags = 32))
+        assertNull(AirPlayWire.snapshot(2, 2, 0, flags = 128))
     }
 
 
     @Test fun backgroundPoliciesRemainIndependentAcrossWire() {
-        for (flags in 0..31) {
+        for (flags in 0..127) {
             val state = AirPlayWire.snapshot(2, 0, 0, flags = flags)!!
             assertEquals(flags and 1 != 0, state.keepAvailable)
             assertEquals(flags and 2 != 0, state.audioActive)
             assertEquals(flags and 4 != 0, state.keepSession)
             assertEquals(flags and 8 != 0, state.backgroundAudio)
             assertEquals(flags and 16 != 0, state.autoOpenVideo)
+            assertEquals(flags and 32 != 0, state.discoverable)
+            assertEquals(flags and 64 != 0, state.videoActive)
         }
     }
 }

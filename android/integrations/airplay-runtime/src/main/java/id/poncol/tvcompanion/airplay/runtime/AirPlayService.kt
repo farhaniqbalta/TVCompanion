@@ -24,13 +24,14 @@ class AirPlayService : Service() {
         super.onCreate()
         session = ReceiverSession((application as ReceiverEngineProvider).receiverCapabilities()) { state -> revision++; publish(state) }
         getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL, getString(R.string.airplay_channel), NotificationManager.IMPORTANCE_LOW))
+            NotificationChannel(CHANNEL, getString(R.string.airplay_runtime_channel), NotificationManager.IMPORTANCE_LOW))
     }
     private fun sendState(client: IAirPlayEvents, state: AirPlaySnapshot) {
         try { client.onState(AirPlayWire.VERSION, revision, AirPlayWire.phase(state.phase), AirPlayWire.connection(state.connection), AirPlayWire.issue(state.issue),
             (if (state.capabilities.video) 1 else 0) or (if (state.capabilities.audio) 2 else 0), state.capabilities.width ?: 0, state.capabilities.height ?: 0, state.capabilities.maxFps ?: 0,
             (if (state.keepAvailable) 1 else 0) or (if (state.audioActive) 2 else 0) or (if (state.keepSession) 4 else 0) or
-            (if (state.backgroundAudio) 8 else 0) or (if (state.autoOpenVideo) 16 else 0)) }
+            (if (state.backgroundAudio) 8 else 0) or (if (state.autoOpenVideo) 16 else 0) or
+            (if (state.discoverable) 32 else 0) or (if (state.videoActive) 64 else 0)) }
         catch (_: RemoteException) { }
     }
     private fun publish(state: AirPlaySnapshot) {
@@ -48,7 +49,7 @@ class AirPlayService : Service() {
             } catch (_: RuntimeException) { main.post { if (!destroyed) session.stop() } }
         } else if (foreground) { stopForeground(STOP_FOREGROUND_REMOVE); foreground = false }
         if (state.phase == AirPlayPhase.STOPPED && state.keepAvailable) main.post {
-            if (!destroyed && session.snapshot.phase == AirPlayPhase.STOPPED && session.snapshot.keepAvailable) start(getString(R.string.airplay_receiver_name))
+            if (!destroyed && session.snapshot.phase == AirPlayPhase.STOPPED && session.snapshot.keepAvailable) start(getString(R.string.airplay_runtime_receiver_name))
         }
         if (surface == null && !session.heldInBackground && state.phase in listOf(AirPlayPhase.STOPPED, AirPlayPhase.FAILED)) stopSelf()
     }
@@ -56,11 +57,11 @@ class AirPlayService : Service() {
         val open = PendingIntent.getActivity(this, 10, Intent(this, AirPlayPlaybackActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val stop = PendingIntent.getService(this, 11, Intent(this, AirPlayService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE)
         val notification = Notification.Builder(this, CHANNEL)
-            .setSmallIcon(R.drawable.ic_airplay_status).setContentTitle(getString(R.string.airplay_notification_title))
-            .setContentText(getString(if (state.connection == AirPlayConnection.NONE) R.string.airplay_notification_idle else R.string.airplay_notification_stream))
+            .setSmallIcon(R.drawable.ic_airplay_status).setContentTitle(getString(R.string.airplay_runtime_notification_title))
+            .setContentText(getString(if (state.connection == AirPlayConnection.NONE) R.string.airplay_runtime_notification_idle else R.string.airplay_runtime_notification_stream))
             .setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true)
-            .addAction(Notification.Action.Builder(null, getString(R.string.airplay_notification_open), open).build())
-            .addAction(Notification.Action.Builder(null, getString(R.string.airplay_notification_stop), stop).build()).build()
+            .addAction(Notification.Action.Builder(null, getString(R.string.airplay_runtime_notification_open), open).build())
+            .addAction(Notification.Action.Builder(null, getString(R.string.airplay_runtime_notification_stop), stop).build()).build()
         if (Build.VERSION.SDK_INT >= 34) {
             val type = ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or
                 (if (state.audioActive || (surface != null && state.connection == AirPlayConnection.PLAYING)) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK else 0)
@@ -82,7 +83,7 @@ class AirPlayService : Service() {
                 }
             } catch (_: RuntimeException) { return AirPlayResult(false, AirPlayIssue.START_FAILED) }
             session.setKeepAvailable(true)
-            return start(getString(R.string.airplay_receiver_name))
+            return start(getString(R.string.airplay_runtime_receiver_name))
         }
         return session.setKeepAvailable(false)
     }
@@ -149,6 +150,7 @@ class AirPlayService : Service() {
             surface = target; displayObserver = observer; session.attachDisplay(); if (changed) engine?.attachSurface(target); observer(session.snapshot)
         }
         fun beginPlayback(name: String): AirPlayResult = start(name)
+        fun stopPlayback(): AirPlayResult = session.stop()
         fun detachDisplay() { displayObserver = null; surface = null; engine?.attachSurface(null); session.detachDisplay() }
     }
     private val binder = ReceiverBinder()
