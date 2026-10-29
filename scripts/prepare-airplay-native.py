@@ -69,6 +69,9 @@ def main():
     if 'LOGGER_DEBUG, "Handling request %s with URL %s"' in receiver.read_text():
         subprocess.run(['patch', '-p1', '-i', str(ROOT / 'patches' / '0002-control-stage-diagnostic.patch')],
                        cwd=CACHE / 'uxplay', check=True)
+    if 'httpd_remove_known_connections_now' not in receiver.read_text():
+        subprocess.run(['patch', '-p1', '-i', str(ROOT / 'patches' / '0003-ordered-sender-takeover.patch')],
+                       cwd=CACHE / 'uxplay', check=True)
     sdk = os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT')
     if not sdk:
         raise RuntimeError('Set ANDROID_HOME to the Android SDK directory')

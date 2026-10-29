@@ -20,6 +20,7 @@ class AirPlaySettingsActivity : Activity() {
     private lateinit var detail: TextView
     private lateinit var feedback: TextView
     private lateinit var audioHelp: TextView
+    private lateinit var limits: TextView
     private lateinit var open: Button
     private lateinit var stop: Button
     private lateinit var retry: Button
@@ -81,7 +82,7 @@ class AirPlaySettingsActivity : Activity() {
         ui.text(background, getString(R.string.airplay_auto_help), 16f)
         ui.text(preferences, getString(R.string.airplay_lifetime), 16f)
         val about = ui.panel(page, getString(R.string.airplay_about))
-        ui.text(about, getString(R.string.airplay_limits), 16f)
+        limits = ui.text(about, getString(R.string.airplay_limits), 16f)
         action(about, "licenses", getString(R.string.airplay_licenses)) {
             val copy = try { assets.open("third-party-notices.txt").bufferedReader().use { it.readText() } }
             catch (_: java.io.IOException) { getString(R.string.airplay_sources_missing) }
@@ -107,6 +108,7 @@ class AirPlaySettingsActivity : Activity() {
     }
     private fun render(state: AirPlaySnapshot) {
         val model = AirPlayPresentation.from(state)
+        limits.setText(if (state.capabilities.appVideo) R.string.airplay_limits else R.string.airplay_limits_mirror_only)
         status.setText(when (model.status) {
             AirPlayPresentation.Status.BINDING -> R.string.airplay_binding
             AirPlayPresentation.Status.UNAVAILABLE -> R.string.airplay_controls_unavailable
@@ -121,6 +123,9 @@ class AirPlaySettingsActivity : Activity() {
             AirPlayPresentation.Status.IDLE -> R.string.airplay_not_listening
         })
         detail.setText(when {
+            state.issue == AirPlayIssue.PROTECTED_CONTENT -> R.string.airplay_protected_video
+            state.issue == AirPlayIssue.MEDIA_UNSUPPORTED -> R.string.airplay_app_video_unsupported
+            state.issue == AirPlayIssue.MEDIA_FAILED -> R.string.airplay_app_video_failed
             state.issue == AirPlayIssue.AUDIO_UNAVAILABLE -> R.string.airplay_audio_unavailable
             state.issue == AirPlayIssue.DISPLAY_REQUIRED -> R.string.airplay_display_required
             model.status == AirPlayPresentation.Status.UNAVAILABLE -> R.string.airplay_controls_help
@@ -160,6 +165,8 @@ class AirPlaySettingsActivity : Activity() {
             AirPlayIssue.BUSY -> R.string.airplay_busy
             AirPlayIssue.UNSUPPORTED -> R.string.airplay_unsupported
             AirPlayIssue.UNAVAILABLE, AirPlayIssue.CLOSED -> R.string.airplay_controls_help
+            AirPlayIssue.PROTECTED_CONTENT -> R.string.airplay_protected_video
+            AirPlayIssue.MEDIA_UNSUPPORTED -> R.string.airplay_app_video_unsupported
             AirPlayIssue.AUDIO_UNAVAILABLE -> R.string.airplay_audio_unavailable
             else -> R.string.airplay_retry_help
         })

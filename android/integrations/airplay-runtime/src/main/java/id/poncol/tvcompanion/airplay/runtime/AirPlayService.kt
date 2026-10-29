@@ -28,7 +28,7 @@ class AirPlayService : Service() {
     }
     private fun sendState(client: IAirPlayEvents, state: AirPlaySnapshot) {
         try { client.onState(AirPlayWire.VERSION, revision, AirPlayWire.phase(state.phase), AirPlayWire.connection(state.connection), AirPlayWire.issue(state.issue),
-            (if (state.capabilities.video) 1 else 0) or (if (state.capabilities.audio) 2 else 0), state.capabilities.width ?: 0, state.capabilities.height ?: 0, state.capabilities.maxFps ?: 0,
+            (if (state.capabilities.video) 1 else 0) or (if (state.capabilities.audio) 2 else 0) or (if (state.capabilities.appVideo) 4 else 0), state.capabilities.width ?: 0, state.capabilities.height ?: 0, state.capabilities.maxFps ?: 0,
             (if (state.keepAvailable) 1 else 0) or (if (state.audioActive) 2 else 0) or (if (state.keepSession) 4 else 0) or
             (if (state.backgroundAudio) 8 else 0) or (if (state.autoOpenVideo) 16 else 0) or
             (if (state.discoverable) 32 else 0) or (if (state.videoActive) 64 else 0)) }
@@ -94,7 +94,7 @@ class AirPlayService : Service() {
         val platformAllows = Build.VERSION.SDK_INT < 29 ||
             (Build.VERSION.SDK_INT <= 34 && android.provider.Settings.canDrawOverlays(this))
         if (session.snapshot.phase != AirPlayPhase.READY) return
-        if (!videoPresentation.videoRequested(session.snapshot.keepAvailable && session.snapshot.autoOpenVideo, surface?.isValid == true, platformAllows)) return
+        if (!videoPresentation.videoRequested(session.snapshot.autoOpenVideo, surface?.isValid == true, platformAllows)) return
         try {
             startActivity(Intent(this, AirPlayPlaybackActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP))
@@ -109,6 +109,12 @@ class AirPlayService : Service() {
                 created.start(name) { state -> main.post {
                     if (destroyed || engine !== created) return@post
                     emit(when (state) {
+                        ReceiverEngine.State.SESSION_REPLACED -> ReceiverSession.Signal.REPLACED
+                        ReceiverEngine.State.APP_VIDEO_ENDED -> ReceiverSession.Signal.DISCONNECTED
+                        ReceiverEngine.State.APP_VIDEO_FAILED -> ReceiverSession.Signal.APP_VIDEO_FAILED
+                        ReceiverEngine.State.APP_VIDEO_REQUESTED -> ReceiverSession.Signal.APP_VIDEO
+                        ReceiverEngine.State.MEDIA_UNSUPPORTED -> ReceiverSession.Signal.MEDIA_UNSUPPORTED
+                        ReceiverEngine.State.PROTECTED_CONTENT -> ReceiverSession.Signal.PROTECTED_CONTENT
                         ReceiverEngine.State.DISCOVERABLE -> ReceiverSession.Signal.READY
                         ReceiverEngine.State.CONNECTED, ReceiverEngine.State.SESSION_CONNECTED -> ReceiverSession.Signal.CONNECTED
                         ReceiverEngine.State.VIDEO_OUTPUT -> ReceiverSession.Signal.VIDEO
@@ -120,8 +126,9 @@ class AirPlayService : Service() {
                         ReceiverEngine.State.FAILED -> ReceiverSession.Signal.FAILED
                     })
                     when (state) {
-                        ReceiverEngine.State.CONNECTED, ReceiverEngine.State.DISPLAY_REQUIRED -> presentIncomingVideo()
-                        ReceiverEngine.State.DISCONNECTED -> videoPresentation.disconnected()
+                        ReceiverEngine.State.CONNECTED, ReceiverEngine.State.DISPLAY_REQUIRED, ReceiverEngine.State.APP_VIDEO_REQUESTED -> presentIncomingVideo()
+                        ReceiverEngine.State.SESSION_REPLACED -> videoPresentation.disconnected()
+                        ReceiverEngine.State.DISCONNECTED, ReceiverEngine.State.APP_VIDEO_ENDED -> videoPresentation.disconnected()
                         else -> Unit
                     }
                 } }

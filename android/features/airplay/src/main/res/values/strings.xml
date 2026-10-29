@@ -1,7 +1,7 @@
 <resources>
     <string name="airplay_title">AirPlay</string>
     <string name="airplay_eyebrow">SHARE YOUR SCREEN OR SOUND / PREVIEW</string>
-    <string name="airplay_description">A separate Mac display, an iPhone screen, or music on your TV.</string>
+    <string name="airplay_description">A separate Mac display, an iPhone screen, or music on your TV. A new sender connection can replace the current session.</string>
     <string name="airplay_receiver_name">TVCompanion</string>
     <string name="airplay_open">Open playback →</string>
     <string name="airplay_stop">Stop AirPlay</string>
@@ -47,11 +47,15 @@
     <string name="airplay_off">Off</string>
     <string name="airplay_inactive">Inactive</string>
     <string name="airplay_about">About this preview</string>
-    <string name="airplay_limits">720p / 30 fps with audio. Connect on the same trusted local network. Spotify uses AirPlay audio; Spotify Connect is not included.</string>
+    <string name="airplay_limits">Mirroring: 720p / 30 fps with audio. In-app YouTube HLS video is experimental; app/DRM compatibility varies. Connect on the same trusted local network. Spotify uses AirPlay audio; Spotify Connect is not included.</string>
     <string name="airplay_licenses">Sources and licenses</string>
     <string name="airplay_sources_missing">Native source notices were not prepared for this build.</string>
     <string name="airplay_notification_settings">Open notification settings</string>
     <string name="airplay_notification_required">Allow notifications for TVCompanion to enable Background listening. Open playback still works without it.</string>
     <string name="airplay_audio_unavailable">Video can continue, but sound is unavailable or held by another app.</string>
     <string name="airplay_display_required">The session is connected with video hidden. Open playback to view it.</string>
+    <string name="airplay_protected_video">This video requires content protection that this receiver does not support. Use the service’s supported TV app or receiver.</string>
+    <string name="airplay_app_video_unsupported">This app’s video format or AirPlay path is unsupported. Mirroring and AirPlay audio are separate features.</string>
+    <string name="airplay_app_video_failed">App video could not load or play. Reconnect from the sender; a format, network or authorization error may be involved.</string>
+    <string name="airplay_limits_mirror_only">720p / 30 fps mirroring with audio. Connect on the same trusted local network. This receiver does not advertise in-app video playback.</string>
 </resources>

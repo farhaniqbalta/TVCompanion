@@ -101,6 +101,9 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         val hadVideo = snapshot.videoActive
         snapshot = state
         title.setText(when {
+            state.issue == AirPlayIssue.PROTECTED_CONTENT -> R.string.airplay_runtime_protected_video
+            state.issue == AirPlayIssue.MEDIA_UNSUPPORTED -> R.string.airplay_runtime_unsupported_video
+            state.issue == AirPlayIssue.MEDIA_FAILED && state.phase == AirPlayPhase.READY -> R.string.airplay_runtime_app_video_failed
             state.phase == AirPlayPhase.FAILED -> R.string.airplay_runtime_failed
             state.phase == AirPlayPhase.STOPPED -> R.string.airplay_runtime_stopped
             state.phase == AirPlayPhase.STOPPING -> R.string.airplay_runtime_stopping
@@ -111,6 +114,8 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
             else -> R.string.airplay_runtime_ready
         })
         detail.setText(when {
+            state.issue == AirPlayIssue.PROTECTED_CONTENT -> R.string.airplay_runtime_protected_help
+            state.issue == AirPlayIssue.MEDIA_UNSUPPORTED || (state.issue == AirPlayIssue.MEDIA_FAILED && state.phase == AirPlayPhase.READY) -> R.string.airplay_runtime_app_video_help
             state.phase == AirPlayPhase.FAILED -> R.string.airplay_runtime_recovery
             state.issue == AirPlayIssue.AUDIO_UNAVAILABLE -> R.string.airplay_runtime_audio_unavailable
             state.audioActive && !state.videoActive -> R.string.airplay_runtime_audio_only_help
