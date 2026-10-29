@@ -38,7 +38,7 @@ jobs:
       - name: Check native media helpers
         run: python3 ../scripts/check-airplay-native.py
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew --no-daemon :app:assembleDebug :core:domain:test :features:airplay:testDebugUnitTest :integrations:airplay-runtime:testDebugUnitTest :ipc:airplay-contract:testDebugUnitTest :integrations:tuya-lan:testDebugUnitTest :features:notifications:testDebugUnitTest :app:lintDebug
+      - run: ./gradlew --no-daemon :app:assembleDebug :core:domain:test :features:airplay:testDebugUnitTest :features:smart-home:testDebugUnitTest :integrations:airplay-runtime:testDebugUnitTest :ipc:airplay-contract:testDebugUnitTest :integrations:tuya-lan:testDebugUnitTest :features:notifications:testDebugUnitTest :app:lintDebug
       - uses: actions/upload-artifact@v4
         if: always()
         with:

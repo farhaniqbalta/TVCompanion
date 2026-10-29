@@ -87,3 +87,11 @@ Built versionCode 8 with the four separate background/presentation controls, pro
 ## 0.5.3 AirPlay UI/UX candidate
 
 VersionCode 9 adds grouped responsive settings, connection instructions, independent status facts, background-audio dependency feedback, explicit leave/stop behavior, focused retry paths and an on-demand video toolbar. Build and 95 JVM tests pass; lint has zero errors and the known ChromeOS ABI warning. New tests distinguish audio from video and retained sessions from discovery, verify stale display issues clear on reattachment, and round-trip the v4 status flags. Phase 1 suites passed during this change. No TV installation/connection or visual acceptance testing was performed because the user is away from the TV. Home testing remains pending.
+
+## 0.6.0 Bardi color-control preview
+
+Branch `feature/bardi-color-control` starts from pushed AirPlay UI commit `1f60f7d`. VersionCode 10 builds, all 105 JVM tests pass, and lint reports zero errors plus the existing ChromeOS ABI warning. New coverage checks bounded HSV16 parsing, atomic mode/color group validation, separate mode-and-color readback, unsupported/off states, white-mode restoration and pure/controller adjustment behavior. No TV connection, lamp write, installation or benchmark was performed. Physical color and remote navigation remain pending; see [BARDI_COLOR_CONTROL.md](BARDI_COLOR_CONTROL.md).
+
+The user subsequently authorized installation after returning home. The 0.6.0 APK update succeeded; all pre-existing preference files were preserved byte-for-byte and the dashboard opened. The notification receiver was not previously running. No lamp write or AirPlay session was initiated; user hardware review and eventual ADB closure remain pending.
+
+The user subsequently reported “all works” after the requested Bardi color-control test sequence. Presets, HSV adjustments and returning to white mode are accepted by user report; exhaustive edge cases and fully offline operation are not claimed. This acceptance does not resolve pending AirPlay video/Spotify checks or verify ADB closure.

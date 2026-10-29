@@ -21,7 +21,7 @@ Google TV is the primary orchestration host; iPhone, iPad and future Mac softwar
 
 - A TV dashboard with two large feature cards, shared typography, focus states and native vector icons.
 - A compact light-control page and categorized notification settings with local previews, explicit appearance choices and masked pairing details. See the [UI/UX research](docs/UI_UX_RESEARCH.md).
-- Direct Tuya 3.5 LAN light status, power, and white brightness, adapted from the existing Bardi proof of concept. Writes require fresh state and readback; failures remain unconfirmed until refreshed.
+- Direct Tuya 3.5 LAN light status, power, white brightness and a guarded HSV color-control preview, adapted from the existing Bardi proof of concept. Writes require fresh state and readback; failures remain unconfirmed until refreshed.
 - Notification settings, source filtering, previews, transient non-interactive overlays, expiry, deduplication, and bounded queues, adapted from TVNotify.
 - An AirPlay preview card opens the same APK’s receiver: native networking and video rendering stay in `:airplay`, with a replaceable engine and control-only AIDL. Discovery, session retention, hidden audio and automatic video presentation have separate controls.
 - No background lamp polling, dashboard animation loop, notification history, cloud bridge, analytics, automatic receiver restart, or boot service.
@@ -40,6 +40,8 @@ The `review/phase-1-architecture` branch contains a targeted refactor: owned Tuy
 `0.4.0-airplay-preview` bundles the receiver in the single TVCompanion APK. The main-process AirPlay screen controls a private `:airplay` service through AIDL; JNI, native networking, MediaCodec and the playback surface stay in that process. See the [integration record](docs/phase-2/SINGLE_APK_INTEGRATION.md) and [architecture decision](docs/DECISIONS.md#phase-2-packaging-correction--2026-10-28).
 
 The `0.5.3-airplay-ui-preview` candidate adds grouped TV controls, per-setting explanations, actionable recovery, accurate media/discovery status and playback controls that appear on remote interaction. It separates **Background listening** (off by default), **Keep session connected** (on), **Background audio** (off), and **Auto-open incoming video** (on). Open **AirPlay → Open receiver**, then choose **TVCompanion** on the sender. A retained connection can outlive playback without remaining discoverable; hidden audio requires both session retention and Background audio. Incoming video opens once when enabled and Android permits. Open/Stop controls remain in the app, with an ongoing foreground-service notification where the TV exposes it. Idle listening does not auto-start after reboot/app restart. See [audio/background implementation and pending device review](docs/phase-2/AUDIO_AND_BACKGROUND.md), including Spotify AirPlay setup. The optional [lab](experiments/airplay-lab/README.md) reuses the same runtime/engine and is not a production dependency.
+
+The **0.6.0 Bardi color preview** adds six presets, hue/saturation/color-brightness steps and a return to white mode. New writes require supported fresh status and separate readback; color never turns power on implicitly. Local checks pass, and the user confirmed the requested color controls work on the lamp. See [profile, behavior and verification](docs/BARDI_COLOR_CONTROL.md).
 
 ## Get started
 

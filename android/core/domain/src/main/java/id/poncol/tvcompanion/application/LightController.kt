@@ -22,6 +22,8 @@ class LightController(
     fun execute(command: LightCommand) {
         val light = state.light ?: return
         if (command is LightCommand.Brightness && !light.supportsBrightness) return
+        if (command is LightCommand.Color && !light.supportsColor) return
+        if (command is LightCommand.WhiteMode && !light.supportsWhiteMode) return
         run(command)
     }
     private fun publish(next: State) { if (!closed) { state = next; observer?.invoke(next) } }

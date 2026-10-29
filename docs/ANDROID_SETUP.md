@@ -12,7 +12,7 @@ The checked-in Gradle 8.9 wrapper verifies the distribution SHA-256. Initial dep
 
 ## Optional development lamp provisioning
 
-Only the verified Tuya 3.5 lamp profile is supported: power DPS 20, mode DPS 21, white brightness DPS 22 (10–1000). Other devices and firmware require their own verified adapter/profile. Discovery, color control, scenes and cloud control are not implemented.
+The existing single-lamp Tuya 3.5 profile supports verified power DPS20 and white brightness DPS22 (10–1000). The 0.6.0 preview adds guarded DPS21 mode and DPS24 HSV16 color control (hue 0–360, saturation/value 0–1000), supported by the saved schema/status format; the user subsequently confirmed the requested color controls work on the current lamp. Other devices and firmware require their own validated adapter/profile. Discovery, scenes and cloud control are not implemented. See [Bardi color behavior and checks](BARDI_COLOR_CONTROL.md).
 
 Create a private JSON file **outside this repository** with fields `ip`, `id`, `version` and `key`. Use the lamp's actual RFC1918 IPv4 address, device ID, version `3.5`, and 16-byte UTF-8 local key. Never paste its contents into an issue or commit it. `*.private.json` and `provision.json` are ignored as an additional precaution.
 

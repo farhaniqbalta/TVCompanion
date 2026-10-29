@@ -13,6 +13,12 @@ internal interface LampSession : AutoCloseable {
     fun status(): JSONObject
     @Throws(Exception::class)
     fun write(dp: String, value: Any)
+    /** Multi-DPS mode/color changes must be sent as one control packet. */
+    @Throws(Exception::class)
+    fun writeValues(values: Map<String, Any>) {
+        check(values.size == 1) { "Atomic lamp write unavailable" }
+        values.entries.single().let { write(it.key, it.value) }
+    }
     override fun close()
 }
 
@@ -52,25 +58,38 @@ class TuyaLightGateway internal constructor(
     }
     private fun state(dps: JSONObject) = LightState(
         dps.getBoolean("20"), dps.optString("21") == "white",
-        (dps.opt("22") as? Number)?.toInt()?.takeIf { it in 10..1000 }?.let { Math.round((it - 10) * 100f / 990) }
+        (dps.opt("22") as? Number)?.toInt()?.takeIf { it in 10..1000 }?.let { Math.round((it - 10) * 100f / 990) },
+        TuyaColorCodec.decode(dps.opt("24")), dps.optString("21") == "colour"
     )
     override fun read(): LightState = session { state(it.status()) }
     override fun execute(command: LightCommand): LightState {
-        val dp: String
-        val value: Any
-        when (command) {
-            is LightCommand.Power -> { dp = "20"; value = command.on }
-            is LightCommand.Brightness -> { dp = "22"; value = 10 + Math.round(command.percent * 990f / 100) }
+        val values: Map<String, Any> = when (command) {
+            is LightCommand.Power -> mapOf("20" to command.on)
+            is LightCommand.Brightness -> mapOf("22" to (10 + Math.round(command.percent * 990f / 100)))
+            is LightCommand.Color -> linkedMapOf("21" to "colour", "24" to TuyaColorCodec.encode(command.color))
+            LightCommand.WhiteMode -> mapOf("21" to "white")
         }
         session { client ->
             val before = state(client.status())
-            check(command !is LightCommand.Brightness || before.supportsBrightness) { "Brightness unavailable" }
-            client.write(dp, value)
+            when (command) {
+                is LightCommand.Brightness -> check(before.supportsBrightness) { "Brightness unavailable" }
+                is LightCommand.Color -> check(before.supportsColor) { "Color unavailable" }
+                LightCommand.WhiteMode -> check(before.supportsWhiteMode) { "White mode unavailable" }
+                is LightCommand.Power -> Unit
+            }
+            client.writeValues(values)
         }
         checkOpen(); pause(600); checkOpen()
         return session { client ->
             val result = client.status()
-            check(result.opt(dp) == value) { "Result unconfirmed" }
+            check(values.all { (dp, value) ->
+                if (dp == "24") {
+                    val actual = TuyaColorCodec.decode(result.opt(dp))
+                    val expected = (command as LightCommand.Color).color
+                    actual != null && actual.copy(hue = actual.hue % 360) == expected.copy(hue = expected.hue % 360)
+                }
+                else result.opt(dp) == value
+            }) { "Result unconfirmed" }
             state(result)
         }
     }
