@@ -84,6 +84,7 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
     @Override public void setAudioEnabled(boolean enabled) {
         if (closed || audioEnabled == enabled) return;
         audioEnabled = enabled;
+        android.util.Log.i("TVCAirPlay", enabled ? "stage=AUDIO_POLICY_ENABLED" : "stage=AUDIO_POLICY_DISABLED");
         if (enabled) { if (audioRequested) requestFocus(); }
         else { updateFocus(false, 1); abandonFocus(); deliver(State.AUDIO_STOPPED); }
     }
@@ -100,6 +101,7 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
             .setAudioAttributes(attributes).setOnAudioFocusChangeListener(focusListener, main)
             .setAcceptsDelayedFocusGain(false).build();
         ownsFocus = audioManager != null && audioManager.requestAudioFocus(audioFocus) == android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        android.util.Log.i("TVCAirPlay", ownsFocus ? "stage=AUDIO_FOCUS_GRANTED" : "stage=AUDIO_FOCUS_DENIED");
         updateFocus(ownsFocus, 1);
         if (!ownsFocus) deliver(State.AUDIO_UNAVAILABLE);
     }

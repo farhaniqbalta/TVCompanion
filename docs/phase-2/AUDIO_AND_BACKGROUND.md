@@ -111,3 +111,39 @@ A feature-owned, pure presentation mapper selects status without Android or nati
 The playback waiting screen provides sender instructions and retry/leave/stop actions. Back is described as leaving playback, with policy-specific retention/audio hints. Routine video status is hidden. Remote D-pad/OK reveals controls; the first key reveals rather than immediately activating a button. A single six-second callback hides the toolbar, except during touch exploration; callbacks are cancelled on departure. No polling, permanent animation or new framework is introduced. Fatal errors expose retry, disconnected controls offer rebind, and notification denial exposes app notification settings. Runtime and settings strings have separate prefixes to prevent resource merging from replacing each other's labels.
 
 Local verification: APK builds; **95 JVM tests** pass, including pure UI-state mapping, lifecycle discovery/video facts, all flag combinations and existing Phase 1 suites. Lint has zero errors and the existing ChromeOS ABI warning. The user has no TV access, so **this APK is not installed**. Device focus paths, screenshots/overscan, large text, video toolbar behavior, Spotify audio and the 0.5.2 media recovery remain deferred for home testing. No TV connection or benchmark was attempted for this refresh.
+
+## Authorized AirPlay home test — build 11
+
+The user returned to `plan/phase-2-airplay` after accepting the Bardi color branch and requested testing. The existing AirPlay UI candidate retains versionName `0.5.3-airplay-ui-preview`; versionCode is raised from 9 to **11** solely to update the installed Bardi build (10) in place. No receiver/UI behavior changed for this build-number adjustment. The Bardi color implementation remains on its separate branch and is not included in this AirPlay checkout.
+
+A fresh build, all **95 JVM tests**, native media helper checks and lint passed (zero errors; existing ChromeOS ABI warning). The APK was installed successfully using the existing application identity. Existing preference files were verified byte-for-byte preserved; the notification receiver was not previously running. The dashboard was opened. No AirPlay stream, background listening or lamp command was initiated by the agent. Actual video recovery, remote controls, background behavior and Spotify audio remain pending user feedback; the software checks do not establish those device outcomes. ADB closure remains pending during user testing.
+
+Installed APK SHA256: `b341aba63b522efb993d7cfcaa149a857e9765964f7662520cb56c8befddb01d`.
+
+## Home feedback and Spotify diagnostics — build 12
+
+The user confirmed iPad video/pictures, iPad screen mirroring and Mac extended desktop work on the home-test candidate. Spotify AirPlay remains silent, with both Keep session connected and Background audio confirmed On. Do not treat the video acceptance as audio-only acceptance.
+
+Read-only allowlisted TV logs showed successful video output and audio-device activity for an earlier mirroring session, then a separate setup/record exchange without a new audio-device opening. A later read-only audio-focus inspection had no TVCompanion focus entry. These observations do not distinguish transport/format negotiation, lifecycle/focus and decoding, and do not prove the root cause.
+
+VersionCode **12**, `0.5.4-airplay-audio-diagnostics`, adds focused diagnostics: codec category and bounded frame count on negotiation, first audio input and policy eligibility, focus grant/denial, first ALAC decode outcome, first audio-device write, sender mute-state changes, and fixed labels for unsupported stream types/ANNOUNCE. No payload, track metadata, sender identifiers, keys or raw upstream logs are forwarded. Events are per format/transition rather than per-packet logging. The working video path is unchanged. This is a diagnostic candidate, not a claim that Spotify is fixed.
+
+Build and focused runtime/presentation/IPC tests pass; lint has zero errors and the existing ABI warning. The update installed with all existing preference files preserved byte-for-byte; the notification receiver was not previously running. Only the dashboard was opened; the agent did not start an AirPlay session, change background options or send lamp commands. Receiver options reset with service restart as documented. A fresh user-started Spotify audio connection is needed to capture the diagnostic stages. ADB closure remains pending during testing.
+
+Installed APK SHA256: `bea226da66eece1c1b0c58c0fb9083c3e55e27c9341074e7473d36a18f30a7c2`.
+
+## Spotify ALAC byte-order correction — build 13
+
+A fresh user-started Spotify attempt on build 12 produced the following allowlisted sequence: ALAC format, 352 frames; audio policy enabled; focus granted; first audio input allowed; audio-output initialization failed. No audio-device open or ALAC-decode event followed. This rules out discovery, missing media packets and initial focus denial for that observed attempt; it does not itself identify every possible output error.
+
+Inspection found a concrete target portability defect: pinned ALAC `EndianPortable.c` auto-detects little-endian x86/Windows, but not ARM. The Android ALAC target had no explicit byte-order definition, causing network-order configuration words to be misread on little-endian ARM and potentially requesting very large decoder buffers. This is consistent with initialization failing before an AAudio open on the TV. A host encoder/decoder round-trip alone was insufficient target-portability evidence.
+
+Build **13**, `0.5.5-airplay-alac-fix`, defines the ALAC target byte order from CMake's target byte-order detection, failing configuration if unknown. The upstream source pin and notices are unchanged. A production guard verifies the frame-length wire conversion before calling upstream allocation, then checks initialized frame length, 44.1 kHz rate, 16-bit depth and stereo channels. Host checks now use explicit host byte order and independently verify fixed wire/configuration values in addition to PCM round-trip. The generated ARM ALAC compiler command was checked for the little-endian definition. Native checks, APK build, focused JVM suites and lint passed; the existing ABI warning remains.
+
+The correction was installed as an update, with existing preference files preserved byte-for-byte. The notification receiver was not previously running; only the dashboard was opened. No sender playback, background option change or lamp command was initiated by the agent. A fresh Spotify connection is required after re-enabling service-lifetime options. Spotify audible recovery is **pending user verification**; iPad video/mirroring and Mac extended desktop remain previously user-confirmed. ADB closure remains pending during testing.
+
+Installed APK SHA256: `333590dc67f13b670583a6e82fd18f0670e493a53c67e159b3af8df2e974f507`.
+
+## User acceptance after build 13
+
+The user reported “all works fine” after the ALAC correction and requested Spotify reconnection. Spotify AirPlay audio is therefore accepted by user report on the current TV/sender setup. Combined with earlier feedback, accepted paths now include iPad video/pictures, iPad screen mirroring and Mac extended desktop. This does not establish exhaustive codec/device compatibility, long-session stability, measured synchronization/latency, multiroom behavior or all audio-focus edge cases. No benchmark or additional device action was performed to record acceptance. ADB closure remains unverified. The correction and acceptance record remain local until a push is requested.
