@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">TVCompanion AirPlay Lab</string>
     <string name="title">TVCompanion · AirPlay Lab</string>
-    <string name="details">Development-only video experiment · 720p / 30 fps\nAudio is not implemented. Use non-sensitive test content on a trusted LAN.\nOpen the receiver, then choose TVCompanion Lab in Mac Screen Mirroring.\nChoose Extend Display to test a separate desktop. Back stops the receiver.</string>
+    <string name="details">Development receiver preview · 720p / 30 fps\nIncludes the audio candidate. Use the main app for Keep available controls. Use non-sensitive test content on a trusted LAN.\nOpen the receiver, then choose TVCompanion Lab in Mac Screen Mirroring.\nChoose Extend Display to test a separate desktop. Back stops the receiver.</string>
     <string name="open_receiver">Open test receiver</string>
     <string name="licenses">Sources and licenses</string>
     <string name="license_missing">Native sources have not been prepared. See the experiment build instructions.</string>

@@ -74,3 +74,7 @@ The user confirmed true extended desktop from this Mac to the Google TV using th
 ## Integrated checkpoint and next work
 
 The [single-APK integration](SINGLE_APK_INTEGRATION.md) is implemented as `0.4.0-airplay-preview`, installed with settings preserved and user-accepted. Audio is next, followed by an explicitly enabled idle/background availability policy owned by the service independently of the playback UI. The user requested no additional testing at this checkpoint; previous test/build evidence is retained without claiming new device checks.
+
+## Audio and kept-availability candidate
+
+Both requested next steps are implemented in the [0.5 candidate](AUDIO_AND_BACKGROUND.md): local audio decoding/output/focus and opt-in service-owned background discovery with notification controls. Software checks pass; hardware behavior awaits user review after the requested installation. No automatic boot/restart or background UI takeover is introduced.

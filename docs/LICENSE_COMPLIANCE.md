@@ -1,5 +1,7 @@
 # License compliance and future release flexibility
 
+> Audio candidate update: the selected engine now additionally includes the Apache-2.0 Apple ALAC reference decoder at a pinned revision; see [audio/background dependency and review notes](phase-2/AUDIO_AND_BACKGROUND.md). The inspected upstream header credits Apple Inc. No root license is adopted; combined-distribution obligations remain unresolved release gates.
+
 > Integration update: the user approved and accepted the [single-APK video preview](phase-2/SINGLE_APK_INTEGRATION.md). The assessment below describes its review-time baseline and proposed strategy; native implementation is now confined to the selected engine module. No license was adopted and distribution clearance remains open.
 
 > Subsequent development update (2026-10-29): the user approved an opt-in [direct-TV video experiment](phase-2/TV_RECEIVER_EXPERIMENT.md). Statements below about absent implementation describe the reviewed baseline. The harness now selects libplist 2.7.0, OpenSSL 3.5.4 and Android MediaCodec; GStreamer remains unselected for production. This does not adopt licenses or clear distribution.

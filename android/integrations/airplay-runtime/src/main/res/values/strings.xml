@@ -1,9 +1,17 @@
 <resources>
     <string name="airplay_receiver_name">TVCompanion</string>
     <string name="airplay_waiting">Starting AirPlay… · Back to stop</string>
-    <string name="airplay_ready">Choose %1$s in Screen Mirroring · Video preview · Back to stop</string>
+    <string name="airplay_ready">Choose %1$s in Screen Mirroring · Back to return</string>
     <string name="airplay_connecting">Sender connecting… · Back to stop</string>
-    <string name="airplay_playing">AirPlay · Video preview · Back to stop</string>
+    <string name="airplay_playing">AirPlay · Back to return</string>
     <string name="airplay_failed">AirPlay could not continue. Press Back and reopen the receiver.</string>
     <string name="airplay_stopping">Stopping AirPlay…</string>
+    <string name="airplay_channel">AirPlay availability</string>
+    <string name="airplay_notification_title">TVCompanion AirPlay</string>
+    <string name="airplay_notification_idle">Available for Screen Mirroring and audio</string>
+    <string name="airplay_notification_stream">AirPlay connected · Open receiver for playback</string>
+    <string name="airplay_notification_open">Open receiver</string>
+    <string name="airplay_notification_stop">Stop</string>
+    <string name="airplay_stopped">AirPlay stopped · Back to return</string>
+    <string name="airplay_audio_unavailable">Audio is unavailable or in use by another app · Back to return</string>
 </resources>

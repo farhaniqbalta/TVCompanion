@@ -17,6 +17,8 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[1] / 'android' / 'integrations' / 'uxplay-native'
 CACHE = ROOT / '.native'
 SOURCES = (
+    ('alac', 'https://codeload.github.com/macosforge/alac/tar.gz/c38887c5c5e64a4b31108733bd79ca9b2496d987',
+     '98635ece42fb1c3fceb75eaa4b5164d866e09f0195b3e7ec4085f1123c5e272f', 'alac-c38887c5c5e64a4b31108733bd79ca9b2496d987'),
     ('uxplay', 'https://codeload.github.com/FDH2/UxPlay/tar.gz/534e2cc0e558d6c94bcc66964f8fc13ad73a6cdc',
      '3d77ff2086740e875ba7632703dfc67ca2c46ef4686178542726d539f3e5bde9',
      'UxPlay-534e2cc0e558d6c94bcc66964f8fc13ad73a6cdc'),
@@ -94,9 +96,10 @@ def main():
     notices = CACHE / 'notices'; notices.mkdir(exist_ok=True)
     sections = ['Development-only TVCompanion AirPlay preview. No warranty. Upstream rights retained.\n'
                 'Preferred sources and build scripts: scripts/prepare-airplay-native.py and its pinned URLs.\n'
-                'UxPlay LGPL components and GPL PlayFair are linked in this local experimental binary.\n']
+                'UxPlay LGPL components and GPL PlayFair are linked in this local experimental binary.\n'
+                'ALAC reference decoder: Copyright (c) 2011 Apple Inc. Apache License 2.0; encoder is host-test-only.\n']
     for source in ['uxplay/README.md', 'uxplay/LICENSE', 'uxplay/lib/llhttp/LICENSE-MIT',
-                   'libplist/COPYING.LESSER', 'openssl/LICENSE.txt']:
+                   'libplist/COPYING.LESSER', 'openssl/LICENSE.txt', 'alac/LICENSE', 'alac/ReadMe.txt']:
         sections.append('\n\n--- ' + source + ' ---\n' + (CACHE / source).read_text())
     (notices / 'third-party-notices.txt').write_text('\n'.join(sections))
     print('Native sources and libcrypto ready. Build the TVCompanion APK (or optional lab) next.', flush=True)

@@ -14,7 +14,7 @@ import java.util.concurrent.Executors;
 /** UxPlay-specific adapter. Native loading and all engine work stay in the receiver process. */
 public final class UxPlayReceiverEngine implements ReceiverEngine {
     public static id.poncol.tvcompanion.domain.airplay.AirPlayCapabilities capabilities() {
-        return new id.poncol.tvcompanion.domain.airplay.AirPlayCapabilities(true, false, 1280, 720, 30);
+        return new id.poncol.tvcompanion.domain.airplay.AirPlayCapabilities(true, true, 1280, 720, 30);
     }
     private final Context context;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -25,8 +25,23 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
     private boolean released;
     private final java.util.List<Runnable> releaseObservers = new java.util.ArrayList<>();
     private WifiManager.MulticastLock multicast;
-    public UxPlayReceiverEngine(Context context) { this.context = context.getApplicationContext(); }
-    @Override public void start(Surface surface, String receiverName, Observer observer) {
+    private final android.media.AudioManager audioManager;
+    private android.media.AudioFocusRequest audioFocus;
+    private boolean ownsFocus;
+    private boolean audioEnabled;
+    private boolean audioRequested;
+    private Boolean advertised;
+    private final android.media.AudioManager.OnAudioFocusChangeListener focusListener = change -> {
+        if (closed || !audioEnabled) return;
+        if (change == android.media.AudioManager.AUDIOFOCUS_GAIN) updateFocus(true, 1);
+        else if (change == android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) updateFocus(true, .2f);
+        else {
+            updateFocus(false, 1); deliver(State.AUDIO_STOPPED);
+            if (change == android.media.AudioManager.AUDIOFOCUS_LOSS) abandonFocus();
+        }
+    };
+    public UxPlayReceiverEngine(Context context) { this.context = context.getApplicationContext(); this.audioManager = (android.media.AudioManager) this.context.getSystemService(Context.AUDIO_SERVICE); }
+    @Override public void start(String receiverName, Observer observer) {
         this.observer = observer;
         worker.execute(() -> {
             try {
@@ -46,7 +61,7 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
                     identity = text.toString();
                     context.getSharedPreferences("receiver", 0).edit().putString("identity", identity).apply();
                 }
-                handle = nativeStart(surface, new File(context.getFilesDir(), "receiver.key").getPath(), identity, receiverName);
+                handle = nativeStart( new File(context.getFilesDir(), "receiver.key").getPath(), identity, receiverName);
                 if (handle == 0) throw new IllegalStateException("Native initialization failed");
                 deliver(State.DISCOVERABLE);
             } catch (RuntimeException | LinkageError failure) {
@@ -55,12 +70,54 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
             }
         });
     }
+    @Override public void attachSurface(Surface surface) {
+        if (closed) return;
+        worker.execute(() -> {
+            if (!closed && handle != 0 && (surface == null || surface.isValid())) nativeSetSurface(handle, surface);
+        });
+    }
+    @Override public void setDiscoverable(boolean enabled) {
+        if (closed || (advertised != null && advertised == enabled)) return;
+        advertised = enabled;
+        worker.execute(() -> { if (!closed && handle != 0 && !nativeSetDiscoverable(handle, enabled)) deliver(State.FAILED); });
+    }
+    @Override public void setAudioEnabled(boolean enabled) {
+        if (closed || audioEnabled == enabled) return;
+        audioEnabled = enabled;
+        if (enabled) { if (audioRequested) requestFocus(); }
+        else { updateFocus(false, 1); abandonFocus(); deliver(State.AUDIO_STOPPED); }
+    }
+    private void updateFocus(boolean allowed, float duck) {
+        if (closed) return;
+        worker.execute(() -> { if (!closed && handle != 0) nativeSetFocus(handle, allowed, duck); });
+    }
+    private void requestFocus() {
+        if (closed || !audioEnabled) return;
+        if (ownsFocus) { updateFocus(true, 1); return; }
+        android.media.AudioAttributes attributes = new android.media.AudioAttributes.Builder()
+            .setUsage(android.media.AudioAttributes.USAGE_MEDIA).setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build();
+        audioFocus = new android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(attributes).setOnAudioFocusChangeListener(focusListener, main)
+            .setAcceptsDelayedFocusGain(false).build();
+        ownsFocus = audioManager != null && audioManager.requestAudioFocus(audioFocus) == android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        updateFocus(ownsFocus, 1);
+        if (!ownsFocus) deliver(State.AUDIO_UNAVAILABLE);
+    }
+    private void abandonFocus() {
+        if (ownsFocus && audioManager != null && audioFocus != null) audioManager.abandonAudioFocusRequest(audioFocus);
+        ownsFocus = false; audioFocus = null;
+    }
     private void onNativeState(int state) {
+        if (state == 9) { main.post(() -> { if (!closed) { audioRequested = true; deliver(State.SESSION_CONNECTED); requestFocus(); } }); return; }
+        if (state == 7) { main.post(() -> { audioRequested = false; abandonFocus(); if (!closed && observer != null) observer.onState(State.AUDIO_STOPPED); }); return; }
         State text;
         switch (state) {
             case 1: text = State.CONNECTED; break;
             case 2: text = State.VIDEO_OUTPUT; break;
             case 3: text = State.DISCONNECTED; break;
+            case 5: text = State.AUDIO_PLAYING; break;
+            case 6: text = State.AUDIO_UNAVAILABLE; break;
+            case 8: text = State.DISPLAY_REQUIRED; break;
             default: text = State.FAILED;
         }
         deliver(text);
@@ -68,12 +125,16 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
     private void deliver(State state) {
         main.post(() -> { if (!closed && observer != null) observer.onState(state); });
     }
-    private native long nativeStart(Surface surface, String keyPath, String identity, String receiverName);
+    private native long nativeStart(String keyPath, String identity, String receiverName);
     private native void nativeStop(long handle);
+    private native void nativeSetSurface(long handle, Surface surface);
+    private native boolean nativeSetDiscoverable(long handle, boolean enabled);
+    private native void nativeSetFocus(long handle, boolean allowed, float duck);
     private void release() {
         if (handle != 0) { nativeStop(handle); handle = 0; }
         if (multicast != null && multicast.isHeld()) multicast.release();
         multicast = null;
+        main.post(this::abandonFocus);
     }
     @Override public synchronized void stop(Runnable completion) {
         if (released) { main.post(completion); return; }

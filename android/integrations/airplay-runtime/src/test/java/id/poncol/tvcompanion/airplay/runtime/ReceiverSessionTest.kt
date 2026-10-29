@@ -93,4 +93,95 @@ class ReceiverSessionTest {
         assertEquals(AirPlayPhase.STOPPED, session.snapshot.phase)
     }
 
+    @Test fun optInAllowsStartupWithoutAnyActivityOrSurface() {
+        val session = ReceiverSession {}; val engine = Engine()
+        assertFalse(session.snapshot.keepAvailable)
+        session.setKeepAvailable(true)
+        assertTrue(session.start(false) { engine }.accepted)
+        session.detachDisplay()
+        assertEquals(0, engine.closes); assertEquals(AirPlayPhase.STARTING, session.snapshot.phase)
+    }
+    @Test fun backgroundVideoDetachKeepsNetworkingAndRequestsDisplayInsteadOfClosingEngine() {
+        val session = ReceiverSession {}; val engine = Engine(); var emit: ((ReceiverSession.Signal) -> Unit)? = null
+        session.setKeepAvailable(true); session.start(true) { emit = it; engine }
+        emit!!(ReceiverSession.Signal.VIDEO); session.detachDisplay()
+        assertEquals(0, engine.closes); assertTrue(session.snapshot.keepAvailable)
+        assertEquals(AirPlayIssue.DISPLAY_REQUIRED, session.snapshot.issue)
+        session.attachDisplay(); emit!!(ReceiverSession.Signal.VIDEO)
+        assertNull(session.snapshot.issue); assertEquals(AirPlayConnection.PLAYING, session.snapshot.connection)
+    }
+    @Test fun disablingBackgroundWithoutDisplayWaitsForCleanupAndDoesNotRestart() {
+        val session = ReceiverSession {}; val engine = Engine()
+        session.setKeepAvailable(true); session.start(false) { engine }
+        session.setKeepAvailable(false)
+        assertEquals(1, engine.closes); assertFalse(session.snapshot.keepAvailable)
+        assertEquals(AirPlayPhase.STOPPING, session.snapshot.phase)
+        engine.completeStop(); assertEquals(AirPlayPhase.STOPPED, session.snapshot.phase)
+        assertEquals(AirPlayIssue.DISPLAY_REQUIRED, session.start(false) { Engine() }.issue)
+    }
+    @Test fun disablingBackgroundWithDisplayKeepsForegroundPlaybackUntilDisplayLeaves() {
+        val session = ReceiverSession {}; val engine = Engine()
+        session.setKeepAvailable(true); session.start(true) { engine }
+        session.setKeepAvailable(false); assertEquals(0, engine.closes)
+        session.detachDisplay(); assertEquals(1, engine.closes)
+    }
+    @Test fun explicitStopClearsOptInAndNewOwnerDefaultsOff() {
+        val session = ReceiverSession {}; val engine = Engine()
+        session.setKeepAvailable(true); session.start(false) { engine }; session.stop()
+        assertFalse(session.snapshot.keepAvailable); assertEquals(1, engine.closes)
+        assertFalse(ReceiverSession {}.snapshot.keepAvailable)
+    }
+    @Test fun audioFailureIsNonFatalAndDoesNotDropWorkingVideo() {
+        val session = ReceiverSession {}; val engine = Engine(); var emit: ((ReceiverSession.Signal) -> Unit)? = null
+        session.start(true) { emit = it; engine }; emit!!(ReceiverSession.Signal.VIDEO)
+        emit!!(ReceiverSession.Signal.AUDIO); assertTrue(session.snapshot.audioActive)
+        emit!!(ReceiverSession.Signal.AUDIO_UNAVAILABLE)
+        assertFalse(session.snapshot.audioActive); assertEquals(AirPlayIssue.AUDIO_UNAVAILABLE, session.snapshot.issue)
+        assertEquals(AirPlayPhase.READY, session.snapshot.phase); assertEquals(0, engine.closes)
+    }
+    @Test fun audioCanContinueAfterVideoSurfaceLeavesAndFocusLossDoesNotStopReceiver() {
+        val session = ReceiverSession {}; val engine = Engine(); var emit: ((ReceiverSession.Signal) -> Unit)? = null
+        session.setBackgroundOptions(true, true, true)
+        session.setKeepAvailable(true); session.start(false) { emit = it; engine }
+        emit!!(ReceiverSession.Signal.AUDIO); session.detachDisplay()
+        assertTrue(session.snapshot.audioActive)
+        emit!!(ReceiverSession.Signal.AUDIO_STOPPED)
+        assertFalse(session.snapshot.audioActive); assertTrue(session.snapshot.keepAvailable)
+        assertEquals(AirPlayPhase.READY, session.snapshot.phase); assertEquals(0, engine.closes)
+    }
+
+
+    @Test fun retainedSessionDoesNotRequireBackgroundDiscoveryOrAudio() {
+        val session = ReceiverSession {}; val engine = Engine(); lateinit var emit: (ReceiverSession.Signal) -> Unit
+        session.start(true) { emit = it; engine }; emit(ReceiverSession.Signal.CONNECTED)
+        session.detachDisplay()
+        assertTrue(session.heldInBackground); assertFalse(session.discoverable); assertFalse(session.audioAllowed)
+        assertFalse(session.snapshot.keepAvailable); assertEquals(0, engine.closes)
+        session.attachDisplay(); assertTrue(session.discoverable); assertTrue(session.audioAllowed)
+        session.detachDisplay(); emit(ReceiverSession.Signal.DISCONNECTED)
+        assertEquals(1, engine.closes); assertFalse(session.heldInBackground)
+    }
+    @Test fun sessionRetentionOffEndsConnectionButPreservesIdleListeningChoice() {
+        val session = ReceiverSession {}; val engine = Engine(); lateinit var emit: (ReceiverSession.Signal) -> Unit
+        session.setKeepAvailable(true); session.setBackgroundOptions(false, false, true)
+        session.start(true) { emit = it; engine }; emit(ReceiverSession.Signal.CONNECTED)
+        session.detachDisplay(); assertEquals(1, engine.closes); assertTrue(session.snapshot.keepAvailable)
+        engine.completeStop(); assertEquals(AirPlayPhase.STOPPED, session.snapshot.phase)
+        assertTrue(session.start(false) { Engine() }.accepted)
+    }
+    @Test fun backgroundAudioRequiresRetentionButDoesNotEnableDiscoveryOrPresentation() {
+        val session = ReceiverSession {}; lateinit var emit: (ReceiverSession.Signal) -> Unit
+        session.setBackgroundOptions(true, true, false)
+        session.start(true) { emit = it; Engine() }; emit(ReceiverSession.Signal.CONNECTED)
+        session.detachDisplay()
+        assertTrue(session.audioAllowed); assertFalse(session.discoverable); assertFalse(session.snapshot.autoOpenVideo)
+        session.setBackgroundOptions(true, false, false)
+        assertFalse(session.audioAllowed); assertTrue(session.heldInBackground)
+    }
+    @Test fun idlePoliciesAloneDoNotCreateAnEngine() {
+        val session = ReceiverSession {}
+        session.setBackgroundOptions(true, true, true)
+        assertFalse(session.heldInBackground); assertFalse(session.audioAllowed)
+        assertEquals(AirPlayIssue.DISPLAY_REQUIRED, session.start(false) { fail("idle policy must not start engine"); Engine() }.issue)
+    }
 }

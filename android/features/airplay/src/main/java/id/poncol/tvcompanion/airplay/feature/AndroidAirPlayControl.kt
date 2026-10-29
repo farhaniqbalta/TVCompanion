@@ -37,12 +37,12 @@ internal class AndroidAirPlayControl(context: Context) : AirPlayReceiverControl 
             val token = ++epoch; revision = -1
             val service = IAirPlayReceiver.Stub.asInterface(binder)
             val listener = object : IAirPlayEvents.Stub() {
-                override fun onState(version: Int, rev: Long, phase: Int, connection: Int, issue: Int, capabilities: Int, width: Int, height: Int, maxFps: Int) { main.post {
+                override fun onState(version: Int, rev: Long, phase: Int, connection: Int, issue: Int, capabilities: Int, width: Int, height: Int, maxFps: Int, flags: Int) { main.post {
                     if (closed || epoch != token || rev < revision) return@post
                     if (version != AirPlayWire.VERSION) {
                         publish(AirPlaySnapshot(availability = AirPlayAvailability.UNSUPPORTED, issue = AirPlayIssue.UNSUPPORTED)); return@post
                     }
-                    val state = AirPlayWire.snapshot(phase, connection, issue, capabilities, width, height, maxFps)
+                    val state = AirPlayWire.snapshot(phase, connection, issue, capabilities, width, height, maxFps, flags)
                     if (state == null) { publish(AirPlaySnapshot(availability = AirPlayAvailability.UNSUPPORTED, issue = AirPlayIssue.UNSUPPORTED)); return@post }
                     revision = rev; publish(state)
                 } }
@@ -75,6 +75,8 @@ internal class AndroidAirPlayControl(context: Context) : AirPlayReceiverControl 
         try { send(service, id, listener) } catch (_: RemoteException) { disconnected() }
     }
     override fun start(options: AirPlayOptions, reply: (AirPlayResult) -> Unit) = command(reply) { service, id, listener -> service.start(id, options.receiverName, listener) }
+    override fun setKeepAvailable(enabled: Boolean, reply: (AirPlayResult) -> Unit) = command(reply) { service, id, listener -> service.setKeepAvailable(id, enabled, listener) }
+    override fun setBackgroundOptions(keepSession: Boolean, backgroundAudio: Boolean, autoOpenVideo: Boolean, reply: (AirPlayResult) -> Unit) = command(reply) { service, id, listener -> service.setBackgroundOptions(id, keepSession, backgroundAudio, autoOpenVideo, listener) }
     override fun stop(reply: (AirPlayResult) -> Unit) = command(reply) { service, id, listener -> service.stop(id, listener) }
     override fun observe(observer: (AirPlaySnapshot) -> Unit): AutoCloseable {
         check(Looper.myLooper() == Looper.getMainLooper())

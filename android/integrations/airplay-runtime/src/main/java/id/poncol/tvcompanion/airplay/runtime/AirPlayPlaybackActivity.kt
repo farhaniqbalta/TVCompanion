@@ -55,6 +55,8 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
                 label.post { if (active) host?.beginPlayback(getString(R.string.airplay_receiver_name)) }
             }
             label.text = when {
+                snapshot.issue == AirPlayIssue.AUDIO_UNAVAILABLE -> getString(R.string.airplay_audio_unavailable)
+                snapshot.phase == AirPlayPhase.STOPPED -> getString(R.string.airplay_stopped)
                 snapshot.phase == AirPlayPhase.FAILED -> getString(R.string.airplay_failed)
                 snapshot.phase == AirPlayPhase.STOPPING -> getString(R.string.airplay_stopping)
                 snapshot.connection == AirPlayConnection.PLAYING -> getString(R.string.airplay_playing)

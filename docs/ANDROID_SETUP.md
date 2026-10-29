@@ -38,8 +38,10 @@ HTTP currently has no transport encryption and the six-digit PIN is prototype-le
 
 The app is installed and the user has confirmed basic functionality. The 0.2.0 UI preview has been visually reviewed on the TV; physical remote behavior, offline operation and overlays across players still need broader validation. Build/test success does not establish these behaviors. No CPU/RAM benchmarking is requested.
 
-## AirPlay video preview
+## AirPlay preview
 
-Open AirPlay from the dashboard, then Open receiver. Select **TVCompanion** in the sender’s Screen Mirroring controls; Mac can use a separate extended display. The playback Activity and receiver service share `:airplay`; leaving playback stops networking and releases native resources asynchronously. No receiver starts from the home card, no foreground service is required for this foreground-only mode, and no background discovery option exists yet.
+Open AirPlay from the dashboard, then Open receiver. Select **TVCompanion** in the sender’s Screen Mirroring controls; Mac can use a separate extended display. The playback Activity and receiver service share `:airplay`; leaving playback stops networking unless Keep available after leaving is enabled in AirPlay settings. That option uses a foreground service with visible Open/Stop controls, defaults off and does not restart after reboot/app restart. No receiver starts merely from the home card.
 
-Use the trusted LAN and non-sensitive content. Audio and app-specific HLS video playback are not implemented. This native preview targets `armeabi-v7a`, matching the validated TV; general ABI/device coverage and distribution licensing remain release work. Read [actual integration evidence and limits](phase-2/SINGLE_APK_INTEGRATION.md).
+Use the trusted LAN and non-sensitive content. The audio candidate supports AAC-ELD/AAC-LC, ALAC and PCM at 44.1 kHz stereo, with device review pending. App-specific HLS video playback is not implemented. This native preview targets `armeabi-v7a`, matching the validated TV; general ABI/device coverage and distribution licensing remain release work. Read [actual integration evidence and limits](phase-2/SINGLE_APK_INTEGRATION.md).
+
+For the audio/background candidate and review status, see [audio and background availability](phase-2/AUDIO_AND_BACKGROUND.md). Native host checks run with `python3 scripts/check-airplay-native.py` after native preparation and do not contact the TV.

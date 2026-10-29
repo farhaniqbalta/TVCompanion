@@ -12,6 +12,6 @@ cd android
 ./gradlew --no-daemon -PairplayLab=true :experiments:airplay-lab:assembleDebug
 ```
 
-The package remains `id.poncol.tvcompanion.airplaylab`; output is `experiments/airplay-lab/app/build/outputs/apk/debug/airplay-lab-debug.apk`. This shell uses **TVCompanion Lab** as its receiver name, while the main app uses **TVCompanion**. Run one receiver at a time. Open the receiver, use Screen Mirroring from the sender, and leave playback to stop it. Audio and background availability are not implemented yet.
+The package remains `id.poncol.tvcompanion.airplaylab`; output is `experiments/airplay-lab/app/build/outputs/apk/debug/airplay-lab-debug.apk`. This shell uses **TVCompanion Lab** as its receiver name, while the main app uses **TVCompanion**. Run one receiver at a time. Open the receiver, use Screen Mirroring from the sender, and leave playback to stop it. The shared engine now includes the audio candidate. Keep available is controlled from the main app’s AirPlay settings; this thin lab entry remains a foreground test shell.
 
 Downloaded sources, notices and native outputs stay under ignored `android/integrations/uxplay-native/.native/`. No APKs or native binaries are committed. Source/script pins are recorded in the shared preparation script. Generated upstream notices are accessible in-app; they do not replace the [licensing/distribution review](../../docs/LICENSE_COMPLIANCE.md). No root license is adopted by this experiment. Follow the workspace’s authorized TV/ADB procedure when deploying.

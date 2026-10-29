@@ -1,5 +1,7 @@
 # Phase 2 — single-APK AirPlay video integration
 
+> Historical accepted 0.4 video checkpoint. The [0.5 audio/background candidate](AUDIO_AND_BACKGROUND.md) implements the requested follow-up steps, with new device review still pending.
+
 Date: 2026-10-29. Branch: `plan/phase-2-airplay`. Version: **0.4.0-airplay-preview**, versionCode 5, unchanged application ID `id.poncol.tvcompanion`. The user approved proceeding beyond the standalone harness, then confirmed the integrated app ran perfectly and requested no further testing at this checkpoint.
 
 ## Implemented boundaries

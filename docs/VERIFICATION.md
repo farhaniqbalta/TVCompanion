@@ -73,3 +73,13 @@ See [current architecture](phase-1/CURRENT_ARCHITECTURE.md), [target proposal](p
 ## Phase 2 integrated video preview — 2026-10-29
 
 See the [single-APK integration record](phase-2/SINGLE_APK_INTEGRATION.md): 73 passing tests, successful main/lab builds, main lint with zero errors and one target-ABI warning, update with existing preferences preserved byte-for-byte, and user acceptance of the integrated preview. No further testing was performed after the user requested stopping checks. Audio, idle background availability, broader device compatibility and distribution licensing remain open.
+
+## Audio and background candidate — 2026-10-29
+
+The [0.5 candidate](phase-2/AUDIO_AND_BACKGROUND.md) builds with 81 passing JVM tests and passing native clock/H.264/ALAC round-trip checks. Lint: zero errors, one known ChromeOS/ABI warning. No automated TV session, audio listening, background-mode test or benchmark was run; the user requested installation and will provide device review.
+
+The audio/background candidate was subsequently installed at the user’s explicit request. Existing preference files were preserved byte-for-byte; no notification receiver was running before the update. The dashboard was opened without starting AirPlay. Audible output, lip-sync and idle/background behavior remain pending user review.
+
+## 0.5.2 local lifecycle/video correction
+
+Built versionCode 8 with the four separate background/presentation controls, protocol v3 and bounded startup-video recovery. All 89 JVM tests pass, including the Phase 1 suites; native helper checks pass; lint has zero errors and the known ChromeOS ABI warning. Spotify AirPlay source/implementation review and deferred manual checks are recorded in [AUDIO_AND_BACKGROUND.md](phase-2/AUDIO_AND_BACKGROUND.md). The user has no TV access: this candidate was not installed and neither the video fix nor Spotify playback is hardware-verified. No commit/push is included.
