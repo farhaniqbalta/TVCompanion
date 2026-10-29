@@ -88,6 +88,16 @@ Built versionCode 8 with the four separate background/presentation controls, pro
 
 VersionCode 9 adds grouped responsive settings, connection instructions, independent status facts, background-audio dependency feedback, explicit leave/stop behavior, focused retry paths and an on-demand video toolbar. Build and 95 JVM tests pass; lint has zero errors and the known ChromeOS ABI warning. New tests distinguish audio from video and retained sessions from discovery, verify stale display issues clear on reattachment, and round-trip the v4 status flags. Phase 1 suites passed during this change. No TV installation/connection or visual acceptance testing was performed because the user is away from the TV. Home testing remains pending.
 
+## 0.6.0 Bardi color-control preview
+
+Branch `feature/bardi-color-control` starts from pushed AirPlay UI commit `1f60f7d`. VersionCode 10 builds, all 105 JVM tests pass, and lint reports zero errors plus the existing ChromeOS ABI warning. New coverage checks bounded HSV16 parsing, atomic mode/color group validation, separate mode-and-color readback, unsupported/off states, white-mode restoration and pure/controller adjustment behavior. No TV connection, lamp write, installation or benchmark was performed. Physical color and remote navigation remain pending; see [BARDI_COLOR_CONTROL.md](BARDI_COLOR_CONTROL.md).
+
+The user subsequently authorized installation after returning home. The 0.6.0 APK update succeeded; all pre-existing preference files were preserved byte-for-byte and the dashboard opened. The notification receiver was not previously running. No lamp write or AirPlay session was initiated; user hardware review and eventual ADB closure remain pending.
+
+The user subsequently reported “all works” after the requested Bardi color-control test sequence. Presets, HSV adjustments and returning to white mode are accepted by user report; exhaustive edge cases and fully offline operation are not claimed. This acceptance does not resolve pending AirPlay video/Spotify checks or verify ADB closure.
+
+## AirPlay home acceptance and ALAC correction
+
 The AirPlay home-test update (same 0.5.3 candidate, versionCode 11) subsequently passed a fresh build, 95 JVM tests, native checks and lint, then installed successfully over Bardi build 10 with all existing preferences preserved. Only the dashboard was opened; user AirPlay playback/UX feedback and ADB closure remain pending. See [installation record](phase-2/AUDIO_AND_BACKGROUND.md).
 
 Home feedback confirms iPad video/pictures, iPad screen mirroring and Mac extended desktop; Spotify audio-only remains silent despite confirmed background settings. Diagnostic build 12 installed with saved preferences preserved after passing build/focused tests/lint. Root cause and Spotify recovery remain unverified; see [audio diagnostic record](phase-2/AUDIO_AND_BACKGROUND.md).
@@ -95,3 +105,9 @@ Home feedback confirms iPad video/pictures, iPad screen mirroring and Mac extend
 Spotify diagnostic logs showed ALAC/352 negotiation, granted focus, allowed audio packets and output-init failure. Build 13 corrects missing ARM ALAC byte-order configuration, adds a pre-allocation wire/configuration guard and independent native assertions. Build, focused tests, native checks and lint pass; installed preferences were preserved. Spotify audible recovery awaits a fresh user connection. See the [ALAC correction record](phase-2/AUDIO_AND_BACKGROUND.md).
 
 The user subsequently confirmed “all works fine” after build 13. Spotify AirPlay audio is accepted by user report alongside the previously confirmed iPad video/pictures, iPad mirroring and Mac extended desktop. This supersedes the pending Spotify-recovery status above; broader compatibility, long-session behavior and ADB closure are not claimed.
+
+## Combined Bardi/AirPlay merge verification
+
+After the Bardi branch merged into main (`3774cbb`), main was merged into `plan/phase-2-airplay` to resolve the remaining integration conflict. Only the app version declaration and appended verification history conflicted; both implementation trees merged without content conflicts. The combined candidate is **0.6.1-integration-preview**, versionCode **14**, greater than both installed/tested candidate codes 10 and 13. Both Bardi and AirPlay acceptance histories are retained.
+
+The combined APK builds; all **105 JVM tests** pass with zero failures/errors; native ALAC wire/configuration, round-trip and media helper checks pass. Lint has zero errors and the existing ChromeOS ABI warning. Bardi color behavior and AirPlay ALAC byte-order corrections are both present. No new TV installation, lamp write or casting session was performed for merge verification; this is local integration verification, not a new hardware acceptance result.

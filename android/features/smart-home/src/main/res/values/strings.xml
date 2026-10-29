@@ -24,4 +24,29 @@
     <string name="light_mode_hint">Brightness is available in white mode.</string>
     <string name="light_setup_hint">Check the light and connection, then refresh.</string>
     <string name="light_footer">Arrows to move   ·   OK to adjust   ·   Back to home</string>
+    <string name="light_color_title">Color</string>
+    <string name="light_color_unknown">Color status unavailable</string>
+    <string name="light_white_active">White mode · stored color values below</string>
+    <string name="light_color_active">Color mode</string>
+    <string name="light_other_mode">Scene or unsupported mode</string>
+    <string name="light_color_presets_help">Choose a color, or adjust hue, saturation and color brightness below. These actions switch to color mode.</string>
+    <string name="light_color_hint">Changes appear after lamp readback confirms them. Zero color brightness produces no visible light.</string>
+    <string name="light_color_unavailable">Color controls need a supported mode and valid color status. Refresh after changing the mode in the Bardi app.</string>
+    <string name="light_color_off_hint">Turn the light on before changing its color.</string>
+    <string name="light_white_mode">Use white mode</string>
+    <string name="light_red">Red</string>
+    <string name="light_orange">Orange</string>
+    <string name="light_yellow">Yellow</string>
+    <string name="light_green">Green</string>
+    <string name="light_blue">Blue</string>
+    <string name="light_purple">Purple</string>
+    <string name="light_hue">HUE</string>
+    <string name="light_saturation">SATURATION</string>
+    <string name="light_color_brightness">COLOR BRIGHTNESS</string>
+    <string name="light_hue_value">%1$d°</string>
+    <string name="light_hue_less">− 15° hue</string>
+    <string name="light_hue_more">+ 15° hue</string>
+    <string name="light_percent_less" formatted="false">− 10%</string>
+    <string name="light_percent_more" formatted="false">+ 10%</string>
+    <string name="light_adjust_accessibility">%1$s: %2$s</string>
 </resources>
