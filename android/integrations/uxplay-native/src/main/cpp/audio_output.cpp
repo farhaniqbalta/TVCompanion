@@ -2,9 +2,11 @@
 #include "playout_clock.h"
 #include "audio_formats.h"
 #include <aaudio/AAudio.h>
+#include <android/log.h>
 #include <media/NdkMediaCodec.h>
 #include <media/NdkMediaFormat.h>
 #include "ALACDecoder.h"
+#include "EndianPortable.h"
 #include "ALACBitUtilities.h"
 #include <algorithm>
 #include <atomic>
@@ -32,8 +34,9 @@ struct AudioOutput::Impl {
     bool closing = false;
     unsigned type = 0, spf = 480;
     uint64_t version = 0;
-    std::atomic<bool> allowed{false}, broken{false}, needsFocus{true};
+    std::atomic<bool> allowed{false}, broken{false}, needsFocus{true}, received{false}, decodeReported{false};
     std::atomic<float> gain{1}, duck{1};
+    std::atomic<int> reportedMute{-1};
     explicit Impl(std::function<void(int)> callback) : event(std::move(callback)) {}
     ~Impl() {
         { std::lock_guard<std::mutex> lock(mutex); closing = true; queue.clear(); }
@@ -51,13 +54,22 @@ struct AudioOutput::Impl {
             if (decoder) { AMediaCodec_stop(decoder); AMediaCodec_delete(decoder); decoder = nullptr; }
             alac.reset(); playing = false;
         };
-        auto fail = [&]() { release(); broken = true; event(6); event(7); };
+        auto fail = [&]() { __android_log_print(ANDROID_LOG_WARN, "TVCAirPlay", "stage=AUDIO_OUTPUT_FAILED"); release(); broken = true; event(6); event(7); };
         auto open = [&]() -> bool {
             if (activeType == 2) {
                 // ALACSpecificConfig: immutable 16-bit stereo 44.1 kHz stream parameters.
                 auto cookie = alacCookie(activeSpf);
+                uint32_t wireLength = 0; std::memcpy(&wireLength, cookie.data(), sizeof(wireLength));
+                // Fail before upstream allocation if a future build has incorrect endian flags.
+                if (Swap32BtoN(wireLength) != activeSpf) {
+                    __android_log_print(ANDROID_LOG_WARN, "TVCAirPlay", "stage=ALAC_BYTE_ORDER_INVALID"); return false;
+                }
                 alac.reset(new ALACDecoder());
-                if (alac->Init(cookie.data(), cookie.size()) != 0) return false;
+                if (alac->Init(cookie.data(), cookie.size()) != 0 || alac->mConfig.frameLength != activeSpf ||
+                    alac->mConfig.sampleRate != rate || alac->mConfig.bitDepth != 16 || alac->mConfig.numChannels != channels) {
+                    __android_log_print(ANDROID_LOG_WARN, "TVCAirPlay", "stage=ALAC_CONFIG_REJECTED"); return false;
+                }
+                __android_log_print(ANDROID_LOG_INFO, "TVCAirPlay", "stage=ALAC_READY");
             } else if (activeType == 4 || activeType == 8) {
                 AMediaFormat *format = AMediaFormat_new();
                 AMediaFormat_setString(format, AMEDIAFORMAT_KEY_MIME, "audio/mp4a-latm");
@@ -117,7 +129,7 @@ struct AudioOutput::Impl {
                 if (result < 0) return false;
                 if (result == 0) return true; // Bounded wait; never spin or grow a backlog.
                 offset += result;
-                if (!playing) { playing = true; event(5); }
+                if (!playing) { playing = true; __android_log_print(ANDROID_LOG_INFO, "TVCAirPlay", "stage=FIRST_AUDIO_OUTPUT"); event(5); }
             }
             return true;
         };
@@ -146,8 +158,11 @@ struct AudioOutput::Impl {
                 const auto count = packet.bytes.size(); packet.bytes.resize(count + 16, 0);
                 BitBuffer bits; BitBufferInit(&bits, packet.bytes.data(), static_cast<uint32_t>(count));
                 std::vector<uint8_t> pcm(4096 * channels * sizeof(int16_t)); uint32_t frames = 0;
-                if (alac->Decode(&bits, pcm.data(), activeSpf, channels, &frames) == 0 && frames <= activeSpf)
+                const auto decoded = alac->Decode(&bits, pcm.data(), activeSpf, channels, &frames);
+                if (!decodeReported.exchange(true)) __android_log_print(ANDROID_LOG_INFO, "TVCAirPlay", "stage=%s", decoded == 0 && frames > 0 && frames <= activeSpf ? "ALAC_DECODED" : "ALAC_DECODE_FAILED");
+                if (decoded == 0 && frames > 0 && frames <= activeSpf) {
                     if (!writePcm(pcm.data(), frames * channels * sizeof(int16_t), packet.target)) fail();
+                }
             } else {
                 ssize_t index = AMediaCodec_dequeueInputBuffer(decoder, 1000);
                 if (index < 0 && index != AMEDIACODEC_INFO_TRY_AGAIN_LATER) { fail(); continue; }
@@ -190,6 +205,9 @@ struct AudioOutput::Impl {
 AudioOutput::AudioOutput(std::function<void(int)> event) : impl(new Impl(std::move(event))) {}
 AudioOutput::~AudioOutput() = default;
 void AudioOutput::configure(unsigned type, unsigned samplesPerFrame) {
+    const char *codec = type == 2 ? "ALAC" : type == 8 ? "AAC_ELD" : type == 4 ? "AAC_LC" : type == 1 ? "PCM" : "UNSUPPORTED";
+    __android_log_print(ANDROID_LOG_INFO, "TVCAirPlay", "stage=AUDIO_FORMAT codec=%s frames=%u", codec, samplesPerFrame <= 4096 ? samplesPerFrame : 0);
+    impl->received = false; impl->decodeReported = false;
     if (samplesPerFrame == 0) samplesPerFrame = type == 8 ? 480 : type == 4 ? 1024 : 352;
     if (samplesPerFrame > 4096 || (type != 1 && type != 2 && type != 4 && type != 8)) { impl->broken = true; impl->event(6); return; }
     { std::lock_guard<std::mutex> lock(impl->mutex);
@@ -200,6 +218,7 @@ void AudioOutput::configure(unsigned type, unsigned samplesPerFrame) {
 void AudioOutput::submit(unsigned type, const uint8_t *data, size_t size, int64_t target) {
     if (!data || !size || size > 16384 || impl->broken) return;
     { std::lock_guard<std::mutex> lock(impl->mutex); if (impl->closing || type != impl->type) return; }
+    if (!impl->received.exchange(true)) __android_log_print(ANDROID_LOG_INFO, "TVCAirPlay", "stage=AUDIO_INPUT_RECEIVED allowed=%d", static_cast<int>(impl->allowed.load()));
     if (!impl->allowed) { if (impl->needsFocus.exchange(false)) impl->event(9); return; }
     { std::lock_guard<std::mutex> lock(impl->mutex);
       if (impl->closing || type != impl->type) return;
@@ -212,7 +231,11 @@ void AudioOutput::focus(bool allowed, float duck) {
     if (!allowed) { std::lock_guard<std::mutex> lock(impl->mutex); impl->queue.clear(); ++impl->version; }
     impl->wake.notify_all();
 }
-void AudioOutput::volume(float decibels) { impl->gain = !std::isfinite(decibels) || decibels <= -144 ? 0.0f : std::clamp(std::pow(10.0f, decibels / 20.0f), 0.0f, 1.0f); }
+void AudioOutput::volume(float decibels) {
+    impl->gain = !std::isfinite(decibels) || decibels <= -144 ? 0.0f : std::clamp(std::pow(10.0f, decibels / 20.0f), 0.0f, 1.0f);
+    const int muted = impl->gain.load() == 0 ? 1 : 0;
+    if (impl->reportedMute.exchange(muted) != muted) __android_log_print(ANDROID_LOG_INFO, "TVCAirPlay", "stage=%s", muted ? "AUDIO_SENDER_MUTED" : "AUDIO_SENDER_UNMUTED");
+}
 void AudioOutput::flush() { std::lock_guard<std::mutex> lock(impl->mutex); impl->queue.clear(); ++impl->version; impl->wake.notify_all(); }
 void AudioOutput::end() {
     focus(false, 1);

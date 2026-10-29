@@ -4,6 +4,7 @@
 #include "audio_formats.h"
 #include "ALACEncoder.h"
 #include "ALACDecoder.h"
+#include "EndianPortable.h"
 #include "ALACBitUtilities.h"
 #include <cassert>
 #include <cstring>
@@ -49,7 +50,13 @@ int main() {
     std::vector<uint8_t> packet(8192); int32_t count=static_cast<int32_t>(original.size()*2);
     assert(encoder.Encode(input,output,reinterpret_cast<uint8_t*>(original.data()),packet.data(),&count)==0);
     assert(count>0 && count<8192);
-    auto cookie=alacCookie(frames); ALACDecoder decoder; assert(decoder.Init(cookie.data(),cookie.size())==0);
+    auto cookie=alacCookie(frames);
+    // Independent wire-value assertions catch symmetric encoder/decoder byte-order errors.
+    uint32_t wireLength=0; std::memcpy(&wireLength,cookie.data(),sizeof(wireLength));
+    assert(Swap32BtoN(wireLength)==frames);
+    ALACDecoder decoder; assert(decoder.Init(cookie.data(),cookie.size())==0);
+    assert(decoder.mConfig.frameLength==frames && decoder.mConfig.sampleRate==44100);
+    assert(decoder.mConfig.bitDepth==16 && decoder.mConfig.numChannels==2 && decoder.mConfig.maxRun==255);
     BitBuffer bits; BitBufferInit(&bits,packet.data(),count); std::vector<int16_t> decoded(frames*2); uint32_t actual=0;
     assert(decoder.Decode(&bits,reinterpret_cast<uint8_t*>(decoded.data()),frames,2,&actual)==0);
     assert(actual==frames); assert(decoded==original);

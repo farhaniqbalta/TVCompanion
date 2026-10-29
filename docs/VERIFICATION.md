@@ -87,3 +87,11 @@ Built versionCode 8 with the four separate background/presentation controls, pro
 ## 0.5.3 AirPlay UI/UX candidate
 
 VersionCode 9 adds grouped responsive settings, connection instructions, independent status facts, background-audio dependency feedback, explicit leave/stop behavior, focused retry paths and an on-demand video toolbar. Build and 95 JVM tests pass; lint has zero errors and the known ChromeOS ABI warning. New tests distinguish audio from video and retained sessions from discovery, verify stale display issues clear on reattachment, and round-trip the v4 status flags. Phase 1 suites passed during this change. No TV installation/connection or visual acceptance testing was performed because the user is away from the TV. Home testing remains pending.
+
+The AirPlay home-test update (same 0.5.3 candidate, versionCode 11) subsequently passed a fresh build, 95 JVM tests, native checks and lint, then installed successfully over Bardi build 10 with all existing preferences preserved. Only the dashboard was opened; user AirPlay playback/UX feedback and ADB closure remain pending. See [installation record](phase-2/AUDIO_AND_BACKGROUND.md).
+
+Home feedback confirms iPad video/pictures, iPad screen mirroring and Mac extended desktop; Spotify audio-only remains silent despite confirmed background settings. Diagnostic build 12 installed with saved preferences preserved after passing build/focused tests/lint. Root cause and Spotify recovery remain unverified; see [audio diagnostic record](phase-2/AUDIO_AND_BACKGROUND.md).
+
+Spotify diagnostic logs showed ALAC/352 negotiation, granted focus, allowed audio packets and output-init failure. Build 13 corrects missing ARM ALAC byte-order configuration, adds a pre-allocation wire/configuration guard and independent native assertions. Build, focused tests, native checks and lint pass; installed preferences were preserved. Spotify audible recovery awaits a fresh user connection. See the [ALAC correction record](phase-2/AUDIO_AND_BACKGROUND.md).
+
+The user subsequently confirmed “all works fine” after build 13. Spotify AirPlay audio is accepted by user report alongside the previously confirmed iPad video/pictures, iPad mirroring and Mac extended desktop. This supersedes the pending Spotify-recovery status above; broader compatibility, long-session behavior and ADB closure are not claimed.

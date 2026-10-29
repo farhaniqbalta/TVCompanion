@@ -30,5 +30,14 @@ target_link_libraries(receiver PRIVATE plist playfair llhttp dnssd "${DEPS}/open
 set(ALAC "${DEPS}/alac/codec")
 add_library(alac STATIC "${ALAC}/ALACDecoder.cpp" "${ALAC}/ALACBitUtilities.c" "${ALAC}/EndianPortable.c" "${ALAC}/ag_dec.c" "${ALAC}/dp_dec.c" "${ALAC}/matrix_dec.c")
 target_include_directories(alac PUBLIC "${ALAC}")
+# The pinned portable ALAC source only auto-detects x86/Windows byte order.
+# Supply the target CPU byte order explicitly; the host architecture is irrelevant.
+if(CMAKE_C_BYTE_ORDER STREQUAL "LITTLE_ENDIAN")
+    target_compile_definitions(alac PRIVATE TARGET_RT_LITTLE_ENDIAN=1)
+elseif(CMAKE_C_BYTE_ORDER STREQUAL "BIG_ENDIAN")
+    target_compile_definitions(alac PRIVATE TARGET_RT_LITTLE_ENDIAN=0)
+else()
+    message(FATAL_ERROR "ALAC requires a known target byte order")
+endif()
 add_library(tvcompanion_uxplay SHARED receiver_jni.cpp audio_output.cpp)
 target_link_libraries(tvcompanion_uxplay PRIVATE receiver alac android mediandk aaudio log)
