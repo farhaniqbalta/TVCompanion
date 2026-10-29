@@ -1,0 +1,16 @@
+plugins { id 'com.android.library'; id 'org.jetbrains.kotlin.android' }
+android {
+    namespace 'id.poncol.tvcompanion.uxplay'
+    compileSdk 34
+    defaultConfig { minSdk 26 }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    kotlinOptions { jvmTarget = '17' }
+    ndkVersion '27.2.12479018'
+    defaultConfig { ndk { abiFilters 'armeabi-v7a' }; externalNativeBuild { cmake { cppFlags '-std=c++17'; arguments '-DANDROID_STL=c++_static' } } }
+    externalNativeBuild { cmake { path 'src/main/cpp/CMakeLists.txt'; version '3.22.1' } }
+    sourceSets { main.assets.srcDirs = ['.native/notices'] }
+}
+dependencies {
+implementation project(':integrations:airplay-runtime')
+implementation project(':core:domain')
+}

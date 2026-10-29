@@ -1,6 +1,6 @@
 # AirPlay receiver control — Phase 2 design boundary
 
-Status: design only; no AIDL, Binder, JNI, native dependency or receiver implementation exists. This document supersedes its Phase 1 external-APK proposal under [decision 13](../docs/DECISIONS.md#phase-2-packaging-correction--2026-10-28). The filename is retained for existing links; “external” no longer describes production packaging.
+Status: the foreground-only single-APK video preview now implements a focused pure receiver port, private control/status AIDL, runtime host and selected native engine. See [current implementation and limits](../docs/phase-2/SINGLE_APK_INTEGRATION.md). Original responsibilities below remain the design boundary; not every future option is implemented. This document supersedes its Phase 1 external-APK proposal under [decision 13](../docs/DECISIONS.md#phase-2-packaging-correction--2026-10-28). The filename is retained for existing links; “external” no longer describes production packaging.
 
 ## Ownership and packaging
 

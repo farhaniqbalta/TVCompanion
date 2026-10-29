@@ -2,10 +2,10 @@
 
 ## Build
 
-Install JDK 17 and Android SDK platform/build-tools 34. Set `JAVA_HOME` and `ANDROID_HOME`, or create an ignored `android/local.properties` with `sdk.dir=/path/to/sdk`. Run from `android/`:
+Install JDK 17, Android SDK platform/build-tools 34, NDK 27.2.12479018 and SDK CMake 3.22.1. Run `python3 scripts/prepare-airplay-native.py` from the repository root before a full APK build. Native sources/notices and static dependencies are checksum-pinned and cached under ignored `android/integrations/uxplay-native/.native/`; they are not committed. Set `JAVA_HOME` and `ANDROID_HOME`, or create an ignored `android/local.properties` with `sdk.dir=/path/to/sdk`. Run from `android/`:
 
 ```sh
-./gradlew :app:assembleDebug :core:domain:test :integrations:tuya-lan:testDebugUnitTest :features:notifications:testDebugUnitTest :app:lintDebug
+./gradlew :app:assembleDebug :core:domain:test :integrations:airplay-runtime:testDebugUnitTest :ipc:airplay-contract:testDebugUnitTest :integrations:tuya-lan:testDebugUnitTest :features:notifications:testDebugUnitTest :app:lintDebug
 ```
 
 The checked-in Gradle 8.9 wrapper verifies the distribution SHA-256. Initial dependency resolution needs network access; subsequent offline builds work with cached dependencies. CI uses the same tasks. No local credentials are read by the build.
@@ -37,3 +37,9 @@ HTTP currently has no transport encryption and the six-digit PIN is prototype-le
 ## Status and limits
 
 The app is installed and the user has confirmed basic functionality. The 0.2.0 UI preview has been visually reviewed on the TV; physical remote behavior, offline operation and overlays across players still need broader validation. Build/test success does not establish these behaviors. No CPU/RAM benchmarking is requested.
+
+## AirPlay video preview
+
+Open AirPlay from the dashboard, then Open receiver. Select **TVCompanion** in the sender’s Screen Mirroring controls; Mac can use a separate extended display. The playback Activity and receiver service share `:airplay`; leaving playback stops networking and releases native resources asynchronously. No receiver starts from the home card, no foreground service is required for this foreground-only mode, and no background discovery option exists yet.
+
+Use the trusted LAN and non-sensitive content. Audio and app-specific HLS video playback are not implemented. This native preview targets `armeabi-v7a`, matching the validated TV; general ABI/device coverage and distribution licensing remain release work. Read [actual integration evidence and limits](phase-2/SINGLE_APK_INTEGRATION.md).

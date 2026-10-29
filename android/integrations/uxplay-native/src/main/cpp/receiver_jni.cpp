@@ -1,4 +1,4 @@
-// Development-only adapter to the pinned UxPlay API; no upstream implementation is
+// Receiver implementation adapter to the pinned UxPlay API; no upstream implementation is
 // copied into core/application modules. See docs/LICENSE_COMPLIANCE.md.
 #include <jni.h>
 #include <android/native_window_jni.h>
@@ -159,7 +159,7 @@ void destroy(JNIEnv *env, Receiver *r) {
 }
 
 extern "C" JNIEXPORT jlong JNICALL
-Java_id_poncol_tvcompanion_airplaylab_UxPlayEngine_nativeStart(JNIEnv *env, jobject self, jobject surface, jstring path, jstring identity) {
+Java_id_poncol_tvcompanion_uxplay_UxPlayReceiverEngine_nativeStart(JNIEnv *env, jobject self, jobject surface, jstring path, jstring identity, jstring receiverName) {
     auto *r = new Receiver();
     env->GetJavaVM(&r->vm);
     r->observer = env->NewGlobalRef(self);
@@ -199,7 +199,7 @@ Java_id_poncol_tvcompanion_airplaylab_UxPlayEngine_nativeStart(JNIEnv *env, jobj
     }
     env->ReleaseStringUTFChars(path, key); env->ReleaseStringUTFChars(identity, id);
     int error = 0;
-    if (ok) { r->discovery = dnssd_init("TVCompanion Lab", 15, reinterpret_cast<const char *>(hw), 6, 0, &error); ok = r->discovery && !error; }
+    if (ok) { const char *name = env->GetStringUTFChars(receiverName, nullptr); r->discovery = dnssd_init(name, std::strlen(name), reinterpret_cast<const char *>(hw), 6, 0, &error); ok = r->discovery && !error; env->ReleaseStringUTFChars(receiverName, name); }
     if (ok) {
         // Preserve upstream's discovery/pairing profile, including audio negotiation.
         // The experiment accepts but discards audio: sound output remains unimplemented.
@@ -215,6 +215,6 @@ Java_id_poncol_tvcompanion_airplaylab_UxPlayEngine_nativeStart(JNIEnv *env, jobj
     return reinterpret_cast<jlong>(r);
 }
 extern "C" JNIEXPORT void JNICALL
-Java_id_poncol_tvcompanion_airplaylab_UxPlayEngine_nativeStop(JNIEnv *env, jobject, jlong handle) {
+Java_id_poncol_tvcompanion_uxplay_UxPlayReceiverEngine_nativeStop(JNIEnv *env, jobject, jlong handle) {
     if (handle) destroy(env, reinterpret_cast<Receiver *>(handle));
 }

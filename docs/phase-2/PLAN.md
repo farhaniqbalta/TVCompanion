@@ -1,6 +1,6 @@
 # Phase 2 — AirPlay feasibility and single-APK integration
 
-Status: architecture planning plus an opt-in video feasibility harness, updated 2026-10-29. Working branch: `plan/phase-2-airplay`. Baseline: `b876c0d` (merged Phase 1 and CI/PR automation). [Decision 13](../DECISIONS.md#phase-2-packaging-correction--2026-10-28) supersedes the separate-production-receiver APK design.
+Status: initial video feasibility passed; foreground-only single-APK integration implemented and user-accepted, updated 2026-10-29. Working branch: `plan/phase-2-airplay`. Baseline: `b876c0d` (merged Phase 1 and CI/PR automation). [Decision 13](../DECISIONS.md#phase-2-packaging-correction--2026-10-28) supersedes the separate-production-receiver APK design.
 
 ## Inspected state and impact
 
@@ -70,3 +70,7 @@ Real-device acceptance: preserve signing/settings with an update, never uninstal
 ## Direct-TV video gate result — 2026-10-29
 
 The user confirmed true extended desktop from this Mac to the Google TV using the optional [video receiver harness](TV_RECEIVER_EXPERIMENT.md). This establishes initial native video feasibility on that target; it does not clear production service/IPC integration, audio, long-session stability or distribution licensing. Preserve the experiment and use its findings to implement the smallest neutral engine/runtime seam when that work is requested.
+
+## Integrated checkpoint and next work
+
+The [single-APK integration](SINGLE_APK_INTEGRATION.md) is implemented as `0.4.0-airplay-preview`, installed with settings preserved and user-accepted. Audio is next, followed by an explicitly enabled idle/background availability policy owned by the service independently of the playback UI. The user requested no additional testing at this checkpoint; previous test/build evidence is retained without claiming new device checks.

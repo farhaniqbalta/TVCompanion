@@ -1,5 +1,7 @@
 # Phase 2 receiver boundary review
 
+> Integration update: the user approved and accepted the [single-APK video preview](SINGLE_APK_INTEGRATION.md). The assessment below describes its review-time baseline and proposed strategy; native implementation is now confined to the selected engine module. No license was adopted and distribution clearance remains open.
+
 > Subsequent development update (2026-10-29): the user approved an opt-in [direct-TV video experiment](TV_RECEIVER_EXPERIMENT.md). Statements below about absent implementation describe the reviewed baseline. The harness now selects libplist 2.7.0, OpenSSL 3.5.4 and Android MediaCodec; GStreamer remains unselected for production. This does not adopt licenses or clear distribution.
 
 Assessment date: 2026-10-28. Branch: `plan/phase-2-airplay`, baseline `b876c0d` plus uncommitted architecture documentation. Documentation proposal only; no receiver interfaces, modules or manifest entries are implemented. See [licensing assessment](../LICENSE_COMPLIANCE.md) and [Phase 2 plan](PLAN.md).

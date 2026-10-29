@@ -1,5 +1,7 @@
 # Direct Google TV receiver experiment
 
+> Historical harness evidence. The validated engine has since moved into the [single-APK integration](SINGLE_APK_INTEGRATION.md); the optional lab now shares that implementation. Results below describe the original feasibility run.
+
 Date: 2026-10-29. Branch: `plan/phase-2-airplay`; local, uncommitted experiment. The user approved testing directly on the TV with a development APK, replacing the earlier requirement to first use another desktop receiver host.
 
 ## Scope and architecture

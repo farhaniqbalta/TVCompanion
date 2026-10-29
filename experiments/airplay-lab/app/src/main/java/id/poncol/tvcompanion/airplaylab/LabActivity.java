@@ -23,7 +23,7 @@ public final class LabActivity extends Activity {
         details.setText(R.string.details);
         details.setTextSize(18); details.setPadding(0, 24, 0, 24); page.addView(details);
         Button open = new Button(this); open.setText(R.string.open_receiver);
-        open.setOnClickListener(v -> startActivity(new Intent(this, ReceiverActivity.class)));
+        open.setOnClickListener(v -> startActivity(new Intent().setClassName(getPackageName(), "id.poncol.tvcompanion.airplay.runtime.AirPlayPlaybackActivity")));
         page.addView(open);
         Button licenses = new Button(this); licenses.setText(R.string.licenses);
         licenses.setOnClickListener(v -> {

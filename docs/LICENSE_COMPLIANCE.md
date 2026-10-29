@@ -1,5 +1,7 @@
 # License compliance and future release flexibility
 
+> Integration update: the user approved and accepted the [single-APK video preview](phase-2/SINGLE_APK_INTEGRATION.md). The assessment below describes its review-time baseline and proposed strategy; native implementation is now confined to the selected engine module. No license was adopted and distribution clearance remains open.
+
 > Subsequent development update (2026-10-29): the user approved an opt-in [direct-TV video experiment](phase-2/TV_RECEIVER_EXPERIMENT.md). Statements below about absent implementation describe the reviewed baseline. The harness now selects libplist 2.7.0, OpenSSL 3.5.4 and Android MediaCodec; GStreamer remains unselected for production. This does not adopt licenses or clear distribution.
 
 Assessment: 2026-10-28, branch `plan/phase-2-airplay`, baseline `b876c0d` plus architecture documentation. This is a technical compliance assessment and proposed strategy, not a legal determination of derivative-work scope. No license grant, relicensing, LICENSE file, native integration or release is made here. See [source provenance](PROVENANCE.md) and [receiver boundary review](phase-2/RECEIVER_BOUNDARY_REVIEW.md).

@@ -69,3 +69,7 @@ Current tests cover six light-controller cases, five notification-controller cas
 No deployment, ADB session, real-lamp command, credential read, device trace or CPU/RAM benchmark was performed. Previously recorded hardware/user confirmation is historical evidence rather than a new assessment result. The GitHub Actions issue remains explicitly postponed and the workflow is unchanged.
 
 See [current architecture](phase-1/CURRENT_ARCHITECTURE.md), [target proposal](phase-1/TARGET_ARCHITECTURE.md), and [migration plan](phase-1/MIGRATION_PLAN.md). Application implementation awaits approval of the proposed changes, as requested by the handoff.
+
+## Phase 2 integrated video preview — 2026-10-29
+
+See the [single-APK integration record](phase-2/SINGLE_APK_INTEGRATION.md): 73 passing tests, successful main/lab builds, main lint with zero errors and one target-ABI warning, update with existing preferences preserved byte-for-byte, and user acceptance of the integrated preview. No further testing was performed after the user requested stopping checks. Audio, idle background availability, broader device compatibility and distribution licensing remain open.

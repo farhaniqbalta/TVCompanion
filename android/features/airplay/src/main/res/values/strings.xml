@@ -1,0 +1,20 @@
+<resources>
+    <string name="airplay_title">A little more space.</string>
+    <string name="airplay_eyebrow">AIRPLAY / VIDEO PREVIEW</string>
+    <string name="airplay_description">Use your TV as a separate Mac display, or mirror your iPhone or iPad.</string>
+    <string name="airplay_limits">Video preview · 720p / 30 fps · Audio playback is not available yet. Use Screen Mirroring on your trusted local network.</string>
+    <string name="airplay_lifetime">The receiver stays available while its playback screen is open. Press Back or leave playback to stop it.</string>
+    <string name="airplay_open">Open receiver →</string>
+    <string name="airplay_stop">Stop receiver</string>
+    <string name="airplay_back">← Home</string>
+    <string name="airplay_status">Receiver</string>
+    <string name="airplay_idle">Ready when you are</string>
+    <string name="airplay_binding">Connecting to receiver controls…</string>
+    <string name="airplay_starting">Starting receiver…</string>
+    <string name="airplay_ready">Available in Screen Mirroring</string>
+    <string name="airplay_playing">Receiving screen video</string>
+    <string name="airplay_stopping">Stopping receiver…</string>
+    <string name="airplay_error">Receiver unavailable. Close and reopen AirPlay to retry.</string>
+    <string name="airplay_licenses">Sources and licenses</string>
+    <string name="airplay_sources_missing">Native source notices were not prepared for this build.</string>
+</resources>
