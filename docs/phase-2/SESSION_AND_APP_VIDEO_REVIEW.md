@@ -96,3 +96,7 @@ Deferred device matrix, only after installation is authorized:
 | Bardi and notifications | Existing behavior remains intact on the new APK | Local suites pass; device regression pending |
 
 No installation, benchmark, commit or push is included in this implementation turn. Native-library licensing and corresponding-source obligations remain as recorded in LICENSE_COMPLIANCE.md; no root license is changed.
+
+### Home installation and user acceptance
+
+The user later requested installation of this branch. The versionCode 15 debug APK built successfully and installed as an update over TVCompanion versionCode 14 on the home TV. The installed package reported `0.7.0-airplay-app-video-preview`. The user subsequently reported “it works.” This confirms the tested AirPlay update at the level reported by the user; the exact sender app, media title, and individual YouTube/Crunchyroll scenarios were not separately identified. Protected-media compatibility and broad app-video support remain unverified.
