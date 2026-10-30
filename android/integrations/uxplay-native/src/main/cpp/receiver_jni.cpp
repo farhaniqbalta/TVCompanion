@@ -141,6 +141,8 @@ void customProfile(void *, const char **profile) { *profile = "AVC:720,0;HEVC:0;
 void protocolStage(void *context, int, const char *message) {
     struct Stage { const char *prefix; const char *label; };
     static const Stage stages[] = {
+        {"retaining same-peer RAOP connection", "SAME_PEER_CONNECTION"},
+        {"*****\"nohold\" feature: switch", "SENDER_TAKEOVER"},
         {"Unsupported m3u8 HLS streaming format", "UNSUPPORTED_APP_VIDEO"},
         {"only FairPlay version", "UNSUPPORTED_APP_VIDEO"},
         {"Handling request GET with URL /info", "INFO"},

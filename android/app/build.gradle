@@ -3,7 +3,7 @@ android {
     namespace 'id.poncol.tvcompanion.app'
     compileSdk 34
     ndkVersion '27.2.12479018'
-    defaultConfig { applicationId 'id.poncol.tvcompanion'; versionCode 15; versionName '0.7.0-airplay-app-video-preview'; targetSdk 34; minSdk 26 }
+    defaultConfig { applicationId 'id.poncol.tvcompanion'; versionCode 18; versionName '0.7.2-airplay-handoff-preview'; targetSdk 34; minSdk 26 }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = '17' }
     lint { checkDependencies = true }
