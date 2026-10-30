@@ -75,6 +75,9 @@ def main():
     if 'bool different_peer = false;' not in receiver.read_text():
         subprocess.run(['patch', '-p1', '-i', str(ROOT / 'patches' / '0004-preserve-same-peer-setup.patch')],
                        cwd=CACHE / 'uxplay', check=True)
+    if 'httpd_remove_other_peer_connections_now' not in receiver.read_text():
+        subprocess.run(['patch', '-p1', '-i', str(ROOT / 'patches' / '0005-close-displaced-peer-sockets.patch')],
+                       cwd=CACHE / 'uxplay', check=True)
     sdk = os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT')
     if not sdk:
         raise RuntimeError('Set ANDROID_HOME to the Android SDK directory')
