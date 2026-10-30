@@ -4,7 +4,7 @@ import id.poncol.tvcompanion.domain.airplay.*
 /** Serialized lifecycle owner, independent of Android and the native implementation. */
 internal class ReceiverSession(private val capabilities: AirPlayCapabilities = AirPlayCapabilities(), private val publish: (AirPlaySnapshot) -> Unit) {
     interface Lease { fun stop(released: () -> Unit) }
-    enum class Signal { READY, CONNECTED, VIDEO, AUDIO, AUDIO_STOPPED, AUDIO_UNAVAILABLE, DISPLAY_REQUIRED, DISCONNECTED, FAILED }
+    enum class Signal { READY, CONNECTED, VIDEO, AUDIO, AUDIO_STOPPED, AUDIO_UNAVAILABLE, DISPLAY_REQUIRED, REPLACED, APP_VIDEO, APP_VIDEO_FAILED, MEDIA_UNSUPPORTED, PROTECTED_CONTENT, DISCONNECTED, FAILED }
     var snapshot = AirPlaySnapshot(availability = AirPlayAvailability.AVAILABLE, capabilities = capabilities)
         private set
     private var lease: Lease? = null
@@ -39,6 +39,15 @@ internal class ReceiverSession(private val capabilities: AirPlayCapabilities = A
         val receive: (Signal) -> Unit = receive@ { signal ->
                 if (closed || token != generation) return@receive
                 when (signal) {
+                    Signal.REPLACED, Signal.APP_VIDEO -> {
+                        connected = true; videoPlaying = false
+                        state(AirPlayPhase.READY, AirPlayConnection.CONNECTING, audio = false)
+                    }
+                    Signal.MEDIA_UNSUPPORTED, Signal.PROTECTED_CONTENT, Signal.APP_VIDEO_FAILED -> {
+                        videoPlaying = false
+                        state(AirPlayPhase.READY, snapshot.connection,
+                            when (signal) { Signal.PROTECTED_CONTENT -> AirPlayIssue.PROTECTED_CONTENT; Signal.APP_VIDEO_FAILED -> AirPlayIssue.MEDIA_FAILED; else -> AirPlayIssue.MEDIA_UNSUPPORTED }, audio = false)
+                    }
                     Signal.READY -> state(AirPlayPhase.READY)
                     Signal.CONNECTED -> { connected = true; state(AirPlayPhase.READY, AirPlayConnection.CONNECTING) }
                     Signal.VIDEO -> { connected = true; videoPlaying = true; state(AirPlayPhase.READY, AirPlayConnection.PLAYING) }
@@ -46,8 +55,11 @@ internal class ReceiverSession(private val capabilities: AirPlayCapabilities = A
                     Signal.AUDIO_STOPPED -> state(AirPlayPhase.READY, if (videoPlaying) AirPlayConnection.PLAYING else if (connected) AirPlayConnection.CONNECTING else AirPlayConnection.NONE, snapshot.issue, audio = false)
                     Signal.AUDIO_UNAVAILABLE -> state(AirPlayPhase.READY, snapshot.connection, AirPlayIssue.AUDIO_UNAVAILABLE, audio = false)
                     Signal.DISPLAY_REQUIRED -> { connected = true; state(AirPlayPhase.READY, AirPlayConnection.CONNECTING, AirPlayIssue.DISPLAY_REQUIRED) }
-                    Signal.DISCONNECTED -> { connected = false; videoPlaying = false;
-                        if (!displayAttached && !snapshot.keepAvailable) stop() else state(AirPlayPhase.READY, audio = false) }
+                    Signal.DISCONNECTED -> { connected = false; videoPlaying = false
+                        val problem = snapshot.issue?.takeIf { it in listOf(AirPlayIssue.MEDIA_UNSUPPORTED, AirPlayIssue.PROTECTED_CONTENT, AirPlayIssue.MEDIA_FAILED) }
+                        if (!displayAttached && !snapshot.keepAvailable) stop(failure = problem)
+                        else state(AirPlayPhase.READY, issue = problem, audio = false)
+                    }
                     Signal.FAILED -> stop(if (snapshot.phase == AirPlayPhase.STARTING) AirPlayIssue.START_FAILED else AirPlayIssue.MEDIA_FAILED)
                 }
         }

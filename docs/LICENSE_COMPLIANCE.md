@@ -97,3 +97,5 @@ Planned distribution checklist:
 - Build from the published source instructions, inspect the resulting artifact contents, and archive evidence. Do not publish user credentials, personal configuration or signing secrets in compliance bundles.
 
 **Optional later:** automate SBOM/notices and source-archive checks, add a receiver-free CI variant, test replacement composition, and formalize contributor terms if outside contributions become material. No plugin framework or new DI system is needed.
+
+The 0.7 app-video candidate uses the device-provided Android MediaPlayer API and adds no packaged Media3/GStreamer/other player dependency. The maintained `0003-ordered-sender-takeover.patch` modifies the existing pinned native source and must accompany corresponding source/build instructions if a covered APK is distributed. Existing native licensing obligations remain; no root/module license was selected or changed. New player/bridge code is kept in the implementation module, outside independent domain/application code.
