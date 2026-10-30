@@ -77,4 +77,15 @@ class EventGateTest {
         time += 8000
         assertEquals(202, gate.accept(event()).code)
     }
+
+    @Test fun alert2IsAdditiveAndSharesLegacyValidationDedupAndFiltering() {
+        val accepted = gate.accept(event("urgent", "alert2"))
+        assertEquals(202, accepted.code); assertEquals("alert2", accepted.event?.source)
+        assertEquals("duplicate", gate.accept(event("urgent", "alert2")).status)
+        assertEquals(202, gate.accept(event("legacy", "test")).code)
+        val filtered = EventGate(now = { time }, enabled = { it != "alert2" })
+        assertEquals("filtered", filtered.accept(event("muted", "alert2")).status)
+        val long = JSONObject().put("id", "long").put("source", "alert2").put("body", "x".repeat(513)).toString()
+        assertEquals("invalid_text", gate.accept(long).status)
+    }
 }

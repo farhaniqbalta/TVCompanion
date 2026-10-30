@@ -19,6 +19,7 @@ object NotificationThemes {
         "grab" to Theme("Grab", Color.rgb(66,199,131), R.drawable.ic_scooter, "Driver arriving soon", "Your order is near your location."),
         "shopeefood" to Theme("ShopeeFood", Color.rgb(255,149,91), R.drawable.ic_food_bag, "Your order is on the way", "A rider is heading to you."),
         "gojek" to Theme("Gojek", Color.rgb(86,201,186), R.drawable.ic_scooter, "Driver nearby", "Please be ready for pickup."),
+        "alert2" to Theme("Urgent", Color.rgb(243,196,108), R.drawable.ic_alert, "Urgent message", "Please check your phone."),
         "alert" to Theme("Alert", Color.rgb(243,196,108), R.drawable.ic_alert, "Emergency!", "Your snacks have mysteriously disappeared.")
     )
     fun demo(source: String, duration: Int): NotificationEvent {

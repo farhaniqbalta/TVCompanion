@@ -26,12 +26,18 @@ internal class AndroidNotificationOverlay(
         check(card == null)
         val metrics = context.resources.displayMetrics
         val width = min(dp(280), metrics.widthPixels - dp(96)).coerceAtLeast(dp(200))
-        val view = NotificationCard(context, event, settings.mode)
-        val params = WindowManager.LayoutParams(width, WindowManager.LayoutParams.WRAP_CONTENT,
+        val urgent = event.source == "alert2"
+        lateinit var view: View
+        fun finish() { if (card === view) { clear(); dismissed() } }
+        view = if (urgent) UrgentNotificationCard(context, event, settings.mode, ::finish) else NotificationCard(context, event, settings.mode)
+        val params = WindowManager.LayoutParams(if (urgent) (metrics.widthPixels * .9f).toInt() else width,
+            if (urgent) (metrics.heightPixels * .86f).toInt() else WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+            if (urgent) WindowManager.LayoutParams.FLAG_DIM_BEHIND else
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
             PixelFormat.TRANSLUCENT).apply {
-            gravity = Gravity.TOP or Gravity.END; x = dp(48); y = dp(48)
+            gravity = if (urgent) Gravity.CENTER else Gravity.TOP or Gravity.END
+            x = if (urgent) 0 else dp(48); y = if (urgent) 0 else dp(48); dimAmount = .65f
         }
         context.getSystemService(WindowManager::class.java).addView(view, params)
         card = view

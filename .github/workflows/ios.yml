@@ -1,0 +1,22 @@
+name: iPhone and iPad
+on:
+  push:
+    paths: ['ios/**', '.github/workflows/ios.yml']
+  pull_request:
+    paths: ['ios/**', '.github/workflows/ios.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ios-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test pure protocol kit
+        run: swift test --package-path ios/TVCompanionKit
+      - name: Build iPhone/iPad simulator app
+        run: xcodebuild -project ios/TVCompanion.xcodeproj -scheme TVCompanion -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
