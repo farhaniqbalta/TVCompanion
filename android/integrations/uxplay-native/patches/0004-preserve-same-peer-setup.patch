@@ -1,0 +1,25 @@
+--- a/lib/raop.c
++++ b/lib/raop.c
+@@ -274 +274,18 @@
+-            if (httpd_count_connection_type(raop->httpd, CONNECTION_TYPE_RAOP)) {
++            int session_connections = 0;
++            bool different_peer = false;
++            for (int type = CONNECTION_TYPE_RAOP; type <= CONNECTION_TYPE_AIRPLAY; ++type) {
++                int count = httpd_count_connection_type(raop->httpd, (connection_type_t) type);
++                session_connections += count;
++                for (int i = 1; i <= count; ++i) {
++                    raop_conn_t *old = (raop_conn_t *) httpd_get_connection_by_type(raop->httpd, (connection_type_t) type, i);
++                    if (!old || old->remotelen != conn->remotelen || old->zone_id != conn->zone_id ||
++                        memcmp(old->remote, conn->remote, conn->remotelen) != 0) {
++                        different_peer = true;
++                        break;
++                    }
++                }
++                if (different_peer) break;
++            }
++            /* An app-video session may retain its AirPlay control socket after RAOP ends.
++             * Preserve one sender's setup sockets; clear all known sessions for another peer. */
++            if (different_peer) {
+@@ -290,0 +308,2 @@
++            } else if (session_connections > 0) {
++                logger_log(raop->logger, LOGGER_INFO, "retaining same-peer RAOP connection");

@@ -14,7 +14,7 @@ import java.util.concurrent.Executors;
 /** UxPlay-specific adapter. Native loading and all engine work stay in the receiver process. */
 public final class UxPlayReceiverEngine implements ReceiverEngine {
     public static id.poncol.tvcompanion.domain.airplay.AirPlayCapabilities capabilities() {
-        return new id.poncol.tvcompanion.domain.airplay.AirPlayCapabilities(true, true, 1280, 720, 30);
+        return new id.poncol.tvcompanion.domain.airplay.AirPlayCapabilities(true, true, 1280, 720, 30, true);
     }
     private final Context context;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -31,6 +31,8 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
     private boolean audioEnabled;
     private boolean audioRequested;
     private Boolean advertised;
+    private final HlsPlayback hls;
+    private boolean hlsActive;
     private final android.media.AudioManager.OnAudioFocusChangeListener focusListener = change -> {
         if (closed || !audioEnabled) return;
         if (change == android.media.AudioManager.AUDIOFOCUS_GAIN) updateFocus(true, 1);
@@ -40,7 +42,19 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
             if (change == android.media.AudioManager.AUDIOFOCUS_LOSS) abandonFocus();
         }
     };
-    public UxPlayReceiverEngine(Context context) { this.context = context.getApplicationContext(); this.audioManager = (android.media.AudioManager) this.context.getSystemService(Context.AUDIO_SERVICE); }
+    public UxPlayReceiverEngine(Context context) {
+        this.context = context.getApplicationContext();
+        this.audioManager = (android.media.AudioManager) this.context.getSystemService(Context.AUDIO_SERVICE);
+        this.hls = new HlsPlayback(this.context, state -> {
+            if (closed) return;
+            // Queue the terminal reason before native EOS can report disconnection.
+            deliver(state);
+            if (state == State.APP_VIDEO_ENDED || state == State.APP_VIDEO_FAILED || state == State.MEDIA_UNSUPPORTED || state == State.PROTECTED_CONTENT) {
+                hlsActive = false; audioRequested = false; abandonFocus();
+                worker.execute(() -> { if (!closed && handle != 0) nativeHlsEnded(handle); });
+            }
+        });
+    }
     @Override public void start(String receiverName, Observer observer) {
         this.observer = observer;
         worker.execute(() -> {
@@ -72,6 +86,8 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
     }
     @Override public void attachSurface(Surface surface) {
         if (closed) return;
+        hls.setSurface(surface);
+        if (surface != null && surface.isValid() && audioEnabled && audioRequested && !ownsFocus) requestFocus();
         worker.execute(() -> {
             if (!closed && handle != 0 && (surface == null || surface.isValid())) nativeSetSurface(handle, surface);
         });
@@ -84,12 +100,14 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
     @Override public void setAudioEnabled(boolean enabled) {
         if (closed || audioEnabled == enabled) return;
         audioEnabled = enabled;
+        hls.setAudioEnabled(enabled);
         android.util.Log.i("TVCAirPlay", enabled ? "stage=AUDIO_POLICY_ENABLED" : "stage=AUDIO_POLICY_DISABLED");
         if (enabled) { if (audioRequested) requestFocus(); }
         else { updateFocus(false, 1); abandonFocus(); deliver(State.AUDIO_STOPPED); }
     }
     private void updateFocus(boolean allowed, float duck) {
         if (closed) return;
+        hls.setFocus(allowed, duck);
         worker.execute(() -> { if (!closed && handle != 0) nativeSetFocus(handle, allowed, duck); });
     }
     private void requestFocus() {
@@ -109,9 +127,39 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
         if (ownsFocus && audioManager != null && audioFocus != null) audioManager.abandonAudioFocusRequest(audioFocus);
         ownsFocus = false; audioFocus = null;
     }
+    private void onNativeHlsCommand(int operation, String location, float value, int port) {
+        main.post(() -> {
+            if (closed) return;
+            switch (operation) {
+                case 0:
+                    hlsActive = true; audioRequested = true;
+                    deliver(State.APP_VIDEO_REQUESTED); requestFocus();
+                    hls.play(location, value, port); break;
+                case 1: hls.seek(value); break;
+                case 2: hls.rate(value); break;
+                case 3:
+                    hls.stop(); hlsActive = false;
+                    if (value == 0) { audioRequested = false; updateFocus(false, 1); abandonFocus(); }
+                    // A mirror transition retains focus until its own format/stop callback.
+                    worker.execute(() -> { if (!closed && handle != 0) nativeHlsReleased(handle); });
+                    break;
+                default: deliver(State.MEDIA_UNSUPPORTED);
+            }
+        });
+    }
+    private double[] onNativeHlsInfo() { return hls.info(); }
+    private void onNativeHlsVolume(float value) { main.post(() -> { if (!closed) hls.volume(value); }); }
     private void onNativeState(int state) {
+        if (state == 11) {
+            main.post(() -> {
+                if (closed) return;
+                hls.stop(); hlsActive = false; audioRequested = false;
+                updateFocus(false, 1); abandonFocus(); deliver(State.SESSION_REPLACED);
+            }); return;
+        }
+        if (state == 15) { deliver(State.MEDIA_UNSUPPORTED); return; }
         if (state == 9) { main.post(() -> { if (!closed) { audioRequested = true; deliver(State.SESSION_CONNECTED); requestFocus(); } }); return; }
-        if (state == 7) { main.post(() -> { audioRequested = false; abandonFocus(); if (!closed && observer != null) observer.onState(State.AUDIO_STOPPED); }); return; }
+        if (state == 7) { main.post(() -> { if (closed || hlsActive) return; audioRequested = false; abandonFocus(); if (!closed && observer != null) observer.onState(State.AUDIO_STOPPED); }); return; }
         State text;
         switch (state) {
             case 1: text = State.CONNECTED; break;
@@ -131,6 +179,8 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
     private native void nativeStop(long handle);
     private native void nativeSetSurface(long handle, Surface surface);
     private native boolean nativeSetDiscoverable(long handle, boolean enabled);
+    private native void nativeHlsReleased(long handle);
+    private native void nativeHlsEnded(long handle);
     private native void nativeSetFocus(long handle, boolean allowed, float duck);
     private void release() {
         if (handle != 0) { nativeStop(handle); handle = 0; }
@@ -143,6 +193,7 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
         releaseObservers.add(completion);
         if (closed) return;
         closed = true;
+        hls.close();
         observer = null;
         main.removeCallbacksAndMessages(null);
         worker.execute(() -> {

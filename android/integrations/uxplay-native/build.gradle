@@ -13,4 +13,5 @@ android {
 dependencies {
 implementation project(':integrations:airplay-runtime')
 implementation project(':core:domain')
+testImplementation 'junit:junit:4.13.2'
 }

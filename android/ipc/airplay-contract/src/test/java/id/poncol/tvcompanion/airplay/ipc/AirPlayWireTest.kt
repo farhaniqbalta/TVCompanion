@@ -41,4 +41,11 @@ class AirPlayWireTest {
             assertEquals(flags and 64 != 0, state.videoActive)
         }
     }
+
+    @Test fun appVideoCapabilityAndProtectedErrorsAreTypedMetadata() {
+        val protected = AirPlayWire.snapshot(2, 1, AirPlayWire.issue(AirPlayIssue.PROTECTED_CONTENT), 7)!!
+        assertTrue(protected.capabilities.appVideo); assertEquals(AirPlayIssue.PROTECTED_CONTENT, protected.issue)
+        assertEquals(AirPlayIssue.MEDIA_UNSUPPORTED, AirPlayWire.issue(AirPlayWire.issue(AirPlayIssue.MEDIA_UNSUPPORTED)))
+        assertNull(AirPlayWire.snapshot(2, 0, 0, 8))
+    }
 }

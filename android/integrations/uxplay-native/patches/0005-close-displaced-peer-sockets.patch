@@ -1,0 +1,33 @@
+--- a/lib/httpd.h
++++ b/lib/httpd.h
+@@ -43,0 +44,2 @@
++/* Close all sockets of the displaced peer, including those still negotiating. */
++void httpd_remove_other_peer_connections_now(httpd_t *httpd, void *incoming, bool (*same_peer)(void *, void *));
+--- a/lib/httpd.c
++++ b/lib/httpd.c
+@@ -361,0 +362,11 @@
++httpd_remove_other_peer_connections_now(httpd_t *httpd, void *incoming, bool (*same_peer)(void *, void *)) {
++    for (int i = 0; i < httpd->max_connections; i++) {
++        http_connection_t *connection = &httpd->connections[i];
++        if (connection->connected && connection->user_data &&
++            connection->user_data != incoming && !same_peer(connection->user_data, incoming)) {
++            httpd_remove_connection(httpd, connection, 0);
++        }
++    }
++}
++
++void
+--- a/lib/raop.c
++++ b/lib/raop.c
+@@ -188,0 +189,8 @@
++}
++
++static bool
++same_network_peer(void *candidate, void *incoming) {
++    raop_conn_t *old = (raop_conn_t *) candidate;
++    raop_conn_t *next = (raop_conn_t *) incoming;
++    return old->remotelen == next->remotelen && old->zone_id == next->zone_id &&
++           memcmp(old->remote, next->remote, next->remotelen) == 0;
+@@ -301 +309 @@
+-                    httpd_remove_known_connections_now(raop->httpd);
++                    httpd_remove_other_peer_connections_now(raop->httpd, conn, same_network_peer);
