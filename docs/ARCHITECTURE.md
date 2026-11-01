@@ -44,7 +44,7 @@ These are implementation rules, not measured CPU/RAM claims. No performance benc
 
 ## Apple boundary
 
-The Apple app belongs in `ios/`, with presentation, application/domain, and protocol adapters kept separate. iPhone/iPad are intended targets; Mac availability and interaction need an explicit platform decision. Pairing, Keychain storage, connection lifecycle, and commands belong behind a remote-control port. No Android code or shared runtime is required. Do not claim compatibility before actual protocol work and device checks.
+Phase 3's iPhone/iPad app lives in `ios/`. `TVCompanionKit` owns bounded protocol and notification value types without UI or Android dependencies. App infrastructure owns Google TV Remote v2 TLS, pairing, Keychain, Bonjour discovery, and notification HTTP; view models own screen state and SwiftUI renders it. Remote pairing credentials and the TVCompanion notification PIN remain separate. Mac availability and interaction need an explicit platform decision. The local build and protocol tests pass; actual pairing, keys, discovery, and message delivery still need device checks. See the [Phase 3 record](phase-3/README.md).
 
 ## Migration boundary
 

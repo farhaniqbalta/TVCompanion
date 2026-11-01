@@ -34,6 +34,10 @@ The receiver currently uses authenticated **unencrypted LAN HTTP** inherited fro
 
 The [iPhone/iPad app](ios/README.md) pairs with Google TV Remote v2 for D-pad and media keys, and sends `alert`/`alert2` messages through the TVCompanion notification receiver. Its pure protocol kit, Keychain-backed credentials, network adapters and SwiftUI views have separate boundaries. Local builds pass; pairing and delivery require device testing.
 
+## Phase 3 — iPhone and iPad companion
+
+The `feature/ios-remote-notifications` branch contains the Phase 3 candidate: the native remote, notification sender, and TV-side urgent `alert2` overlay. It now includes the latest merged Phase 2 AirPlay work; the combined Android preview uses versionCode 20. See the [Phase 3 scope and device checks](docs/phase-3/README.md). This branch has not yet been merged into `main`.
+
 ## Phase 1 refactor
 
 The `review/phase-1-architecture` branch contains a targeted refactor: owned Tuya cancellation and fragmented-read deadlines, typed notification lifecycle state, and testable listener/overlay session coordination. The accepted Phase 1 candidate was `0.3.0-phase1-preview`, with 59 passing tests and zero lint findings, with installation and lamp/notification functionality now user-confirmed. See [implementation details](docs/phase-1/IMPLEMENTATION_CHANGELOG.md). The command endpoint remains design-only. The Phase 2 preview now implements the private receiver IPC boundary; no external command server is added.

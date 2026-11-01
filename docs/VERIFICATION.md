@@ -121,3 +121,7 @@ Local verification on 2026-10-30: Android debug APK build and lint pass; 111 And
 ## 0.7.0 sender takeover and app-video candidate
 
 On `investigate/airplay-session-video-flow`, versionCode 15 builds with 111 passing JVM tests, passing native helpers, a verified source-patch round-trip and lint with zero errors plus the existing ChromeOS ABI warning. The candidate adds ordered sender replacement, a platform HLS player within the native integration, control protocol v5 and typed unsupported/protected-video feedback. User explicitly requested no installation: no TV connection, deployment, casting or lamp command was performed. Android player behavior, actual handoff, YouTube and Crunchyroll compatibility remain unverified; see the [device test matrix](phase-2/SESSION_AND_APP_VIDEO_REVIEW.md).
+
+## Phase 3 integration with merged Phase 2
+
+The `feature/ios-remote-notifications` branch was updated from `main` after AirPlay PR #5 merged. Both verification histories were retained. Android versionCode 20 (`0.8.0-phase3-preview`) exceeds the installed Phase 2 build 19. On 2026-11-01, the combined Android APK build, focused notification/AirPlay/runtime/native unit tests and lint passed; the Swift kit passed 11 tests and the iOS simulator app built with signing disabled. This is local integration verification. No Android or Apple device installation, pairing, notification delivery, or combined-feature physical test was performed for Phase 3.

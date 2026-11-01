@@ -1,4 +1,4 @@
-# TVCompanion for iPhone and iPad
+# TVCompanion for iPhone and iPad — Phase 3
 
 This native SwiftUI client pairs with a Google TV using its Remote v2 service and sends `alert` or `alert2` messages to the TVCompanion Android notification receiver. Mac support remains a later evaluation. It has no UxPlay, Tuya, Android command-server or third-party package dependency.
 
