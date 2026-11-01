@@ -1,0 +1,26 @@
+--- a/lib/httpd.h
++++ b/lib/httpd.h
+@@ -41,0 +42,2 @@
++/* Only from the request-owner thread; join old media before admitting a replacement. */
++void httpd_remove_known_connections_now(httpd_t *httpd);
+--- a/lib/httpd.c
++++ b/lib/httpd.c
+@@ -347,0 +348,10 @@
++    }
++}
++
++void
++httpd_remove_known_connections_now(httpd_t *httpd) {
++    for (int i = 0; i < httpd->max_connections; i++) {
++        http_connection_t *connection = &httpd->connections[i];
++        if (connection->connected && connection->type != CONNECTION_TYPE_UNKNOWN) {
++            httpd_remove_connection(httpd, connection, 0);
++        }
+--- a/lib/raop.c
++++ b/lib/raop.c
+@@ -279 +278,0 @@
+-                    httpd_remove_known_connections(raop->httpd);
+@@ -282,0 +282,3 @@
++                    /* This request is still UNKNOWN and survives removal. Old RTP workers
++                     * are joined here, before any setup callback for the new sender. */
++                    httpd_remove_known_connections_now(raop->httpd);

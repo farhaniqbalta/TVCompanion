@@ -200,4 +200,29 @@ class ReceiverSessionTest {
         emit(ReceiverSession.Signal.VIDEO); assertTrue(session.snapshot.videoActive)
         session.stop(); assertFalse(session.snapshot.videoActive); assertFalse(session.snapshot.discoverable)
     }
+
+    @Test fun replacementKeepsRetainedReceiverButClearsPreviousMediaAndFailure() {
+        val session = ReceiverSession {}; val engine = Engine(); lateinit var emit: (ReceiverSession.Signal) -> Unit
+        session.setBackgroundOptions(true, true, true)
+        session.start(true) { emit = it; engine }; emit(ReceiverSession.Signal.VIDEO); emit(ReceiverSession.Signal.AUDIO)
+        session.detachDisplay(); emit(ReceiverSession.Signal.REPLACED)
+        assertEquals(0, engine.closes); assertTrue(session.heldInBackground)
+        assertFalse(session.snapshot.videoActive); assertFalse(session.snapshot.audioActive); assertNull(session.snapshot.issue)
+        assertEquals(AirPlayConnection.CONNECTING, session.snapshot.connection)
+        session.attachDisplay(); emit(ReceiverSession.Signal.VIDEO)
+        assertTrue(session.snapshot.videoActive); assertEquals(0, engine.closes)
+    }
+    @Test fun protectedOrUnsupportedAppVideoDoesNotKillTheReceiverOrClaimVideoOutput() {
+        val session = ReceiverSession {}; val engine = Engine(); lateinit var emit: (ReceiverSession.Signal) -> Unit
+        session.start(true) { emit = it; engine }; emit(ReceiverSession.Signal.APP_VIDEO)
+        emit(ReceiverSession.Signal.PROTECTED_CONTENT)
+        assertEquals(AirPlayIssue.PROTECTED_CONTENT, session.snapshot.issue)
+        emit(ReceiverSession.Signal.DISCONNECTED)
+        assertEquals(AirPlayIssue.PROTECTED_CONTENT, session.snapshot.issue)
+        assertEquals(AirPlayPhase.READY, session.snapshot.phase); assertFalse(session.snapshot.videoActive)
+        emit(ReceiverSession.Signal.MEDIA_UNSUPPORTED)
+        assertEquals(AirPlayIssue.MEDIA_UNSUPPORTED, session.snapshot.issue)
+        emit(ReceiverSession.Signal.APP_VIDEO); assertNull(session.snapshot.issue)
+        emit(ReceiverSession.Signal.VIDEO); assertTrue(session.snapshot.videoActive); assertEquals(0, engine.closes)
+    }
 }

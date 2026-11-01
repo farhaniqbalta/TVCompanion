@@ -3,8 +3,8 @@ package id.poncol.tvcompanion.domain.airplay
 enum class AirPlayAvailability { AVAILABLE, DISCONNECTED, UNSUPPORTED }
 enum class AirPlayPhase { STOPPED, STARTING, READY, STOPPING, FAILED }
 enum class AirPlayConnection { NONE, CONNECTING, PLAYING }
-enum class AirPlayIssue { UNAVAILABLE, UNSUPPORTED, BUSY, DISPLAY_REQUIRED, START_FAILED, MEDIA_FAILED, TIMEOUT, CLOSED, AUDIO_UNAVAILABLE }
-data class AirPlayCapabilities(val video: Boolean = false, val audio: Boolean = false, val width: Int? = null, val height: Int? = null, val maxFps: Int? = null)
+enum class AirPlayIssue { UNAVAILABLE, UNSUPPORTED, BUSY, DISPLAY_REQUIRED, START_FAILED, MEDIA_FAILED, TIMEOUT, CLOSED, AUDIO_UNAVAILABLE, MEDIA_UNSUPPORTED, PROTECTED_CONTENT }
+data class AirPlayCapabilities(val video: Boolean = false, val audio: Boolean = false, val width: Int? = null, val height: Int? = null, val maxFps: Int? = null, val appVideo: Boolean = false)
 data class AirPlaySnapshot(
     val availability: AirPlayAvailability = AirPlayAvailability.DISCONNECTED,
     val phase: AirPlayPhase = AirPlayPhase.STOPPED,
