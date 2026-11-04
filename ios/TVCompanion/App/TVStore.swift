@@ -31,6 +31,7 @@ func companionMessage(_ error: Error) -> String {
     case CompanionError.rateLimited: return "The TV queue is busy. Wait before trying again."
     case CompanionError.receiverUnavailable: return "Start the notification receiver in TVCompanion and check overlay permission."
     case CompanionError.invalidNotification: return "Enter a short message (up to 512 UTF-16 units) and a valid notification PIN."
+    case CompanionError.invalidText: return "Enter a shorter message for the TV text field."
     case CompanionError.unconfirmed: return "Delivery is unconfirmed and may have succeeded. An explicit retry reuses this message ID."
     default: return "The operation could not finish. Check the TV and connection."
     }

@@ -82,6 +82,10 @@ actor GoogleTVRemote {
         guard let channel = remote else { throw CompanionError.disconnected }
         try await channel.write(handshake.key(key))
     }
+    func sendText(_ value: String) async throws {
+        guard let channel = remote else { throw CompanionError.disconnected }
+        try await channel.write(handshake.text(value))
+    }
     func disconnect() {
         generation = UUID(); receiveTask?.cancel(); receiveTask = nil
         pairing?.close(); remote?.close(); pairing = nil; remote = nil; identity = nil

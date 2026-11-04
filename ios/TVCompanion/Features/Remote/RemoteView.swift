@@ -36,6 +36,29 @@ struct RemoteView: View {
                     HStack { key(.back, "Back", "arrow.uturn.backward"); key(.home, "Home", "house"); key(.playPause, "Play or pause", "playpause") }
                     HStack { key(.volumeDown, "Volume down", "speaker.minus"); key(.mute, "Mute", "speaker.slash"); key(.volumeUp, "Volume up", "speaker.plus") }
                     HStack { key(.previous, "Previous", "backward.end"); key(.next, "Next", "forward.end") }
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("TV keyboard", systemImage: "keyboard").font(.headline)
+                        Text("Select a text field on the TV, then type here and send it.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                        HStack {
+                            TextField("Text for TV", text: $model.text)
+                                .textFieldStyle(.roundedBorder)
+                                .submitLabel(.send)
+                                .onSubmit { model.sendText() }
+                                .disabled(!model.connected || model.busy)
+                            Button("Send") { model.sendText() }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(!model.connected || model.busy || model.text.isEmpty || model.text.utf16.count > 512)
+                        }
+                        if model.text.utf16.count > 512 {
+                            Text("Text is too long to send.")
+                                .font(.footnote).foregroundStyle(.red)
+                        }
+                        HStack {
+                            key(.delete, "Delete on TV", "delete.left")
+                            key(.enter, "Enter on TV", "return")
+                        }
+                    }.padding().background(.quaternary, in: RoundedRectangle(cornerRadius: 16))
                     Text("Volume and playback behavior depend on the TV and active app. Remote sessions close when this app becomes inactive.")
                         .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 }.padding(24).frame(maxWidth: 520).frame(maxWidth: .infinity)

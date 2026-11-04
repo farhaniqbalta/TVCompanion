@@ -3,7 +3,7 @@ import Foundation
 public enum CompanionError: Error, Equatable {
     case invalidAddress, invalidCode, malformedMessage, oversizedMessage, unexpectedMessage
     case disconnected, timedOut, notPaired, certificateChanged, remoteRejected, unsupported
-    case invalidNotification, unauthorized, filtered, rateLimited, receiverUnavailable, unconfirmed
+    case invalidNotification, invalidText, unauthorized, filtered, rateLimited, receiverUnavailable, unconfirmed
 }
 
 /// A deliberately narrow protobuf wire reader/writer for Remote v2. Unknown fields are skipped.
@@ -100,11 +100,14 @@ public struct FrameDecoder {
 
 public enum RemoteKey: UInt64, CaseIterable {
     case home = 3, back = 4, up = 19, down = 20, left = 21, right = 22, select = 23
-    case volumeUp = 24, volumeDown = 25, playPause = 85, next = 87, previous = 88, mute = 164
+    case volumeUp = 24, volumeDown = 25, enter = 66, delete = 67
+    case playPause = 85, next = 87, previous = 88, mute = 164
 }
 public struct RemoteHandshake {
     public private(set) var ready = false
-    public private(set) var features: UInt64 = 1 | 2 | 32 | 64
+    public private(set) var features: UInt64 = 1 | 2 | 4 | 32 | 64
+    private var imeCounter: UInt64 = 0
+    private var imeFieldCounter: UInt64 = 0
     public init() {}
     public mutating func reply(to data: Data) throws -> Data? {
         let input = try ProtoMessage(data); var output = ProtoMessage()
@@ -119,6 +122,10 @@ public struct RemoteHandshake {
             var active = ProtoMessage(); active.set(1, integer: features); output.set(2, message: active)
         } else if let ping = try input.message(8) {
             var pong = ProtoMessage(); pong.set(1, integer: ping.integer(1) ?? 0); output.set(9, message: pong)
+        } else if let edit = try input.message(21) {
+            imeCounter = edit.integer(1) ?? 0
+            imeFieldCounter = edit.integer(2) ?? 0
+            return nil
         } else if input.fields[3] != nil { throw CompanionError.remoteRejected
         } else if input.fields[40] != nil { ready = true; return nil
         } else { return nil }
@@ -129,5 +136,17 @@ public struct RemoteHandshake {
         if [.volumeUp, .volumeDown, .mute].contains(key) && features & 64 == 0 { throw CompanionError.unsupported }
         var command = ProtoMessage(); command.set(1, integer: key.rawValue); command.set(2, integer: 3) // SHORT: no held key
         var outer = ProtoMessage(); outer.set(10, message: command); return outer.encoded
+    }
+    public func text(_ value: String) throws -> Data {
+        guard ready else { throw CompanionError.disconnected }
+        guard features & 4 != 0 else { throw CompanionError.unsupported }
+        guard !value.isEmpty, value.utf16.count <= 512 else { throw CompanionError.invalidText }
+        // Android IME selection offsets count UTF-16 code units.
+        let offset = UInt64(value.utf16.count - 1)
+        var object = ProtoMessage(); object.set(1, integer: offset); object.set(2, integer: offset); object.set(3, string: value)
+        var editInfo = ProtoMessage(); editInfo.set(1, integer: 1); editInfo.set(2, message: object)
+        var batch = ProtoMessage(); batch.set(1, integer: imeCounter); batch.set(2, integer: imeFieldCounter)
+        batch.set(3, message: editInfo)
+        var outer = ProtoMessage(); outer.set(21, message: batch); return outer.encoded
     }
 }

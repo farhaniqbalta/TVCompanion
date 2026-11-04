@@ -6,6 +6,7 @@ import TVCompanionKit
     @Published var connected = false
     @Published var busy = false
     @Published var needsCode = false
+    @Published var text = ""
     private let client: GoogleTVRemote
     private var task: Task<Void, Never>?
     private var foreground = true
@@ -75,6 +76,26 @@ import TVCompanionKit
         task = Task {
             do { try await client.send(key) }
             catch { if operation == token && !Task.isCancelled { status = companionMessage(error); connected = false } }
+            if operation == token { busy = false }
+        }
+    }
+    func sendText() {
+        guard connected && !busy else { return }
+        guard !text.isEmpty, text.utf16.count <= 512 else {
+            status = "Enter a shorter message for the TV text field."
+            return
+        }
+        let value = text; busy = true; let token = operation
+        task = Task {
+            do {
+                try await client.sendText(value)
+                if operation == token && !Task.isCancelled { text = ""; status = "Text sent to the TV. Check the focused field." }
+            } catch {
+                if operation == token && !Task.isCancelled {
+                    status = companionMessage(error)
+                    if error as? CompanionError == .disconnected { connected = false }
+                }
+            }
             if operation == token { busy = false }
         }
     }

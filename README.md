@@ -32,7 +32,7 @@ The new application identity is `id.poncol.tvcompanion`. It does not replace exi
 
 The receiver currently uses authenticated **unencrypted LAN HTTP** inherited from the prototype. Use non-sensitive demo messages on a trusted LAN. Encrypted transport and stronger pairing remain release work. Automatic capture of other iPhone apps' notifications is not implemented or established by this receiver.
 
-The [iPhone/iPad app](ios/README.md) pairs with Google TV Remote v2 for D-pad and media keys, and sends `alert`/`alert2` messages through the TVCompanion notification receiver. Its pure protocol kit, Keychain-backed credentials, network adapters and SwiftUI views have separate boundaries. Local builds pass; pairing and delivery require device testing.
+The [iPhone/iPad app](ios/README.md) pairs with Google TV Remote v2 for D-pad, media keys and focused TV text entry, and sends `alert`/`alert2` messages through the TVCompanion notification receiver. Its pure protocol kit, Keychain-backed credentials, network adapters and SwiftUI views have separate boundaries. Local builds pass; remote text entry and notification delivery require device testing.
 
 ## Phase 3 — iPhone and iPad companion
 

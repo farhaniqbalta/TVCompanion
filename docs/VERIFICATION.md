@@ -131,3 +131,7 @@ The `feature/ios-remote-notifications` branch was updated from `main` after AirP
 VersionCode 21 (`0.8.1-phase3-boot-preview`) adds separate saved TV choices for notification and AirPlay startup after `BOOT_COMPLETED`. AirPlay restores Background listening, Keep session connected, and Background audio without restoring an old sender session or requesting media playback while idle. The merged manifest includes `RECEIVE_BOOT_COMPLETED` and a private boot receiver. Focused notification/AirPlay/runtime tests, the Android debug APK build and lint pass locally; no Phase 3 APK has been installed and no physical reboot test has been performed.
 
 The user later requested continuation. ADB reconnected to the home TV, whose installed app was versionCode 19. The versionCode 21 debug APK installed successfully as an update and the package reported `0.8.1-phase3-boot-preview`. No preference reset or device reboot was performed. The two new boot choices remain off until selected on the TV; actual boot restoration and combined-feature behavior await user review.
+
+## Phase 3 iOS TV keyboard
+
+On 2026-11-04, the iPhone/iPad remote gained an explicit text entry field and TV Delete/Enter keys. Remote v2 IME support is negotiated, and text messages carry the latest field counters reported by the TV. The Swift protocol kit passed 12 tests, the iOS Simulator app built with signing disabled, and `git diff --check` passed. No Apple device or live TV text field was tested for this addition; TV app compatibility remains a device check.

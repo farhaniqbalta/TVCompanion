@@ -6,10 +6,10 @@ The subsequent boot candidate is versionCode 21 (`0.8.1-phase3-boot-preview`). N
 
 ## Scope
 
-- Native SwiftUI app for iPhone and iPad. Google TV Remote v2 discovery/manual address, pairing, D-pad, Home/Back, volume/mute and basic media keys.
+- Native SwiftUI app for iPhone and iPad. Google TV Remote v2 discovery/manual address, pairing, D-pad, Home/Back, volume/mute, basic media keys, and focused TV text entry with Delete/Enter controls.
 - A separate TVCompanion notification sender for `alert` and `alert2`, using the existing PIN-authenticated notification endpoint. It does not use the Google TV remote credential for messages.
 - TV-side `alert2` uses the existing bounded notification intake and a large dismissible overlay. The existing compact alert path, source filtering, privacy modes, expiry and queue remain in place.
-- Pure Swift protocol/value kit, app-owned network/Keychain adapters, view models and SwiftUI views. No Android command server, remote keyboard, voice, app launching, or Mac target is included in this phase.
+- Pure Swift protocol/value kit, app-owned network/Keychain adapters, view models and SwiftUI views. No Android command server, voice, app launching, or Mac target is included in this phase.
 
 ## Acceptance path
 
