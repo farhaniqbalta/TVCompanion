@@ -15,7 +15,9 @@ Development LAN contract adapted from TVNotify. Default TVCompanion port: **8766
 }
 ```
 
-Sources: `grab`, `shopeefood`, `gojek`, `alert`. Legacy aliases `shopee` and `test` map to `shopeefood` and `alert`. `message` is a fallback body alias; `sentAt` is a fallback for `timestamp`. Optional timestamps must be ISO-8601 with timezone. When absent, receipt time is used. TTL defaults to 120 seconds (1–300); display duration defaults to the configured setting (3–30 seconds). Future timestamps allow at most 30 seconds of skew.
+Sources: `grab`, `shopeefood`, `gojek`, `alert`, `alert2`. Legacy aliases `shopee` and `test` map to `shopeefood` and `alert`. `message` is a fallback body alias; `sentAt` is a fallback for `timestamp`. Optional timestamps must be ISO-8601 with timezone. When absent, receipt time is used. TTL defaults to 120 seconds (1–300); display duration defaults to the configured setting (3–30 seconds). Future timestamps allow at most 30 seconds of skew.
+
+`alert2` uses the same authenticated endpoint, admission limits, FIFO queue and expiry as other sources. It shows a large centered, dimmed TV overlay with a focused **Dismiss** action; Back also dismisses it. The overlay closes automatically after `durationSeconds` (3–30). Normal alerts keep their compact, non-interactive presentation. The TV's compact/full/privacy appearance setting still controls which title and body text is visible. A queued receipt means accepted for display, not that the overlay appeared over every foreground application.
 
 IDs are optional generated strings, or nonblank strings up to 128 characters. Title/body/message fields are optional strings up to 512 characters; control characters are stripped. A blank title becomes `Delivery update`.
 
@@ -33,4 +35,4 @@ IDs are optional generated strings, or nonblank strings up to 128 characters. Ti
 
 Responses contain a JSON `status` string. `GET /health` is unauthenticated and returns `{"status":"ok","app":"TVCompanion"}` without PIN, content, or device state. No history or durable queue is provided.
 
-Only one overlay is visible, with ten waiting events maximum and 256 remembered IDs maximum. Acceptance is capped at twelve events per eight seconds. Pause clears transient state. Start is manual after reboot. This receiver does not establish automatic iPhone notification capture.
+Only one overlay is visible, with ten waiting events maximum and 256 remembered IDs maximum. Acceptance is capped at twelve events per eight seconds. Pause clears transient state. Start after reboot is optional and off by default; it requires TV notifications and overlay permission. This receiver does not establish automatic iPhone notification capture.

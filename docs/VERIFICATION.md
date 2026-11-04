@@ -112,6 +112,26 @@ After the Bardi branch merged into main (`3774cbb`), main was merged into `plan/
 
 The combined APK builds; all **105 JVM tests** pass with zero failures/errors; native ALAC wire/configuration, round-trip and media helper checks pass. Lint has zero errors and the existing ChromeOS ABI warning. Bardi color behavior and AirPlay ALAC byte-order corrections are both present. No new TV installation, lamp write or casting session was performed for merge verification; this is local integration verification, not a new hardware acceptance result.
 
+## iPhone/iPad remote and alert2 candidate
+
+Branch `feature/ios-remote-notifications` adds a native iPhone/iPad app, Google TV Remote v2 pairing/control, a PIN-authenticated `alert`/`alert2` sender, and an urgent TV overlay for `alert2`. The normal alert path retains its compact presentation. The urgent path shares the same admission, FIFO queue, expiry, source filter and privacy settings; it supports manual Dismiss/Back and timed closure. Android versionCode 16 (`0.8.0-companion-preview`) is reserved for this candidate.
+
+Local verification on 2026-10-30: Android debug APK build and lint pass; 111 Android JVM tests report zero failures/errors across the repository's test result files. `TVCompanionKit` passes 11 Swift tests, and the iOS app builds for a generic iOS Simulator with signing disabled. `git diff --check` passes. The iOS GitHub Actions workflow is added but has not run on GitHub. No TV or Apple device was connected or installed during this work. Physical pairing, discovery, remote keys, TLS certificate behavior, HTTP delivery and overlay appearance remain pending device acceptance.
+
 ## 0.7.0 sender takeover and app-video candidate
 
 On `investigate/airplay-session-video-flow`, versionCode 15 builds with 111 passing JVM tests, passing native helpers, a verified source-patch round-trip and lint with zero errors plus the existing ChromeOS ABI warning. The candidate adds ordered sender replacement, a platform HLS player within the native integration, control protocol v5 and typed unsupported/protected-video feedback. User explicitly requested no installation: no TV connection, deployment, casting or lamp command was performed. Android player behavior, actual handoff, YouTube and Crunchyroll compatibility remain unverified; see the [device test matrix](phase-2/SESSION_AND_APP_VIDEO_REVIEW.md).
+
+## Phase 3 integration with merged Phase 2
+
+The `feature/ios-remote-notifications` branch was updated from `main` after AirPlay PR #5 merged. Both verification histories were retained. Android versionCode 20 (`0.8.0-phase3-preview`) exceeds the installed Phase 2 build 19. On 2026-11-01, the combined Android APK build, focused notification/AirPlay/runtime/native unit tests and lint passed; the Swift kit passed 11 tests and the iOS simulator app built with signing disabled. This is local integration verification. No Android or Apple device installation, pairing, notification delivery, or combined-feature physical test was performed for Phase 3.
+
+## Phase 3 opt-in reboot startup
+
+VersionCode 21 (`0.8.1-phase3-boot-preview`) adds separate saved TV choices for notification and AirPlay startup after `BOOT_COMPLETED`. AirPlay restores Background listening, Keep session connected, and Background audio without restoring an old sender session or requesting media playback while idle. The merged manifest includes `RECEIVE_BOOT_COMPLETED` and a private boot receiver. Focused notification/AirPlay/runtime tests, the Android debug APK build and lint pass locally; no Phase 3 APK has been installed and no physical reboot test has been performed.
+
+The user later requested continuation. ADB reconnected to the home TV, whose installed app was versionCode 19. The versionCode 21 debug APK installed successfully as an update and the package reported `0.8.1-phase3-boot-preview`. No preference reset or device reboot was performed. The two new boot choices remain off until selected on the TV; actual boot restoration and combined-feature behavior await user review.
+
+## Phase 3 iOS TV keyboard
+
+On 2026-11-04, the iPhone/iPad remote gained an explicit text entry field and TV Delete/Enter keys. Remote v2 IME support is negotiated, and text messages carry the latest field counters reported by the TV. The Swift protocol kit passed 12 tests, the iOS Simulator app built with signing disabled, and `git diff --check` passed. No Apple device or live TV text field was tested for this addition; TV app compatibility remains a device check.

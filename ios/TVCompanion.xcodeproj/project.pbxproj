@@ -1,0 +1,45 @@
+// !$*UTF8*$!
+{ archiveVersion = 1; classes = {}; objectVersion = 56; objects = {
+5A3E1D966B0A660FA5FE9D59 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TVCompanion/App/CompanionApp.swift"; sourceTree = SOURCE_ROOT; };
+E8C580B2C669390127FA9302 = { isa = PBXBuildFile; fileRef = 5A3E1D966B0A660FA5FE9D59; };
+F6998053E39CFA8A76853C16 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TVCompanion/App/TVSetupView.swift"; sourceTree = SOURCE_ROOT; };
+555CC18F645C0C958C4DE7D0 = { isa = PBXBuildFile; fileRef = F6998053E39CFA8A76853C16; };
+EAF2585FC4EB8BB0E745E13D = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TVCompanion/App/TVStore.swift"; sourceTree = SOURCE_ROOT; };
+751F369C2D5C261100217283 = { isa = PBXBuildFile; fileRef = EAF2585FC4EB8BB0E745E13D; };
+AD8032E7C4DBF1473E776827 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TVCompanion/Features/Notifications/NotificationSenderView.swift"; sourceTree = SOURCE_ROOT; };
+4AEB45FE09CD26930F1A02E9 = { isa = PBXBuildFile; fileRef = AD8032E7C4DBF1473E776827; };
+AF3A10E4AFC82714D4CBBF33 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TVCompanion/Features/Notifications/NotificationViewModel.swift"; sourceTree = SOURCE_ROOT; };
+7E08A27E9E93B337E4A1D3A5 = { isa = PBXBuildFile; fileRef = AF3A10E4AFC82714D4CBBF33; };
+CC35F03C374A24583B63F3BC = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TVCompanion/Features/Remote/RemoteView.swift"; sourceTree = SOURCE_ROOT; };
+EE1A8EB30CF31EE8870260D5 = { isa = PBXBuildFile; fileRef = CC35F03C374A24583B63F3BC; };
+CB88D3F03AEE19B3D32E99BF = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TVCompanion/Features/Remote/RemoteViewModel.swift"; sourceTree = SOURCE_ROOT; };
+AA67904F62333B7DFDBF2BB4 = { isa = PBXBuildFile; fileRef = CB88D3F03AEE19B3D32E99BF; };
+AE4175D27647688C1AA1E6F2 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TVCompanion/Infrastructure/CredentialStore.swift"; sourceTree = SOURCE_ROOT; };
+62E4ECB086D165C4ECAC903E = { isa = PBXBuildFile; fileRef = AE4175D27647688C1AA1E6F2; };
+4A8239FEF1D85ABF8F6E2661 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TVCompanion/Infrastructure/GoogleTVRemote.swift"; sourceTree = SOURCE_ROOT; };
+2725A726F72129AE1FC229C2 = { isa = PBXBuildFile; fileRef = 4A8239FEF1D85ABF8F6E2661; };
+C1BF026E632C4977D1D7EEC7 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TVCompanion/Infrastructure/NotificationHTTPClient.swift"; sourceTree = SOURCE_ROOT; };
+E35FC53D226DD7AF6A977351 = { isa = PBXBuildFile; fileRef = C1BF026E632C4977D1D7EEC7; };
+B5DF61AA52119F0601930BC6 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TVCompanion/Infrastructure/TLSChannel.swift"; sourceTree = SOURCE_ROOT; };
+C4A6113E7E089F7535D1910B = { isa = PBXBuildFile; fileRef = B5DF61AA52119F0601930BC6; };
+508A8619B03B9D04EF40A910 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TVCompanion/Infrastructure/TVDiscovery.swift"; sourceTree = SOURCE_ROOT; };
+E1FD21BD13C6318A15CEB135 = { isa = PBXBuildFile; fileRef = 508A8619B03B9D04EF40A910; };
+96ED5C5789B174A01557791C = { isa = PBXFileReference; lastKnownFileType = text.xml; path = TVCompanion/PrivacyInfo.xcprivacy; sourceTree = SOURCE_ROOT; };
+A39309C4376B4D66A5739C05 = { isa = PBXBuildFile; fileRef = 96ED5C5789B174A01557791C; };
+38A007151ABE87CC01A5B6E9 = { isa = PBXFileReference; explicitFileType = wrapper.application; path = TVCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
+582681C2EAE02B3F3D399C0C = { isa = XCLocalSwiftPackageReference; relativePath = TVCompanionKit; };
+B17EB192F8D22D50442F606B = { isa = XCSwiftPackageProductDependency; package = 582681C2EAE02B3F3D399C0C; productName = TVCompanionKit; };
+1C2ED28A3BCBAE5D763936A4 = { isa = PBXBuildFile; productRef = B17EB192F8D22D50442F606B; };
+BCE16DD0260827ECF338C787 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (E8C580B2C669390127FA9302, 555CC18F645C0C958C4DE7D0, 751F369C2D5C261100217283, 4AEB45FE09CD26930F1A02E9, 7E08A27E9E93B337E4A1D3A5, EE1A8EB30CF31EE8870260D5, AA67904F62333B7DFDBF2BB4, 62E4ECB086D165C4ECAC903E, 2725A726F72129AE1FC229C2, E35FC53D226DD7AF6A977351, C4A6113E7E089F7535D1910B, E1FD21BD13C6318A15CEB135); runOnlyForDeploymentPostprocessing = 0; };
+7561BFB015D8F536760CB671 = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (1C2ED28A3BCBAE5D763936A4); runOnlyForDeploymentPostprocessing = 0; };
+0189424A5A60FED329FA868E = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A39309C4376B4D66A5739C05); runOnlyForDeploymentPostprocessing = 0; };
+64292B1C2B2E13EAD8788FC8 = { isa = PBXGroup; children = (5A3E1D966B0A660FA5FE9D59, F6998053E39CFA8A76853C16, EAF2585FC4EB8BB0E745E13D, AD8032E7C4DBF1473E776827, AF3A10E4AFC82714D4CBBF33, CC35F03C374A24583B63F3BC, CB88D3F03AEE19B3D32E99BF, AE4175D27647688C1AA1E6F2, 4A8239FEF1D85ABF8F6E2661, C1BF026E632C4977D1D7EEC7, B5DF61AA52119F0601930BC6, 508A8619B03B9D04EF40A910, 96ED5C5789B174A01557791C, 38A007151ABE87CC01A5B6E9); sourceTree = "<group>"; };
+89E1FD6268CC0F221A2BE178 = { isa = XCBuildConfiguration; name = Debug; buildSettings = { SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; CLANG_ENABLE_MODULES = YES; SWIFT_VERSION = 5.0; }; };
+7082CC0B6FC1282FCEABD07A = { isa = XCBuildConfiguration; name = Debug; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = id.poncol.tvcompanion.client; PRODUCT_NAME = TVCompanion; INFOPLIST_FILE = TVCompanion/Info.plist; GENERATE_INFOPLIST_FILE = NO; TARGETED_DEVICE_FAMILY = "1,2"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; CODE_SIGN_STYLE = Automatic; MARKETING_VERSION = 0.1.0; CURRENT_PROJECT_VERSION = 1; SWIFT_VERSION = 5.0; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; ENABLE_TESTABILITY = YES; }; };
+E6DE6C99132752C914FEF632 = { isa = XCBuildConfiguration; name = Release; buildSettings = { SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; CLANG_ENABLE_MODULES = YES; SWIFT_VERSION = 5.0; }; };
+639A7CA24D39909E713B47F7 = { isa = XCBuildConfiguration; name = Release; buildSettings = { PRODUCT_BUNDLE_IDENTIFIER = id.poncol.tvcompanion.client; PRODUCT_NAME = TVCompanion; INFOPLIST_FILE = TVCompanion/Info.plist; GENERATE_INFOPLIST_FILE = NO; TARGETED_DEVICE_FAMILY = "1,2"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; CODE_SIGN_STYLE = Automatic; MARKETING_VERSION = 0.1.0; CURRENT_PROJECT_VERSION = 1; SWIFT_VERSION = 5.0; SWIFT_OPTIMIZATION_LEVEL = "-O"; ENABLE_TESTABILITY = NO; }; };
+65F43380A7FDA05CA228D639 = { isa = XCConfigurationList; buildConfigurations = (89E1FD6268CC0F221A2BE178, E6DE6C99132752C914FEF632); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+F5B252E79B5260B7FAA19738 = { isa = XCConfigurationList; buildConfigurations = (7082CC0B6FC1282FCEABD07A, 639A7CA24D39909E713B47F7); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+0E8A3AD980EC179856012B7E = { isa = PBXNativeTarget; name = TVCompanion; productName = TVCompanion; productType = "com.apple.product-type.application"; productReference = 38A007151ABE87CC01A5B6E9; buildConfigurationList = F5B252E79B5260B7FAA19738; buildPhases = (BCE16DD0260827ECF338C787, 7561BFB015D8F536760CB671, 0189424A5A60FED329FA868E); buildRules = (); dependencies = (); packageProductDependencies = (B17EB192F8D22D50442F606B); };
+98F54143AB4E86B28C3AFEE0 = { isa = PBXProject; attributes = { LastUpgradeCheck = 2710; }; buildConfigurationList = 65F43380A7FDA05CA228D639; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; knownRegions = (en, Base); mainGroup = 64292B1C2B2E13EAD8788FC8; projectDirPath = ""; projectRoot = ""; targets = (0E8A3AD980EC179856012B7E); packageReferences = (582681C2EAE02B3F3D399C0C); };
+}; rootObject = 98F54143AB4E86B28C3AFEE0; }

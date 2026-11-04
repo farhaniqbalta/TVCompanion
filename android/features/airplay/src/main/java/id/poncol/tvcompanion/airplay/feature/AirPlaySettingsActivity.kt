@@ -10,6 +10,7 @@ import android.widget.*
 import id.poncol.tvcompanion.designsystem.TvUi
 import id.poncol.tvcompanion.airplay.ipc.AirPlayWire
 import id.poncol.tvcompanion.domain.airplay.*
+import id.poncol.tvcompanion.domain.AutoStartSettings
 
 /** TV presentation only; status decisions and receiver commands have separate boundaries. */
 class AirPlaySettingsActivity : Activity() {
@@ -29,6 +30,8 @@ class AirPlaySettingsActivity : Activity() {
     private lateinit var retention: Button
     private lateinit var audio: Button
     private lateinit var autoOpen: Button
+    private lateinit var boot: Button
+    private val bootSettings get() = application as AutoStartSettings
     private val targets = linkedMapOf<String, Button>()
     private var pending = false
     private var lastFocus = "open"
@@ -80,6 +83,11 @@ class AirPlaySettingsActivity : Activity() {
         audioHelp = ui.text(background, getString(R.string.airplay_audio_help), 16f)
         autoOpen = action(background, "auto", "") { changeOptions(automatic = !(control?.snapshot?.autoOpenVideo ?: true)) }
         ui.text(background, getString(R.string.airplay_auto_help), 16f)
+        boot = action(background, "boot", "") {
+            bootSettings.airplayOnBoot = !bootSettings.airplayOnBoot
+            render(control?.snapshot ?: AirPlaySnapshot())
+        }
+        ui.text(background, getString(R.string.airplay_boot_help), 16f)
         ui.text(preferences, getString(R.string.airplay_lifetime), 16f)
         val about = ui.panel(page, getString(R.string.airplay_about))
         limits = ui.text(about, getString(R.string.airplay_limits), 16f)
@@ -143,6 +151,7 @@ class AirPlaySettingsActivity : Activity() {
         retention.text = getString(R.string.airplay_session_option, onOff(state.keepSession))
         audio.text = getString(R.string.airplay_audio_option, if (!state.keepSession && state.backgroundAudio) getString(R.string.airplay_inactive) else onOff(model.backgroundAudioEffective))
         autoOpen.text = getString(R.string.airplay_auto_option, onOff(state.autoOpenVideo))
+        boot.text = getString(R.string.airplay_boot_option, onOff(bootSettings.airplayOnBoot))
         audioHelp.setText(if (state.keepSession) R.string.airplay_audio_help else R.string.airplay_audio_requires_session)
         listOf(listening, retention, autoOpen).forEach { it.isEnabled = model.canChangePreferences }
         // Keep the explanation visible; an inactive dependent setting is not silently applied.

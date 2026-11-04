@@ -7,6 +7,7 @@ import android.os.*
 import android.view.Surface
 import id.poncol.tvcompanion.airplay.ipc.*
 import id.poncol.tvcompanion.domain.airplay.*
+import id.poncol.tvcompanion.domain.AutoStartSettings
 
 /** Owns receiver lifetime. UI bindings and rendering surfaces have independent lifetimes. */
 class AirPlayService : Service() {
@@ -71,14 +72,14 @@ class AirPlayService : Service() {
     private fun result(client: IAirPlayEvents, id: Long, value: AirPlayResult) {
         try { client.onResult(id, AirPlayWire.issue(value.issue)) } catch (_: RemoteException) { }
     }
-    private fun setKeepAvailable(enabled: Boolean): AirPlayResult {
+    private fun setKeepAvailable(enabled: Boolean, fromBoot: Boolean = false): AirPlayResult {
         if (enabled) {
             if (session.snapshot.phase == AirPlayPhase.STOPPING) return AirPlayResult(false, AirPlayIssue.BUSY)
             // Notification permission/channel availability is a product requirement. TV firmware may hide the notification; app controls remain available.
             if (!getSystemService(NotificationManager::class.java).areNotificationsEnabled() || getSystemService(NotificationManager::class.java).getNotificationChannel(CHANNEL)?.importance == NotificationManager.IMPORTANCE_NONE) return AirPlayResult(false, AirPlayIssue.UNAVAILABLE)
             try {
                 if (!foreground) {
-                    startForegroundService(Intent(this, AirPlayService::class.java).setAction(ACTION_HOLD))
+                    if (!fromBoot) startForegroundService(Intent(this, AirPlayService::class.java).setAction(ACTION_HOLD))
                     updateForeground(session.snapshot); foreground = true
                 }
             } catch (_: RuntimeException) { return AirPlayResult(false, AirPlayIssue.START_FAILED) }
@@ -163,6 +164,12 @@ class AirPlayService : Service() {
     private val binder = ReceiverBinder()
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) session.stop()
+        else if (intent?.action == ACTION_BOOT_START) {
+            if ((application as AutoStartSettings).airplayOnBoot) {
+                val started = setKeepAvailable(true, fromBoot = true)
+                if (started.accepted) session.setBackgroundOptions(true, true, true) else stopSelf()
+            } else stopSelf()
+        }
         else if (intent?.action == ACTION_HOLD && session.heldInBackground) updateForeground(session.snapshot)
         return START_NOT_STICKY
     }
@@ -178,6 +185,7 @@ class AirPlayService : Service() {
         super.onDestroy()
     }
     companion object {
+        const val ACTION_BOOT_START = "id.poncol.tvcompanion.airplay.BOOT_START"
         private const val CHANNEL = "airplay_receiver"
         private const val NOTIFICATION = 200
         private const val ACTION_STOP = "id.poncol.tvcompanion.airplay.STOP"

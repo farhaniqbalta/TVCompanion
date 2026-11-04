@@ -49,7 +49,8 @@
     <string name="notifications_port_error">Enter a port from 1024 to 65535</string>
     <string name="notifications_save">Save</string>
     <string name="notifications_privacy_notice">Local HTTP is unencrypted. Use trusted Wi-Fi and non-sensitive messages. No history is saved.</string>
-    <string name="notifications_restart_hint">After a TV restart, open this app to start the receiver again.</string>
+    <string name="notifications_boot_option">Start after TV reboot: %1$s</string>
+    <string name="notifications_boot_help">Restore the notification receiver after reboot when notifications and overlay permission are available. Turn this off to keep startup manual.</string>
     <string name="notifications_footer">Arrows to move   ·   OK to choose   ·   Back to home</string>
     <string name="receiver_status_paused">Paused</string>
     <string name="receiver_status_starting">Starting receiver…</string>
@@ -61,4 +62,10 @@
     <string name="receiver_status_start_failed">Start failed; check overlay permission and listening port</string>
     <string name="receiver_status_receipt">Network event accepted at %1$s</string>
     <string name="receiver_status_no_receipt">No network test received this session</string>
+    <string name="urgent_label">URGENT MESSAGE</string>
+    <string name="urgent_private">Urgent notification</string>
+    <string name="urgent_private_help">Message details are hidden by your Private display setting.</string>
+    <string name="urgent_dismiss">Dismiss</string>
+    <string name="urgent_timeout">Press OK on Dismiss or Back to close. This message also closes automatically.</string>
+    <string name="urgent_compact_help">Full message details are hidden by your Compact display setting.</string>
 </resources>

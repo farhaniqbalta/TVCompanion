@@ -210,4 +210,16 @@ class ReceiverSessionTest {
         try { replacement.start(); assertEquals(port, replacement.boundPort) } finally { replacement.close() }
         assertTrue(overlay.shown.isEmpty())
     }
+
+    @Test fun urgentAndNormalMessagesUseTheSameBoundedFifoAndDismissalOwnership() {
+        val f = Fixture(); f.session.start()
+        assertEquals(202, f.receive(f.raw("normal", "alert")).code); f.drain()
+        assertEquals(202, f.receive(f.raw("urgent", "alert2")).code); f.drain()
+        assertEquals(listOf("alert"), f.overlay.shown.map { it.source })
+        f.overlay.dismissals[0](); f.drain()
+        assertEquals(listOf("alert", "alert2"), f.overlay.shown.map { it.source })
+        f.overlay.dismissals[0](); f.drain() // A stale timeout cannot dismiss the urgent overlay.
+        assertEquals(2, f.overlay.shown.size)
+        f.session.stop(); assertEquals(1, f.overlay.clears)
+    }
 }

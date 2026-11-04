@@ -25,7 +25,7 @@ class EventGate(
         if (id.isBlank() || id.length > 128) return Result(400, "invalid_id")
         val suppliedSource = json.opt("source") as? String ?: return Result(400, "invalid_source")
         val source = when (suppliedSource) { "shopee" -> "shopeefood"; "test" -> "alert"; else -> suppliedSource }
-        if (source !in setOf("grab", "shopeefood", "gojek", "alert")) return Result(400, "invalid_source")
+        if (source !in setOf("grab", "shopeefood", "gojek", "alert", "alert2")) return Result(400, "invalid_source")
         for (key in listOf("title", "body", "message")) {
             if (json.has(key) && (json.opt(key) !is String || json.getString(key).length > 512))
                 return Result(400, "invalid_text")
