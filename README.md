@@ -25,7 +25,7 @@ Google TV is the primary orchestration host; iPhone, iPad and future Mac softwar
 - Notification settings, source filtering, previews, transient non-interactive overlays, expiry, deduplication, and bounded queues, adapted from TVNotify.
 - `alert2` uses the existing notification endpoint and a large, dismissible TV overlay. Existing appearance/privacy settings and queue limits still apply.
 - An AirPlay preview card opens the same APK’s receiver: native networking and video rendering stay in `:airplay`, with a replaceable engine and control-only AIDL. Discovery, session retention, hidden audio and automatic video presentation have separate controls.
-- No background lamp polling, dashboard animation loop, notification history, cloud bridge, analytics, automatic receiver restart, or boot service.
+- No background lamp polling, dashboard animation loop, notification history, cloud bridge, analytics, or automatic receiver retry loop. Notification and AirPlay boot starts are independent opt-in choices.
 - Protocol behavior, UI-independent state handling, and transport regression tests.
 
 The new application identity is `id.poncol.tvcompanion`. It does not replace existing apps or inherit their private settings. Notification reception is opt-in and defaults to port **8766**, so it can coexist with TVNotify's 8765 during development. Use one receiver for normal operation to avoid duplicate overlays and resident processes.
@@ -37,6 +37,7 @@ The [iPhone/iPad app](ios/README.md) pairs with Google TV Remote v2 for D-pad an
 ## Phase 3 — iPhone and iPad companion
 
 The `feature/ios-remote-notifications` branch contains the Phase 3 candidate: the native remote, notification sender, and TV-side urgent `alert2` overlay. It now includes the latest merged Phase 2 AirPlay work; the combined Android preview uses versionCode 20. See the [Phase 3 scope and device checks](docs/phase-3/README.md). This branch has not yet been merged into `main`.
+The current Phase 3 boot preview uses versionCode 21. On the TV, **Notifications → Start after TV reboot** restores the notification listener; **AirPlay → Start after TV reboot** restores Background listening, Keep session connected, and Background audio. Both choices default off and require notification permission; the notification listener also requires overlay permission. Boot starts the AirPlay receiver, not a past sender session.
 
 ## Phase 1 refactor
 

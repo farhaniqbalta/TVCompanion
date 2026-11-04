@@ -3,7 +3,7 @@ android {
     namespace 'id.poncol.tvcompanion.app'
     compileSdk 34
     ndkVersion '27.2.12479018'
-    defaultConfig { applicationId 'id.poncol.tvcompanion'; versionCode 20; versionName '0.8.0-phase3-preview'; targetSdk 34; minSdk 26 }
+    defaultConfig { applicationId 'id.poncol.tvcompanion'; versionCode 21; versionName '0.8.1-phase3-boot-preview'; targetSdk 34; minSdk 26 }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = '17' }
     lint { checkDependencies = true }

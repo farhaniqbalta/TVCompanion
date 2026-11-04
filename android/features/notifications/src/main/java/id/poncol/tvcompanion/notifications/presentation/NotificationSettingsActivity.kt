@@ -16,6 +16,7 @@ import android.text.InputType
 import android.view.Gravity
 import android.widget.*
 import id.poncol.tvcompanion.application.NotificationController
+import id.poncol.tvcompanion.domain.AutoStartSettings
 import id.poncol.tvcompanion.designsystem.TvUi
 import id.poncol.tvcompanion.notifications.R
 import id.poncol.tvcompanion.notifications.infrastructure.AndroidNotificationRuntime
@@ -26,6 +27,7 @@ class NotificationSettingsActivity : Activity() {
     private lateinit var controller: NotificationController
     private val settings get() = controller.preferences
     private val runtime get() = controller.runtime
+    private val bootSettings get() = application as AutoStartSettings
     private val ui by lazy { TvUi(this) }
     private var selectedSection = R.string.notifications_receiver
     private var previewSource = "grab"
@@ -37,6 +39,7 @@ class NotificationSettingsActivity : Activity() {
         var status: TextView? = null
         var receipt: TextView? = null
         var receiverAction: Button? = null
+        var bootAction: Button? = null
         var address: TextView? = null
         var pin: TextView? = null
         var pinAction: Button? = null
@@ -93,7 +96,7 @@ class NotificationSettingsActivity : Activity() {
         // A fallback inline preview is reattached after the section body is replaced.
         (binding.preview.parent as? LinearLayout)?.removeView(binding.preview)
         binding.content.removeAllViews()
-        binding.status = null; binding.receipt = null; binding.receiverAction = null
+        binding.status = null; binding.receipt = null; binding.receiverAction = null; binding.bootAction = null
         binding.address = null; binding.pin = null; binding.pinAction = null
         val panel = ui.panel(binding.content, getString(section))
         when (section) {
@@ -101,13 +104,19 @@ class NotificationSettingsActivity : Activity() {
                 binding.status = ui.text(panel, ReceiverStatusText.status(this, runtime.snapshot), 22f, true)
                 ui.text(panel, getString(R.string.notifications_receiver_hint), 16f)
                 binding.receiverAction = ui.button(panel, "") { if (runtime.running) pause() else startReceiver() }
+                binding.bootAction = ui.button(panel, "") {
+                    if (runtime.overlayAllowed) {
+                        bootSettings.notificationsOnBoot = !bootSettings.notificationsOnBoot
+                        refresh()
+                    } else openOverlaySettings()
+                }
+                ui.text(panel, getString(R.string.notifications_boot_help), 14f)
                 if (!runtime.overlayAllowed) {
                     ui.button(panel, getString(R.string.notifications_permission_needed)) { openOverlaySettings() }
                     ui.text(panel, getString(R.string.notifications_permission_hint), 14f)
                 } else ui.text(panel, getString(R.string.notifications_permission_allowed), 14f).setTextColor(ui.accent)
                 ui.spacer(panel, 12)
                 binding.receipt = ui.text(panel, ReceiverStatusText.receipt(this, runtime.snapshot), 14f)
-                ui.text(panel, getString(R.string.notifications_restart_hint), 14f)
             }
             R.string.notifications_appearance -> {
                 val mode = ui.button(panel, getString(R.string.notifications_style, modeLabel())) {}
@@ -247,6 +256,8 @@ class NotificationSettingsActivity : Activity() {
         binding.status?.text = ReceiverStatusText.status(this, runtime.snapshot)
         binding.receipt?.text = ReceiverStatusText.receipt(this, runtime.snapshot)
         binding.receiverAction?.setText(if (runtime.running) R.string.notifications_pause else R.string.notifications_start)
+        binding.bootAction?.text = getString(R.string.notifications_boot_option,
+            getString(if (bootSettings.notificationsOnBoot) R.string.notifications_on else R.string.notifications_off))
         binding.address?.text = runtime.addresses
         binding.pin?.text = if (pinVisible) runtime.pin else getString(R.string.notifications_pin_hidden)
         binding.pinAction?.setText(if (pinVisible) R.string.notifications_pin_hide else R.string.notifications_pin_show)

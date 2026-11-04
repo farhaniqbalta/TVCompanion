@@ -42,7 +42,9 @@
     <string name="airplay_audio_requires_session">Turn on Keep session connected to allow background audio. A saved On choice stays inactive until then.</string>
     <string name="airplay_auto_option">Auto-open incoming video: %1$s</string>
     <string name="airplay_auto_help">Open playback for a new video session when Android permits. Music alone stays in the background.</string>
-    <string name="airplay_lifetime">Options apply until the receiver service exits. Listening does not start after reboot. Stop AirPlay ends the connection and turns listening off.</string>
+    <string name="airplay_boot_option">Start after TV reboot: %1$s</string>
+    <string name="airplay_boot_help">When on, reboot restores Background listening, Keep session connected, and Background audio. Requires TVCompanion notifications. No sender session is restored.</string>
+    <string name="airplay_lifetime">Playback options apply until the receiver service exits. The separate reboot choice restores listening and background audio at startup. Stop AirPlay ends the current connection and listening.</string>
     <string name="airplay_on">On</string>
     <string name="airplay_off">Off</string>
     <string name="airplay_inactive">Inactive</string>

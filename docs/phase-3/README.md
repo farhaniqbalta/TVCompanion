@@ -1,6 +1,8 @@
 # Phase 3 — iPhone/iPad remote and notification sender
 
-Status: implementation candidate on `feature/ios-remote-notifications`; device acceptance pending. The branch now includes the merged Phase 2 AirPlay work from `main`. The combined Android candidate is versionCode 20 (`0.8.0-phase3-preview`), higher than the installed Phase 2 versionCode 19. No Phase 3 TV or Apple-device installation has been performed.
+Status: implementation candidate on `feature/ios-remote-notifications`; device acceptance pending. The branch includes the merged Phase 2 AirPlay work from `main`. The first combined Android candidate was versionCode 20 (`0.8.0-phase3-preview`); the later boot candidate is documented below. The user reported that the iPad app works, but remote and notification integration with this Android candidate still needs review.
+
+The subsequent boot candidate is versionCode 21 (`0.8.1-phase3-boot-preview`). Notifications and AirPlay each have a **Start after TV reboot** choice, initially off. Notification startup checks TV notifications and overlay permission. AirPlay startup restores Background listening, Keep session connected and Background audio, using a connected-device foreground service while idle; it does not restore a previous sender connection or start a media surface. Android may decline foreground startup if required permissions or platform conditions are missing; the feature screens remain the manual recovery path. VersionCode 21 installed over the existing versionCode 19 TV app; an actual reboot test is pending.
 
 ## Scope
 
@@ -11,7 +13,7 @@ Status: implementation candidate on `feature/ios-remote-notifications`; device a
 
 ## Acceptance path
 
-1. Build the Android candidate and iOS app from this branch. Select an Apple development signing team for physical iPhone/iPad installation.
+1. Use the installed Android candidate and iOS app from this branch. Select an Apple development signing team for physical iPhone/iPad installation.
 2. On the TV, start notification reception and allow its overlay. Pair the iPhone/iPad remote through Google TV's code flow. Check discovery and manual address paths, D-pad/Select, Home/Back, volume and playback keys, disconnect/reconnect, and background/foreground behavior.
 3. Enter the TVCompanion notification PIN separately. Send a normal `alert` and an `alert2`; check receipt status, TV privacy/compact/full presentation, manual Dismiss/Back, timed dismissal and FIFO ordering. Check a muted source and an older receiver that rejects `alert2` without silent downgrade.
 4. Recheck existing TV lamp controls, normal notifications, and AirPlay on the combined APK. Phase 2's reverse-sender takeover and iPad YouTube compatibility retain their separate open device checks; Phase 3 does not claim to resolve them.

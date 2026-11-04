@@ -35,4 +35,4 @@ IDs are optional generated strings, or nonblank strings up to 128 characters. Ti
 
 Responses contain a JSON `status` string. `GET /health` is unauthenticated and returns `{"status":"ok","app":"TVCompanion"}` without PIN, content, or device state. No history or durable queue is provided.
 
-Only one overlay is visible, with ten waiting events maximum and 256 remembered IDs maximum. Acceptance is capped at twelve events per eight seconds. Pause clears transient state. Start is manual after reboot. This receiver does not establish automatic iPhone notification capture.
+Only one overlay is visible, with ten waiting events maximum and 256 remembered IDs maximum. Acceptance is capped at twelve events per eight seconds. Pause clears transient state. Start after reboot is optional and off by default; it requires TV notifications and overlay permission. This receiver does not establish automatic iPhone notification capture.

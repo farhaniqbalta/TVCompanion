@@ -125,3 +125,9 @@ On `investigate/airplay-session-video-flow`, versionCode 15 builds with 111 pass
 ## Phase 3 integration with merged Phase 2
 
 The `feature/ios-remote-notifications` branch was updated from `main` after AirPlay PR #5 merged. Both verification histories were retained. Android versionCode 20 (`0.8.0-phase3-preview`) exceeds the installed Phase 2 build 19. On 2026-11-01, the combined Android APK build, focused notification/AirPlay/runtime/native unit tests and lint passed; the Swift kit passed 11 tests and the iOS simulator app built with signing disabled. This is local integration verification. No Android or Apple device installation, pairing, notification delivery, or combined-feature physical test was performed for Phase 3.
+
+## Phase 3 opt-in reboot startup
+
+VersionCode 21 (`0.8.1-phase3-boot-preview`) adds separate saved TV choices for notification and AirPlay startup after `BOOT_COMPLETED`. AirPlay restores Background listening, Keep session connected, and Background audio without restoring an old sender session or requesting media playback while idle. The merged manifest includes `RECEIVE_BOOT_COMPLETED` and a private boot receiver. Focused notification/AirPlay/runtime tests, the Android debug APK build and lint pass locally; no Phase 3 APK has been installed and no physical reboot test has been performed.
+
+The user later requested continuation. ADB reconnected to the home TV, whose installed app was versionCode 19. The versionCode 21 debug APK installed successfully as an update and the package reported `0.8.1-phase3-boot-preview`. No preference reset or device reboot was performed. The two new boot choices remain off until selected on the TV; actual boot restoration and combined-feature behavior await user review.
