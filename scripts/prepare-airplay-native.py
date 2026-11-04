@@ -69,7 +69,9 @@ def main():
     if 'LOGGER_DEBUG, "Handling request %s with URL %s"' in receiver.read_text():
         subprocess.run(['patch', '-p1', '-i', str(ROOT / 'patches' / '0002-control-stage-diagnostic.patch')],
                        cwd=CACHE / 'uxplay', check=True)
-    if 'httpd_remove_known_connections_now' not in receiver.read_text():
+    # Patch 0005 replaces the call in raop.c, but leaves this helper in httpd.c.
+    # Check the persistent definition so a cached, fully patched tree is reusable.
+    if 'httpd_remove_known_connections_now(httpd_t *httpd)' not in (CACHE / 'uxplay' / 'lib' / 'httpd.c').read_text():
         subprocess.run(['patch', '-p1', '-i', str(ROOT / 'patches' / '0003-ordered-sender-takeover.patch')],
                        cwd=CACHE / 'uxplay', check=True)
     if 'bool different_peer = false;' not in receiver.read_text():
