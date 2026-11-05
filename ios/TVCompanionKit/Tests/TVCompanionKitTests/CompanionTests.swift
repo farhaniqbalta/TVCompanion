@@ -119,4 +119,12 @@ final class CompanionTests: XCTestCase {
         XCTAssertEqual(tv.remotePort, 6466); XCTAssertEqual(tv.pairingPort, 6467)
         XCTAssertThrowsError(try TVProfile(host: "http://tv.local/secret"))
     }
+    func testProfileIdentitySurvivesExplicitAddressUpdateOnly() throws {
+        let saved = try TVProfile(host: "192.0.2.10")
+        let same = try TVProfile(host: "192.0.2.10")
+        XCTAssertEqual(same.preservingIdentity(from: saved).id, saved.id)
+        let changed = try TVProfile(name: saved.name, host: "192.0.2.11")
+        XCTAssertNotEqual(changed.preservingIdentity(from: saved).id, saved.id)
+        XCTAssertEqual(changed.preservingIdentity(from: saved, addressUpdate: true).id, saved.id)
+    }
 }

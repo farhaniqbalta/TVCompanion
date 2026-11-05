@@ -13,6 +13,21 @@ struct TVSetupView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if !store.knownProfiles.isEmpty {
+                    Section("Saved TVs") {
+                        ForEach(store.knownProfiles) { tv in
+                            Button {
+                                store.selectSaved(tv)
+                                dismiss()
+                            } label: {
+                                VStack(alignment: .leading) {
+                                    Text(tv.name)
+                                    Text(tv.host).font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
                 Section("Nearby TVs") {
                     Button(discovery.searching ? "Searching…" : "Find TVs") { discovery.search() }.disabled(discovery.searching)
                     ForEach(discovery.devices) { tv in
@@ -29,10 +44,20 @@ struct TVSetupView: View {
                     Button("Use this TV") {
                         do {
                             guard let number = UInt16(port), number > 0 else { throw CompanionError.invalidAddress }
-                            let id = store.profile?.host == host.trimmingCharacters(in: .whitespacesAndNewlines) ? store.profile!.id : UUID()
-                            store.select(try TVProfile(id: id, name: name, host: host, notificationPort: number)); dismiss()
+                            store.select(try TVProfile(name: name, host: host, notificationPort: number)); dismiss()
                         } catch { self.error = companionMessage(error) }
                     }.disabled(host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if store.profile != nil {
+                        Button("Update saved TV address") {
+                            do {
+                                guard let number = UInt16(port), number > 0 else { throw CompanionError.invalidAddress }
+                                store.select(try TVProfile(name: name, host: host, notificationPort: number), updatingCurrentAddress: true)
+                                dismiss()
+                            } catch { self.error = companionMessage(error) }
+                        }.disabled(host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        Text("Use this only for the same physical TV. Its saved remote and message credentials stay associated with this profile.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                 }
                 if let error { Section { Text(error).foregroundStyle(.red) } }
                 Section { Text("Remote pairing uses Google TV’s remote service. Message delivery uses the TVCompanion notification receiver; they have separate credentials.").font(.footnote) }

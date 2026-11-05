@@ -3,17 +3,31 @@ import TVCompanionKit
 
 @MainActor final class TVStore: ObservableObject {
     @Published private(set) var profile: TVProfile?
+    @Published private(set) var knownProfiles: [TVProfile] = []
     let credentials = CredentialStore()
     init() {
         if let bytes = UserDefaults.standard.data(forKey: "tv-profile"), let saved = try? JSONDecoder().decode(TVProfile.self, from: bytes),
            (try? TVProfile(id: saved.id, name: saved.name, host: saved.host, remotePort: saved.remotePort, pairingPort: saved.pairingPort, notificationPort: saved.notificationPort)) != nil { profile = saved }
+        if let bytes = UserDefaults.standard.data(forKey: "tv-profiles"),
+           let saved = try? JSONDecoder().decode([TVProfile].self, from: bytes) {
+            knownProfiles = saved.filter {
+                (try? TVProfile(id: $0.id, name: $0.name, host: $0.host, remotePort: $0.remotePort,
+                                pairingPort: $0.pairingPort, notificationPort: $0.notificationPort)) != nil
+            }
+        }
+        if let profile, !knownProfiles.contains(where: { $0.id == profile.id }) { knownProfiles.append(profile) }
     }
-    func select(_ selected: TVProfile) {
-        // Preserve pairing identity when reselecting the same host from discovery.
-        var selected = selected
-        if selected.host == profile?.host { selected.id = profile!.id }
-        profile = selected
-        UserDefaults.standard.set(try? JSONEncoder().encode(selected), forKey: "tv-profile")
+    func select(_ selected: TVProfile, updatingCurrentAddress: Bool = false) {
+        let resolved = selected.preservingIdentity(from: profile, addressUpdate: updatingCurrentAddress)
+        activate(resolved)
+    }
+    func selectSaved(_ saved: TVProfile) { activate(saved) }
+    private func activate(_ resolved: TVProfile) {
+        profile = resolved
+        if let index = knownProfiles.firstIndex(where: { $0.id == resolved.id }) { knownProfiles[index] = resolved }
+        else { knownProfiles.append(resolved) }
+        UserDefaults.standard.set(try? JSONEncoder().encode(resolved), forKey: "tv-profile")
+        UserDefaults.standard.set(try? JSONEncoder().encode(knownProfiles), forKey: "tv-profiles")
     }
 }
 
