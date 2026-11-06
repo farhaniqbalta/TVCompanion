@@ -100,7 +100,7 @@ public struct FrameDecoder {
 
 public enum RemoteKey: UInt64, CaseIterable {
     case home = 3, back = 4, up = 19, down = 20, left = 21, right = 22, select = 23
-    case volumeUp = 24, volumeDown = 25, enter = 66, delete = 67
+    case volumeUp = 24, volumeDown = 25, power = 26, enter = 66, delete = 67
     case search = 84, playPause = 85, next = 87, previous = 88, mute = 164
 }
 public enum RemoteCommand: Equatable {
@@ -129,6 +129,7 @@ public struct RemoteHandshake {
     public private(set) var ready = false
     public private(set) var features: UInt64 = 1 | 2 | 4 | 8 | 32 | 64
     public var voiceEnabled: Bool { ready && features & 8 != 0 }
+    public var powerEnabled: Bool { ready && features & 32 != 0 }
     private var imeCounter: UInt64 = 0
     private var imeFieldCounter: UInt64 = 0
     public init() {}
@@ -157,6 +158,7 @@ public struct RemoteHandshake {
     public func key(_ key: RemoteKey) throws -> Data {
         guard ready else { throw CompanionError.disconnected }
         if key == .search && !voiceEnabled { throw CompanionError.unsupported }
+        if key == .power && !powerEnabled { throw CompanionError.unsupported }
         if [.volumeUp, .volumeDown, .mute].contains(key) && features & 64 == 0 { throw CompanionError.unsupported }
         var command = ProtoMessage(); command.set(1, integer: key.rawValue); command.set(2, integer: 3) // SHORT: no held key
         var outer = ProtoMessage(); outer.set(10, message: command); return outer.encoded

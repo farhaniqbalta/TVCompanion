@@ -45,7 +45,15 @@ final class CompanionTests: XCTestCase {
         var remote = RemoteHandshake(); var config = ProtoMessage(); config.set(1, integer: 2)
         var outer = ProtoMessage(); outer.set(1, message: config); _ = try remote.reply(to: outer.encoded)
         outer = ProtoMessage(); outer.set(40, message: ProtoMessage()); _ = try remote.reply(to: outer.encoded)
-        XCTAssertThrowsError(try remote.key(.volumeUp)); XCTAssertNoThrow(try remote.key(.select))
+        XCTAssertThrowsError(try remote.key(.volumeUp))
+        XCTAssertThrowsError(try remote.key(.power))
+        XCTAssertFalse(remote.powerEnabled)
+        XCTAssertNoThrow(try remote.key(.select))
+        var powerRemote = RemoteHandshake(); config.set(1, integer: 2 | 32)
+        outer = ProtoMessage(); outer.set(1, message: config); _ = try powerRemote.reply(to: outer.encoded)
+        outer = ProtoMessage(); outer.set(40, message: ProtoMessage()); _ = try powerRemote.reply(to: outer.encoded)
+        XCTAssertTrue(powerRemote.powerEnabled)
+        XCTAssertEqual(try ProtoMessage(powerRemote.key(.power)).message(10)?.integer(1), 26)
     }
     func testRemoteTextUsesNegotiatedIMEAndLatestTVFieldCounters() throws {
         var remote = RemoteHandshake()

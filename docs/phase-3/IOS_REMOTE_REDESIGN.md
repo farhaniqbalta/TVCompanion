@@ -49,3 +49,9 @@ The user should install the branch build in Xcode, then follow the iPhone ↔ iP
 - Whether the target TV advertises VOICE and accepts begin, PCM payload and end messages.
 - Whether the assistant recognizes a short spoken command; whether a stopped or interrupted session leaves no active microphone.
 - Actual D-pad responsiveness, keyboard delivery, notification receipt and layout at iPhone/iPad sizes and accessibility settings.
+
+## User feedback and follow-up — 2026-11-06
+
+The user reports that other controls work, but Voice briefly appeared and then stopped; holding Voice did nothing. The original capture code stopped on every audio route notification. Apple's route reasons include category changes, which can occur while starting recording. Capture now stops for an interruption beginning or a lost/unsuitable route, while ignoring routine category and route-configuration notifications. This is a code-supported cause, not a confirmed device diagnosis; the user will retest.
+
+Voice now supports tap-to-start/tap-to-stop and hold-to-talk after microphone permission has been granted. A first hold without permission starts the normal permission flow on release. A Power button sends Remote v2 key code 26 only when the TV negotiated POWER. It is disabled while disconnected or unsupported. Power and wake behavior on the target TV remain unverified and are left for the user's device test. No app installation or UI test was performed for this follow-up.

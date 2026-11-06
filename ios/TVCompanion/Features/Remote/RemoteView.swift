@@ -69,6 +69,17 @@ struct RemoteView: View {
                     .padding(.horizontal, 12).padding(.vertical, 7)
                     .background(.quaternary, in: Capsule())
                     .accessibilityLabel("Remote status: \(stateLabel)")
+                Button {
+                    model.send(.power)
+                } label: {
+                    Image(systemName: "power")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.bordered)
+                .disabled(!model.connected || !model.powerAvailable)
+                .accessibilityLabel(model.powerAvailable ? "Power or standby" : "Power unavailable")
+                .accessibilityHint("Sends the TV Power key. Wake works only while its remote service is reachable.")
             }
             if model.state != .connected {
                 Text(model.status).font(.footnote).foregroundStyle(.secondary)
@@ -115,18 +126,7 @@ struct RemoteView: View {
                     key(.back, "Back", "arrow.uturn.backward")
                     key(.home, "Home", "house.fill")
                 }
-                Button {
-                    if model.voiceState == .listening || model.voiceState == .starting { model.stopVoice() }
-                    else { model.startVoice() }
-                } label: {
-                    Label(model.voiceState == .listening ? "Stop" : "Voice",
-                          systemImage: model.voiceState == .listening ? "stop.fill" : "mic.fill")
-                        .frame(maxWidth: .infinity, minHeight: 52)
-                }
-                .buttonStyle(.bordered)
-                .disabled(!model.connected || model.voiceState == .unavailable ||
-                          model.voiceState == .permissionDenied || model.voiceState == .ending)
-                .accessibilityHint("Tap to start or stop sending microphone audio to the TV")
+                VoiceControl(model: model)
             }
             HStack(spacing: 12) {
                 key(.volumeDown, "Volume down", "speaker.minus")
@@ -229,6 +229,57 @@ struct RemoteView: View {
             .toolbar { Button("Close") { pairing = false } }
         }
         .presentationDetents([.medium])
+    }
+}
+
+private struct VoiceControl: View {
+    @ObservedObject var model: RemoteViewModel
+    @State private var holdRecognized = false
+    @State private var holdStarted = false
+
+    private var enabled: Bool {
+        model.connected && model.voiceState != .unavailable &&
+        model.voiceState != .permissionDenied && model.voiceState != .ending
+    }
+
+    private var holdGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.35, maximumDistance: 40)
+            .sequenced(before: DragGesture(minimumDistance: 0))
+            .onChanged { phase in
+                guard case .second(true, _) = phase, !holdRecognized else { return }
+                holdRecognized = true
+                if model.canHoldVoice && (model.voiceState == .idle || model.voiceState == .error) {
+                    holdStarted = true
+                    model.startVoice()
+                }
+            }
+            .onEnded { _ in
+                if holdStarted { model.stopVoice() }
+                else if holdRecognized { model.toggleVoice() }
+                holdStarted = false
+                holdRecognized = false
+            }
+    }
+
+    var body: some View {
+        Label(model.voiceState == .listening ? "Stop" : "Voice",
+              systemImage: model.voiceState == .listening ? "stop.fill" : "mic.fill")
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity, minHeight: 52)
+            .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+            .contentShape(RoundedRectangle(cornerRadius: 10))
+            .opacity(enabled ? 1 : 0.45)
+            .gesture(holdGesture.exclusively(before: TapGesture().onEnded { model.toggleVoice() }))
+            .allowsHitTesting(enabled)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(model.voiceState == .listening ? "Stop voice" : "Voice")
+            .accessibilityValue(enabled ? model.voiceStatus : "Unavailable")
+            .accessibilityHint("Double-tap to start or stop. Touch and hold to talk after microphone access is granted.")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { if enabled { model.toggleVoice() } }
+            .onChange(of: model.state) { _, state in
+                if state != .connected { holdStarted = false; holdRecognized = false }
+            }
     }
 }
 

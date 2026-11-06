@@ -134,6 +134,7 @@ actor GoogleTVRemote {
         try await writer.write(handshake.text(value), to: channel)
     }
     func isVoiceAvailable() -> Bool { remote != nil && handshake.voiceEnabled }
+    func isPowerAvailable() -> Bool { remote != nil && handshake.powerEnabled }
     func startVoice() async throws -> UInt64 {
         guard let channel = remote else { throw CompanionError.disconnected }
         guard handshake.voiceEnabled else { throw CompanionError.unsupported }

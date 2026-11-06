@@ -19,8 +19,10 @@ private enum VoiceCaptureFailure: Error { case interrupted }
     @Published private(set) var needsCode = false
     @Published private(set) var voiceState: RemoteVoiceState = .unavailable
     @Published private(set) var voiceStatus = "Voice is unavailable until the TV advertises support."
+    @Published private(set) var powerAvailable = false
     @Published var text = ""
     var connected: Bool { state == .connected }
+    var canHoldVoice: Bool { AVAudioApplication.shared.recordPermission == .granted }
 
     private let client: GoogleTVRemote
     private var operationTask: Task<Void, Never>?
@@ -115,9 +117,11 @@ private enum VoiceCaptureFailure: Error { case interrupted }
                 guard !Task.isCancelled && operation == token else { return }
                 state = .connected; status = "Connected"; busy = false; retryCount = 0
                 let available = await client.isVoiceAvailable()
+                let power = await client.isPowerAvailable()
                 if operation == token {
                     voiceState = available ? .idle : .unavailable
-                    voiceStatus = available ? "Voice ready" : "Voice is unsupported by this TV."
+                    voiceStatus = available ? "Tap Voice to start, or hold to talk." : "Voice is unsupported by this TV."
+                    powerAvailable = power
                 }
             } catch {
                 guard !Task.isCancelled && operation == token else { return }
@@ -139,6 +143,7 @@ private enum VoiceCaptureFailure: Error { case interrupted }
         if ready { state = .connected; status = "Connected"; retryCount = 0 }
         else {
             stopVoice()
+            powerAvailable = false
             clearCommands()
             state = .offline; status = "TV connection closed."
             scheduleRetry()
@@ -212,6 +217,7 @@ private enum VoiceCaptureFailure: Error { case interrupted }
         foreground = false; stopVoice(); cancelOperations()
         busy = false; needsCode = false
         voiceState = .unavailable
+        powerAvailable = false
         state = activeTV == nil ? .notConfigured : .offline
         status = "Remote disconnected while the app is inactive."
         disconnectTask = Task { await client.disconnect() }
@@ -276,6 +282,11 @@ private enum VoiceCaptureFailure: Error { case interrupted }
         }
     }
 
+    func toggleVoice() {
+        if voiceState == .listening || voiceState == .starting { stopVoice() }
+        else { startVoice() }
+    }
+
     func stopVoice() {
         guard voiceTask != nil else { return }
         microphone?.stop()
@@ -320,7 +331,10 @@ private final class VoiceOverflowFlag: @unchecked Sendable {
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
         guard format.commonFormat == .pcmFormatFloat32,
-              format.channelCount > 0, format.sampleRate > 0 else { throw CompanionError.unsupported }
+              format.channelCount > 0, format.sampleRate > 0 else {
+            try? session.setActive(false)
+            throw CompanionError.unsupported
+        }
         sampleRate = format.sampleRate
         let (stream, destination) = AsyncStream<MicrophoneSamples>.makeStream(bufferingPolicy: .bufferingNewest(8))
         continuation = destination
@@ -341,11 +355,23 @@ private final class VoiceOverflowFlag: @unchecked Sendable {
             }
         }
         tapInstalled = true
-        for name in [AVAudioSession.interruptionNotification, AVAudioSession.routeChangeNotification] {
-            observers.append(NotificationCenter.default.addObserver(forName: name, object: session, queue: nil) { [weak self] _ in
-                Task { @MainActor [weak self] in self?.interrupt() }
-            })
-        }
+        observers.append(NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification, object: session, queue: nil
+        ) { [weak self] notification in
+            guard let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  AVAudioSession.InterruptionType(rawValue: raw) == .began else { return }
+            Task { @MainActor [weak self] in self?.interrupt() }
+        })
+        observers.append(NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification, object: session, queue: nil
+        ) { [weak self] notification in
+            guard let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+                  let reason = AVAudioSession.RouteChangeReason(rawValue: raw),
+                  reason == .oldDeviceUnavailable || reason == .noSuitableRouteForCategory else { return }
+            // Category and route-configuration notifications can arrive when recording starts.
+            // They do not mean the microphone was interrupted.
+            Task { @MainActor [weak self] in self?.interrupt() }
+        })
         engine.prepare()
         do { try engine.start() }
         catch { stop(); throw error }
