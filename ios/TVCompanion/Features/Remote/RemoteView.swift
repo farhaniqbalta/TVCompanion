@@ -262,24 +262,26 @@ private struct VoiceControl: View {
     }
 
     var body: some View {
-        Label(model.voiceState == .listening ? "Stop" : "Voice",
-              systemImage: model.voiceState == .listening ? "stop.fill" : "mic.fill")
-            .font(.subheadline.weight(.semibold))
-            .frame(maxWidth: .infinity, minHeight: 52)
-            .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
-            .contentShape(RoundedRectangle(cornerRadius: 10))
-            .opacity(enabled ? 1 : 0.45)
-            .gesture(holdGesture.exclusively(before: TapGesture().onEnded { model.toggleVoice() }))
-            .allowsHitTesting(enabled)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(model.voiceState == .listening ? "Stop voice" : "Voice")
-            .accessibilityValue(enabled ? model.voiceStatus : "Unavailable")
-            .accessibilityHint("Double-tap to start or stop. Touch and hold to talk after microphone access is granted.")
-            .accessibilityAddTraits(.isButton)
-            .accessibilityAction { if enabled { model.toggleVoice() } }
-            .onChange(of: model.state) { _, state in
-                if state != .connected { holdStarted = false; holdRecognized = false }
-            }
+        // The combined tap and hold gesture owns activation; Button supplies the native border.
+        Button {} label: {
+            Image(systemName: model.voiceState == .listening ? "stop.fill" : "mic.fill")
+                .font(.title3)
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.bordered)
+        .disabled(!enabled)
+        .gesture(holdGesture.exclusively(before: TapGesture().onEnded { model.toggleVoice() }))
+        .allowsHitTesting(enabled)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(model.voiceState == .listening ? "Stop voice" : "Voice")
+        .accessibilityValue(enabled ? model.voiceStatus : "Unavailable")
+        .accessibilityHint("Double-tap to start or stop. Touch and hold to talk after microphone access is granted.")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { if enabled { model.toggleVoice() } }
+        .onChange(of: model.state) { _, state in
+            if state != .connected { holdStarted = false; holdRecognized = false }
+        }
     }
 }
 
