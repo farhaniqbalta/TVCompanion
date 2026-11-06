@@ -26,7 +26,7 @@ Handoff: `TVCOMPANION_IOS_REMOTE_UX_VOICE_HANDOFF.md`, dated 2026-11-06.
 - D-pad and text commands use an ordered 16-item queue. Commands are cleared on disconnect; a slow key send no longer disables the entire remote.
 - The remote screen uses a compact D-pad and a width-based iPad split layout. Keyboard input is in a sheet. The notification composer retains its sender behavior and labels its existing alert kinds Normal and Urgent.
 - Voice uses feature bit 8 and Remote v2 fields 30/31/32 through the existing pinned TLS channel. It waits up to two seconds for the TV session ID. Microphone input is copied into a bounded queue, converted outside the render callback with AVAudioConverter, and sent as 8 KiB PCM packets; the last packet is padded only at the end.
-- Microphone permission is requested on the first Voice action. Capture ends on Stop, backgrounding, disconnect, queue overflow, route change or interruption. No audio is stored or logged. Debug diagnostics include a local installation ID, client certificate fingerprint, profile UUID and connection stage, without PINs, keys or microphone data.
+- Microphone permission is requested on the first Voice action. Capture ends on Stop, backgrounding, disconnect, queue overflow, a lost or unsuitable audio route, or the start of an interruption. Routine audio category and route-configuration changes do not end capture. No audio is stored or logged. Debug diagnostics include a local installation ID, client certificate fingerprint, profile UUID and connection stage, without PINs, keys or microphone data.
 
 ## Verification and device handoff
 
@@ -37,11 +37,11 @@ Handoff: `TVCOMPANION_IOS_REMOTE_UX_VOICE_HANDOFF.md`, dated 2026-11-06.
 
 | Device | OS / TV service version | Pairing and reconnect | Voice | UI |
 | --- | --- | --- | --- | --- |
-| Farhan's iPhone 12 Pro Max | Not recorded | Not run | Not run | Not run |
+| Farhan's iPhone 12 Pro Max | Not recorded | User reports latest build verified; individual pairing/reconnect cases not recorded | User reports latest build verified; detailed command outcome not recorded | User reports latest build verified, including the app icon and Voice button styling |
 | Hanwak's iPad Pro 11-inch (3rd generation) | Not recorded; unavailable during development | Not run | Not run | Not run |
 | Coocaa / Skyworth Google TV | Firmware and Remote Service version not recorded | Not run | Not run | Not run |
 
-The user should install the branch build in Xcode, then follow the iPhone ↔ iPad alternating-pairing and Voice gate in the handoff. If the TV does not advertise VOICE or does not answer KEYCODE_SEARCH, the UI reports Voice unavailable or a bounded timeout; this is not evidence of Assistant compatibility.
+The user installed and verified the latest iPhone build. The iPhone ↔ iPad alternating-pairing scenario from the handoff is still unrecorded. If a TV does not advertise VOICE or does not answer KEYCODE_SEARCH, the UI reports Voice unavailable or a bounded timeout; this is not evidence of Assistant compatibility.
 
 ### Remaining device evidence
 
@@ -52,6 +52,10 @@ The user should install the branch build in Xcode, then follow the iPhone ↔ iP
 
 ## User feedback and follow-up — 2026-11-06
 
-The user reports that other controls work, but Voice briefly appeared and then stopped; holding Voice did nothing. The original capture code stopped on every audio route notification. Apple's route reasons include category changes, which can occur while starting recording. Capture now stops for an interruption beginning or a lost/unsuitable route, while ignoring routine category and route-configuration notifications. This is a code-supported cause, not a confirmed device diagnosis; the user will retest.
+The user reported that other controls worked, but Voice briefly appeared and then stopped; holding Voice did nothing. The original capture code stopped on every audio route notification. Apple's route reasons include category changes, which can occur while starting recording. Capture now stops for an interruption beginning or a lost/unsuitable route, while ignoring routine category and route-configuration notifications. This was a code-supported cause, not a confirmed device diagnosis.
 
-Voice now supports tap-to-start/tap-to-stop and hold-to-talk after microphone permission has been granted. A first hold without permission starts the normal permission flow on release. A Power button sends Remote v2 key code 26 only when the TV negotiated POWER. It is disabled while disconnected or unsupported. Power and wake behavior on the target TV remain unverified and are left for the user's device test. No app installation or UI test was performed for this follow-up.
+Voice now supports tap-to-start/tap-to-stop and hold-to-talk after microphone permission has been granted. A first hold without permission starts the normal permission flow on release. A Power button sends Remote v2 key code 26 only when the TV negotiated POWER. It is disabled while disconnected or unsupported. Power and wake behavior on the target TV were not reported separately.
+
+## User acceptance — 2026-11-06
+
+The user reported that the latest iPhone build is done and verified after the Voice and Power follow-up, the iOS app icon update, and the Voice button styling change. This is user-reported device verification; the development agent did not install or run the app. The latest icon and styling change passed a compile-only unsigned iOS device build, and Xcode generated iPhone and iPad icon entries. No separate iPad acceptance, alternating-pairing result, TV wake result, or detailed voice-command result was supplied.
