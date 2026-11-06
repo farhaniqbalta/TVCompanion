@@ -9,7 +9,7 @@ A local-first Google TV hub with Apple-device clients. Control your room, receiv
 | Directory | Target | Status |
 | --- | --- | --- |
 | [`android/`](android/) | **Android TV / Google TV**, with TV screens and D-pad input; not an Android phone app | Bardi light controls, notifications and an integrated AirPlay video preview |
-| [`ios/`](ios/) | **iPhone and iPad** companion, with **Mac support planned for evaluation** | Native Remote v2 pairing/control and `alert`/`alert2` sender; device validation pending |
+| [`ios/`](ios/) | **iPhone and iPad** companion, with **Mac support planned for evaluation** | Remote v2 controls, voice and `alert`/`alert2` sender; Phase 3 accepted on the tested setup |
 | [`contracts/`](contracts/) | Integration documentation and synthetic examples | Notification HTTP v1 contract |
 | [`docs/`](docs/) | Architecture, design, development and decisions | Foundation documentation |
 
@@ -32,12 +32,11 @@ The new application identity is `id.poncol.tvcompanion`. It does not replace exi
 
 The receiver currently uses authenticated **unencrypted LAN HTTP** inherited from the prototype. Use non-sensitive demo messages on a trusted LAN. Encrypted transport and stronger pairing remain release work. Automatic capture of other iPhone apps' notifications is not implemented or established by this receiver.
 
-The [iPhone/iPad app](ios/README.md) pairs with Google TV Remote v2 for D-pad, media keys and focused TV text entry, and sends `alert`/`alert2` messages through the TVCompanion notification receiver. Its pure protocol kit, Keychain-backed credentials, network adapters and SwiftUI views have separate boundaries. Local builds pass; remote text entry and notification delivery require device testing.
+The [iPhone/iPad app](ios/README.md) pairs with Google TV Remote v2 for D-pad, media keys, voice and focused TV text entry, and sends `alert`/`alert2` messages through the TVCompanion notification receiver. Its pure protocol kit, Keychain-backed credentials, network adapters and SwiftUI views have separate boundaries. Local builds pass, and the user reports Phase 3 device acceptance on the tested setup.
 
 ## Phase 3 — iPhone and iPad companion
 
-The `feature/ios-remote-notifications` branch contains the Phase 3 candidate: the native remote, notification sender, and TV-side urgent `alert2` overlay. It now includes the latest merged Phase 2 AirPlay work; the combined Android preview uses versionCode 20. See the [Phase 3 scope and device checks](docs/phase-3/README.md). This branch has not yet been merged into `main`.
-The current Phase 3 boot preview uses versionCode 21. On the TV, **Notifications → Start after TV reboot** restores the notification listener; **AirPlay → Start after TV reboot** restores Background listening, Keep session connected, and Background audio. Both choices default off and require notification permission; the notification listener also requires overlay permission. Boot starts the AirPlay receiver, not a past sender session.
+Phase 3 is merged into `main` and accepted for the tested home setup by user report. It includes the native iPhone/iPad remote, notification sender, TV-side urgent `alert2` overlay, and the subsequent iOS remote redesign. See the [Phase 3 acceptance record](docs/phase-3/README.md). The combined Android preview uses versionCode 21. On the TV, **Notifications → Start after TV reboot** restores the notification listener; **AirPlay → Start after TV reboot** restores Background listening, Keep session connected, and Background audio. Both choices default off and require notification permission; the notification listener also requires overlay permission. Boot starts the AirPlay receiver, not a past sender session.
 
 ## Phase 1 refactor
 

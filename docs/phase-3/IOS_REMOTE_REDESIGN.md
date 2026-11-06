@@ -33,22 +33,21 @@ Handoff: `TVCOMPANION_IOS_REMOTE_UX_VOICE_HANDOFF.md`, dated 2026-11-06.
 - Before changes: 12 `TVCompanionKit` tests passed; generic iOS Simulator build passed.
 - After connection and voice wire changes: 15 `TVCompanionKit` tests passed; compile-only iOS device build passed. The new `TVCompanionAudio` package passed 2 synthetic conversion tests at 44.1 and 48 kHz. A compile-only unsigned iOS device build linked both packages successfully.
 - `plutil -lint` passes for the Xcode project and Info.plist; `git diff --check` passes.
-- The user requested that all UI and device testing be done personally. No redesigned app was installed on a physical device. No TV pairing, voice command, notification delivery or iPad layout acceptance is claimed.
+- The user requested that all UI and device testing be done personally. The development agent did not install or run the redesigned app. User-reported device acceptance is recorded below.
 
 | Device | OS / TV service version | Pairing and reconnect | Voice | UI |
 | --- | --- | --- | --- | --- |
-| Farhan's iPhone 12 Pro Max | Not recorded | User reports latest build verified; individual pairing/reconnect cases not recorded | User reports latest build verified; detailed command outcome not recorded | User reports latest build verified, including the app icon and Voice button styling |
-| Hanwak's iPad Pro 11-inch (3rd generation) | Not recorded; unavailable during development | Not run | Not run | Not run |
-| Coocaa / Skyworth Google TV | Firmware and Remote Service version not recorded | Not run | Not run | Not run |
+| Farhan's iPhone 12 Pro Max | Not recorded | User reports closeout checks passed | User reports command and microphone cleanup checks passed | User reports icon and remote layout passed |
+| Hanwak's iPad Pro 11-inch (3rd generation) | Not recorded | User reports alternating-pairing and reconnect checks passed | Not separately reported for iPad | User reports remote and keyboard checks passed |
+| Coocaa / Skyworth Google TV | Firmware and Remote Service version not recorded | User reports pairing and reboot checks passed | User reports voice command check passed | User reports alert/alert2, reboot startup and regression checks passed |
 
-The user installed and verified the latest iPhone build. The iPhone ↔ iPad alternating-pairing scenario from the handoff is still unrecorded. If a TV does not advertise VOICE or does not answer KEYCODE_SEARCH, the UI reports Voice unavailable or a bounded timeout; this is not evidence of Assistant compatibility.
+The user reports the iPhone and iPad closeout checks passed, including alternating pairing. Specific OS, firmware and Remote Service versions and logs were not supplied. If a different TV does not advertise VOICE or does not answer KEYCODE_SEARCH, the UI reports Voice unavailable or a bounded timeout; this does not establish Assistant compatibility on that TV.
 
-### Remaining device evidence
+### Evidence limits
 
-- Whether iPhone and iPad retain separate accepted client identities after alternation and TV reboot.
-- Whether the target TV advertises VOICE and accepts begin, PCM payload and end messages.
-- Whether the assistant recognizes a short spoken command; whether a stopped or interrupted session leaves no active microphone.
-- Actual D-pad responsiveness, keyboard delivery, notification receipt and layout at iPhone/iPad sizes and accessibility settings.
+- The user reported a pass for the closeout checks, but did not provide OS/firmware versions, logs, screenshots or protocol traces.
+- Client fingerprint stability, individual Remote v2 voice message stages and unusual error paths were not separately documented.
+- Broader compatibility across other TVs, older notification receivers and accessibility settings was not established by this setup's acceptance.
 
 ## User feedback and follow-up — 2026-11-06
 
@@ -58,4 +57,8 @@ Voice now supports tap-to-start/tap-to-stop and hold-to-talk after microphone pe
 
 ## User acceptance — 2026-11-06
 
-The user reported that the latest iPhone build is done and verified after the Voice and Power follow-up, the iOS app icon update, and the Voice button styling change. This is user-reported device verification; the development agent did not install or run the app. The latest icon and styling change passed a compile-only unsigned iOS device build, and Xcode generated iPhone and iPad icon entries. No separate iPad acceptance, alternating-pairing result, TV wake result, or detailed voice-command result was supplied.
+The user reported that the latest iPhone build is done and verified after the Voice and Power follow-up, the iOS app icon update, and the Voice button styling change. This is user-reported device verification; the development agent did not install or run the app. The latest icon and styling change passed a compile-only unsigned iOS device build, and Xcode generated iPhone and iPad icon entries. At that point, separate iPad and alternating-pairing results had not yet been supplied.
+
+## Phase 3 closeout — 2026-11-06
+
+The user subsequently reported that **all requested Phase 3 closeout checks passed**: iPhone/iPad pairing and alternation, reconnect and keyboard/remote controls, normal and urgent message delivery and TV presentation, opt-in reboot startup and combined Android regressions, and voice command/microphone cleanup. Phase 3 is accepted for the tested home setup. The user did not provide device software versions or detailed traces; the agent did not perform UI or device testing. TV wake behavior, older-receiver rejection and broader compatibility are not claimed by this acceptance.
