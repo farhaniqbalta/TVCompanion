@@ -101,11 +101,34 @@ public struct FrameDecoder {
 public enum RemoteKey: UInt64, CaseIterable {
     case home = 3, back = 4, up = 19, down = 20, left = 21, right = 22, select = 23
     case volumeUp = 24, volumeDown = 25, enter = 66, delete = 67
-    case playPause = 85, next = 87, previous = 88, mute = 164
+    case search = 84, playPause = 85, next = 87, previous = 88, mute = 164
 }
+public enum RemoteCommand: Equatable {
+    case key(RemoteKey), text(String)
+}
+
+/// A small ordered queue for in-flight remote input. Callers clear it on disconnect.
+public struct RemoteCommandBuffer {
+    public static let capacity = 16
+    private var commands: [RemoteCommand] = []
+    public init() {}
+    public var count: Int { commands.count }
+    @discardableResult public mutating func push(_ command: RemoteCommand) -> Bool {
+        guard commands.count < Self.capacity else { return false }
+        commands.append(command)
+        return true
+    }
+    public mutating func pop() -> RemoteCommand? {
+        guard !commands.isEmpty else { return nil }
+        return commands.removeFirst()
+    }
+    public mutating func clear() { commands.removeAll() }
+}
+
 public struct RemoteHandshake {
     public private(set) var ready = false
-    public private(set) var features: UInt64 = 1 | 2 | 4 | 32 | 64
+    public private(set) var features: UInt64 = 1 | 2 | 4 | 8 | 32 | 64
+    public var voiceEnabled: Bool { ready && features & 8 != 0 }
     private var imeCounter: UInt64 = 0
     private var imeFieldCounter: UInt64 = 0
     public init() {}
@@ -133,6 +156,7 @@ public struct RemoteHandshake {
     }
     public func key(_ key: RemoteKey) throws -> Data {
         guard ready else { throw CompanionError.disconnected }
+        if key == .search && !voiceEnabled { throw CompanionError.unsupported }
         if [.volumeUp, .volumeDown, .mute].contains(key) && features & 64 == 0 { throw CompanionError.unsupported }
         var command = ProtoMessage(); command.set(1, integer: key.rawValue); command.set(2, integer: 3) // SHORT: no held key
         var outer = ProtoMessage(); outer.set(10, message: command); return outer.encoded
@@ -148,5 +172,48 @@ public struct RemoteHandshake {
         var batch = ProtoMessage(); batch.set(1, integer: imeCounter); batch.set(2, integer: imeFieldCounter)
         batch.set(3, message: editInfo)
         var outer = ProtoMessage(); outer.set(21, message: batch); return outer.encoded
+    }
+}
+
+/// Voice fields from Remote v2. PCM bytes are never decoded or logged here.
+public enum RemoteVoiceWire {
+    public static let minimumChunk = 8 * 1024
+    public static let maximumChunk = 20 * 1024
+    public static func beginID(_ data: Data) throws -> UInt64? {
+        let message = try ProtoMessage(data)
+        guard let begin = try message.message(30) else { return nil }
+        guard let id = begin.integer(1), id > 0, id <= UInt64(Int32.max) else {
+            throw CompanionError.malformedMessage
+        }
+        return id
+    }
+    public static func begin(_ id: UInt64) throws -> Data { try envelope(30, id: id) }
+    public static func end(_ id: UInt64) throws -> Data { try envelope(32, id: id) }
+    public static func payload(_ samples: Data, id: UInt64) throws -> Data {
+        guard samples.count >= minimumChunk, samples.count <= maximumChunk,
+              samples.count.isMultiple(of: 2) else { throw CompanionError.invalidText }
+        var inner = try session(id)
+        inner.set(2, bytes: samples)
+        var outer = ProtoMessage(); outer.set(31, message: inner)
+        return outer.encoded
+    }
+    public static func chunks(_ samples: Data) -> [Data] {
+        guard !samples.isEmpty else { return [] }
+        var result: [Data] = []
+        for start in stride(from: 0, to: samples.count, by: maximumChunk) {
+            var part = Data(samples[start..<min(samples.count, start + maximumChunk)])
+            if part.count < minimumChunk { part.append(Data(count: minimumChunk - part.count)) }
+            result.append(part)
+        }
+        return result
+    }
+    private static func session(_ id: UInt64) throws -> ProtoMessage {
+        guard id > 0, id <= UInt64(Int32.max) else { throw CompanionError.malformedMessage }
+        var inner = ProtoMessage(); inner.set(1, integer: id)
+        return inner
+    }
+    private static func envelope(_ field: Int, id: UInt64) throws -> Data {
+        var outer = ProtoMessage(); outer.set(field, message: try session(id))
+        return outer.encoded
     }
 }

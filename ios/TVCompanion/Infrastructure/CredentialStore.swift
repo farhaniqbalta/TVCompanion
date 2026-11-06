@@ -27,6 +27,8 @@ final class CredentialStore {
 struct RemoteIdentity {
     let identity: SecIdentity
     let publicRSA: Data
+    let fingerprint: String
+    let reused: Bool
 }
 
 /// Original, minimal self-signed RSA client certificate construction using platform Security APIs.
@@ -67,7 +69,8 @@ final class RemoteIdentityStore {
         let result = SecItemAdd([kSecClass as String: kSecClassCertificate, kSecValueRef as String: certificate,
             kSecAttrLabel as String: label, kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly] as CFDictionary, nil)
         guard result == errSecSuccess || result == errSecDuplicateItem, let identity = try existing() else { throw CompanionError.notPaired }
-        return identity
+        return RemoteIdentity(identity: identity.identity, publicRSA: identity.publicRSA,
+                              fingerprint: identity.fingerprint, reused: false)
     }
     private func existing() throws -> RemoteIdentity? {
         var result: CFTypeRef?
@@ -81,7 +84,9 @@ final class RemoteIdentityStore {
         var error: Unmanaged<CFError>?
         guard let data = SecKeyCopyExternalRepresentation(key, &error) as Data? else { throw CompanionError.notPaired }
         _ = try DER.rsaNumbers(data)
-        return RemoteIdentity(identity: identity, publicRSA: data)
+        let fingerprint = SHA256.hash(data: SecCertificateCopyData(certificate) as Data)
+            .map { String(format: "%02x", $0) }.joined()
+        return RemoteIdentity(identity: identity, publicRSA: data, fingerprint: fingerprint, reused: true)
     }
     private func publicData(_ key: SecKey) throws -> Data {
         var error: Unmanaged<CFError>?
