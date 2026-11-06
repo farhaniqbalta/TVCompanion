@@ -135,3 +135,9 @@ The user later requested continuation. ADB reconnected to the home TV, whose ins
 ## Phase 3 iOS TV keyboard
 
 On 2026-11-04, the iPhone/iPad remote gained an explicit text entry field and TV Delete/Enter keys. Remote v2 IME support is negotiated, and text messages carry the latest field counters reported by the TV. The Swift protocol kit passed 12 tests, the iOS Simulator app built with signing disabled, and `git diff --check` passed. No Apple device or live TV text field was tested for this addition; TV app compatibility remains a device check.
+
+## Phase 3 closeout — 2026-11-06
+
+The Phase 3 iOS remote redesign merged through PR #7. The user reports that **all requested closeout checks passed** on the home setup: iPhone/iPad pairing and alternating use, reconnect after background/relaunch/Wi-Fi return/TV reboot, remote keys and focused keyboard input; normal `alert` and urgent `alert2` delivery with separate PIN and TV presentation/dismissal/expiry/ordering/privacy; notification and AirPlay opt-in reboot startup plus lamp/notification/AirPlay regressions; and voice command with microphone cleanup after Stop, backgrounding and interruption. This supersedes earlier pending-device notes for those tested flows.
+
+Phase 3 is accepted for the tested setup by user report. Device OS, TV firmware and Remote Service versions, logs and screenshots were not supplied, and the development agent did not install or run UI/device tests. Older-receiver rejection, TV wake behavior, unusual TLS/certificate failures, wider device compatibility and store-release readiness remain outside this acceptance. Phase 2 reverse-sender takeover and iPad YouTube compatibility retain their separate scope.
