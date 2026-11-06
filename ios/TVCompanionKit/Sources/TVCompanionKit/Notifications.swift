@@ -17,6 +17,14 @@ public struct TVProfile: Codable, Equatable, Identifiable {
         var value = URLComponents(); value.scheme = "http"; value.host = host; value.port = Int(notificationPort)
         value.path = "/api/v1/notifications"; return value.url
     }
+    /// Keep Keychain account names stable for the same host or an explicit address update.
+    /// A newly discovered host never inherits credentials merely because its name matches.
+    public func preservingIdentity(from current: TVProfile?, addressUpdate: Bool = false) -> TVProfile {
+        guard let current, addressUpdate || host.caseInsensitiveCompare(current.host) == .orderedSame else { return self }
+        var result = self
+        result.id = current.id
+        return result
+    }
 }
 public enum NotificationKind: String, Codable, CaseIterable { case alert, alert2 }
 public struct NotificationEnvelope: Encodable, Equatable {

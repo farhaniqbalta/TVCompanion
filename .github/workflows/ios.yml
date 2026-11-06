@@ -18,5 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test pure protocol kit
         run: swift test --package-path ios/TVCompanionKit
+      - name: Test voice audio conversion
+        run: swift test --package-path ios/TVCompanionAudio
       - name: Build iPhone/iPad simulator app
         run: xcodebuild -project ios/TVCompanion.xcodeproj -scheme TVCompanion -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build

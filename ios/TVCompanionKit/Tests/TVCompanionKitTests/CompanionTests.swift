@@ -45,7 +45,15 @@ final class CompanionTests: XCTestCase {
         var remote = RemoteHandshake(); var config = ProtoMessage(); config.set(1, integer: 2)
         var outer = ProtoMessage(); outer.set(1, message: config); _ = try remote.reply(to: outer.encoded)
         outer = ProtoMessage(); outer.set(40, message: ProtoMessage()); _ = try remote.reply(to: outer.encoded)
-        XCTAssertThrowsError(try remote.key(.volumeUp)); XCTAssertNoThrow(try remote.key(.select))
+        XCTAssertThrowsError(try remote.key(.volumeUp))
+        XCTAssertThrowsError(try remote.key(.power))
+        XCTAssertFalse(remote.powerEnabled)
+        XCTAssertNoThrow(try remote.key(.select))
+        var powerRemote = RemoteHandshake(); config.set(1, integer: 2 | 32)
+        outer = ProtoMessage(); outer.set(1, message: config); _ = try powerRemote.reply(to: outer.encoded)
+        outer = ProtoMessage(); outer.set(40, message: ProtoMessage()); _ = try powerRemote.reply(to: outer.encoded)
+        XCTAssertTrue(powerRemote.powerEnabled)
+        XCTAssertEqual(try ProtoMessage(powerRemote.key(.power)).message(10)?.integer(1), 26)
     }
     func testRemoteTextUsesNegotiatedIMEAndLatestTVFieldCounters() throws {
         var remote = RemoteHandshake()
@@ -118,5 +126,54 @@ final class CompanionTests: XCTestCase {
         XCTAssertEqual(tv.notificationURL?.absoluteString, "http://tv.local:8766/api/v1/notifications")
         XCTAssertEqual(tv.remotePort, 6466); XCTAssertEqual(tv.pairingPort, 6467)
         XCTAssertThrowsError(try TVProfile(host: "http://tv.local/secret"))
+    }
+    func testProfileIdentitySurvivesExplicitAddressUpdateOnly() throws {
+        let saved = try TVProfile(host: "192.0.2.10")
+        let same = try TVProfile(host: "192.0.2.10")
+        XCTAssertEqual(same.preservingIdentity(from: saved).id, saved.id)
+        let changed = try TVProfile(name: saved.name, host: "192.0.2.11")
+        XCTAssertNotEqual(changed.preservingIdentity(from: saved).id, saved.id)
+        XCTAssertEqual(changed.preservingIdentity(from: saved, addressUpdate: true).id, saved.id)
+    }
+    func testRapidCommandsStayOrderedBoundedAndClearOnDisconnect() {
+        var queue = RemoteCommandBuffer()
+        let commands = (0..<RemoteCommandBuffer.capacity).map { index in
+            RemoteCommand.key(index.isMultiple(of: 2) ? .up : .down)
+        }
+        for command in commands { XCTAssertTrue(queue.push(command)) }
+        XCTAssertFalse(queue.push(.key(.select)))
+        XCTAssertEqual((0..<commands.count).compactMap { _ in queue.pop() }, commands)
+        XCTAssertNil(queue.pop())
+        XCTAssertTrue(queue.push(.text("stale")))
+        queue.clear()
+        XCTAssertNil(queue.pop())
+    }
+    func testVoiceFeatureIsNegotiatedAndVoiceFramesAreBounded() throws {
+        var remote = RemoteHandshake()
+        var config = ProtoMessage(); config.set(1, integer: 2 | 8 | 1024)
+        var outer = ProtoMessage(); outer.set(1, message: config)
+        XCTAssertEqual(try ProtoMessage(XCTUnwrap(remote.reply(to: outer.encoded))).message(1)?.integer(1), 2 | 8)
+        outer = ProtoMessage(); outer.set(40, message: ProtoMessage()); _ = try remote.reply(to: outer.encoded)
+        XCTAssertTrue(remote.voiceEnabled)
+        XCTAssertNoThrow(try remote.key(.search))
+        let id: UInt64 = 23
+        XCTAssertEqual(try RemoteVoiceWire.beginID(RemoteVoiceWire.begin(id)), id)
+        XCTAssertEqual(try ProtoMessage(RemoteVoiceWire.end(id)).message(32)?.integer(1), id)
+        let chunks = RemoteVoiceWire.chunks(Data(count: 20_481))
+        XCTAssertEqual(chunks.map(\.count), [20_480, 8_192])
+        var shifted = Data(count: 7)
+        shifted.append(Data(repeating: 1, count: 8_192))
+        shifted.removeFirst(7)
+        XCTAssertEqual(RemoteVoiceWire.chunks(shifted).first, Data(repeating: 1, count: 8_192))
+        XCTAssertEqual(try ProtoMessage(RemoteVoiceWire.payload(chunks[1], id: id)).message(31)?.bytes(2)?.count, 8_192)
+        XCTAssertThrowsError(try RemoteVoiceWire.payload(Data(count: 8_191), id: id))
+        var bad = ProtoMessage(); bad.set(1, integer: 0)
+        outer = ProtoMessage(); outer.set(30, message: bad)
+        XCTAssertThrowsError(try RemoteVoiceWire.beginID(outer.encoded))
+        var keyOnly = RemoteHandshake(); config.set(1, integer: 2)
+        outer = ProtoMessage(); outer.set(1, message: config); _ = try keyOnly.reply(to: outer.encoded)
+        outer = ProtoMessage(); outer.set(40, message: ProtoMessage()); _ = try keyOnly.reply(to: outer.encoded)
+        XCTAssertFalse(keyOnly.voiceEnabled)
+        XCTAssertThrowsError(try keyOnly.key(.search))
     }
 }

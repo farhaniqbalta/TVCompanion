@@ -20,9 +20,10 @@ import SwiftUI
             .tint(Color(red: 0.25, green: 0.65, blue: 0.52))
             .environmentObject(store)
             .onChange(of: phase) { _, state in
-                if state == .active { remote.resume() } else { remote.suspend(); notifications.suspend() }
+                if state == .active { remote.resume(store.profile) } else { remote.suspend(); notifications.suspend() }
             }
-            .onChange(of: store.profile?.id) { _, _ in remote.suspend(); remote.resume(); notifications.suspend(); notifications.loadPIN() }
+            .onChange(of: store.profile) { _, _ in remote.suspend(); remote.resume(store.profile); notifications.suspend(); notifications.loadPIN() }
+            .task { remote.resume(store.profile) }
         }
     }
 }

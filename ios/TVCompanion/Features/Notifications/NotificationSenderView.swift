@@ -14,9 +14,13 @@ struct NotificationSenderView: View {
                 }
                 Section("Message") {
                     Picker("Type", selection: $model.kind) {
-                        Text("Alert").tag(NotificationKind.alert)
-                        Text("Alert2 · urgent").tag(NotificationKind.alert2)
+                        Text("Normal").tag(NotificationKind.alert)
+                        Text("Urgent").tag(NotificationKind.alert2)
                     }
+                    Text(model.kind == .alert2
+                         ? "Urgent uses a large TV overlay with Dismiss and a timeout."
+                         : "Normal uses the compact TV notification overlay.")
+                        .font(.footnote).foregroundStyle(.secondary)
                     TextEditor(text: $model.text).frame(minHeight: 140).accessibilityLabel("Message text")
                     Text("\(model.text.utf16.count) / 512").font(.caption).foregroundStyle(.secondary)
                     SecureField("TVCompanion notification PIN", text: $model.pin).keyboardType(.numberPad)
@@ -25,7 +29,7 @@ struct NotificationSenderView: View {
                 }.disabled(model.busy)
                 Section {
                     Text(model.status)
-                    Text("Alert2 uses a large TV overlay with Dismiss and an automatic timeout. TV privacy settings still apply. The existing notification API sends its PIN and message over unencrypted HTTP; use a trusted local network.")
+                    Text("TV privacy settings still apply. The notification API sends its PIN and message over unencrypted HTTP; use a trusted local network.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
