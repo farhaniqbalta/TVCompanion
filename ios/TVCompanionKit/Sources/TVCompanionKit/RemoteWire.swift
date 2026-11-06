@@ -201,7 +201,9 @@ public enum RemoteVoiceWire {
         guard !samples.isEmpty else { return [] }
         var result: [Data] = []
         for start in stride(from: 0, to: samples.count, by: maximumChunk) {
-            var part = Data(samples[start..<min(samples.count, start + maximumChunk)])
+            let lower = samples.index(samples.startIndex, offsetBy: start)
+            let upper = samples.index(lower, offsetBy: min(maximumChunk, samples.count - start))
+            var part = Data(samples[lower..<upper])
             if part.count < minimumChunk { part.append(Data(count: minimumChunk - part.count)) }
             result.append(part)
         }

@@ -1,10 +1,12 @@
 import Foundation
 import AVFoundation
+import TVCompanionAudio
 import TVCompanionKit
 
 enum RemoteConnectionState: Equatable {
     case notConfigured, needsPairing, connecting, connected, reconnecting, offline, error
 }
+
 enum RemoteVoiceState: Equatable {
     case unavailable, idle, starting, listening, ending, permissionDenied, error
 }
@@ -236,13 +238,13 @@ enum RemoteVoiceState: Equatable {
                 let capture = VoiceCapture()
                 microphone = capture
                 let stream = try capture.start()
-                let encoder = try VoiceAudioEncoder(sampleRate: capture.sampleRate)
+                let encoder = try VoicePCMEncoder(sampleRate: capture.sampleRate)
                 voiceState = .listening; voiceStatus = "Listening… Tap Stop when finished."
                 for await samples in stream {
                     try Task.checkCancellation()
                     guard !capture.overflowed else { throw CompanionError.oversizedMessage }
                     guard operation == token && connected else { throw CompanionError.disconnected }
-                    for chunk in try encoder.append(samples) {
+                    for chunk in try encoder.append(samples.values) {
                         try await client.sendVoice(chunk, sessionID: id)
                     }
                 }
@@ -354,55 +356,5 @@ private final class VoiceOverflowFlag: @unchecked Sendable {
     private func interrupt() {
         overflow.mark()
         stop()
-    }
-}
-
-@MainActor private final class VoiceAudioEncoder {
-    private let converter: AVAudioConverter
-    private let inputFormat: AVAudioFormat
-    private let outputFormat: AVAudioFormat
-    private var pending = Data()
-
-    init(sampleRate: Double) throws {
-        guard let input = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: sampleRate,
-                                        channels: 1, interleaved: false),
-              let output = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 8_000,
-                                         channels: 1, interleaved: false),
-              let converter = AVAudioConverter(from: input, to: output) else { throw CompanionError.unsupported }
-        inputFormat = input; outputFormat = output; self.converter = converter
-    }
-
-    func append(_ samples: MicrophoneSamples) throws -> [Data] {
-        guard !samples.values.isEmpty else { return [] }
-        let input = AVAudioPCMBuffer(pcmFormat: inputFormat, frameCapacity: AVAudioFrameCount(samples.values.count))!
-        input.frameLength = AVAudioFrameCount(samples.values.count)
-        samples.values.withUnsafeBufferPointer { source in
-            input.floatChannelData![0].update(from: source.baseAddress!, count: source.count)
-        }
-        let capacity = AVAudioFrameCount(ceil(Double(samples.values.count) * 8_000 / inputFormat.sampleRate) + 128)
-        let output = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: capacity)!
-        var supplied = false
-        var conversionError: NSError?
-        _ = converter.convert(to: output, error: &conversionError) { _, status in
-            if supplied { status.pointee = .noDataNow; return nil }
-            supplied = true; status.pointee = .haveData; return input
-        }
-        if let conversionError { throw conversionError }
-        if output.frameLength > 0 {
-            pending.append(Data(bytes: output.int16ChannelData![0], count: Int(output.frameLength) * 2))
-        }
-        var chunks: [Data] = []
-        while pending.count >= RemoteVoiceWire.minimumChunk {
-            chunks.append(Data(pending.prefix(RemoteVoiceWire.minimumChunk)))
-            pending.removeFirst(RemoteVoiceWire.minimumChunk)
-        }
-        return chunks
-    }
-
-    func finish() -> Data? {
-        guard !pending.isEmpty else { return nil }
-        let result = RemoteVoiceWire.chunks(pending).first
-        pending.removeAll()
-        return result
     }
 }
