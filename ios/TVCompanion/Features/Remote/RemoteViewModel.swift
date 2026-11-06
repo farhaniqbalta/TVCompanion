@@ -10,6 +10,7 @@ enum RemoteConnectionState: Equatable {
 enum RemoteVoiceState: Equatable {
     case unavailable, idle, starting, listening, ending, permissionDenied, error
 }
+private enum VoiceCaptureFailure: Error { case interrupted }
 
 @MainActor final class RemoteViewModel: ObservableObject {
     @Published private(set) var state: RemoteConnectionState = .notConfigured
@@ -242,13 +243,14 @@ enum RemoteVoiceState: Equatable {
                 voiceState = .listening; voiceStatus = "Listening… Tap Stop when finished."
                 for await samples in stream {
                     try Task.checkCancellation()
-                    guard !capture.overflowed else { throw CompanionError.oversizedMessage }
+                    guard !capture.overflowed else { throw VoiceCaptureFailure.interrupted }
                     guard operation == token && connected else { throw CompanionError.disconnected }
                     for chunk in try encoder.append(samples.values) {
                         try await client.sendVoice(chunk, sessionID: id)
                     }
                 }
                 try Task.checkCancellation()
+                guard !capture.overflowed else { throw VoiceCaptureFailure.interrupted }
                 if let last = encoder.finish() { try await client.sendVoice(last, sessionID: id) }
                 await client.endVoice(sessionID: id)
                 sessionID = nil
@@ -257,16 +259,20 @@ enum RemoteVoiceState: Equatable {
                 if let sessionID { await client.endVoice(sessionID: sessionID) }
                 if operation == token && !Task.isCancelled {
                     voiceState = .error
-                    voiceStatus = error as? CompanionError == .timedOut
-                        ? "The TV did not start voice. Try the keyboard or check TV voice support."
-                        : companionMessage(error)
+                    if error is VoiceCaptureFailure {
+                        voiceStatus = "Microphone input stopped. Try Voice again."
+                    } else if error as? CompanionError == .timedOut {
+                        voiceStatus = "The TV did not start voice. Try the keyboard or check TV voice support."
+                    } else {
+                        voiceStatus = companionMessage(error)
+                    }
                 }
             }
             microphone?.stop(); microphone = nil
             if operation == token {
                 if Task.isCancelled { voiceState = connected ? .idle : .unavailable; voiceStatus = "Voice stopped." }
-                voiceTask = nil
             }
+            voiceTask = nil
         }
     }
 
@@ -313,7 +319,8 @@ private final class VoiceOverflowFlag: @unchecked Sendable {
         try session.setActive(true)
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
-        guard format.channelCount > 0, format.sampleRate > 0 else { throw CompanionError.unsupported }
+        guard format.commonFormat == .pcmFormatFloat32,
+              format.channelCount > 0, format.sampleRate > 0 else { throw CompanionError.unsupported }
         sampleRate = format.sampleRate
         let (stream, destination) = AsyncStream<MicrophoneSamples>.makeStream(bufferingPolicy: .bufferingNewest(8))
         continuation = destination
