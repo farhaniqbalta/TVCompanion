@@ -1,0 +1,932 @@
+{
+  ".github/scripts/pr-description.cjs": {
+    "mtime": 1793199641.0133407,
+    "seen": 1794491587.739167,
+    "ast_hash": "3ce3fc8c1741e163f77784fe2e0f1da1",
+    "semantic_hash": "3ce3fc8c1741e163f77784fe2e0f1da1"
+  },
+  ".github/scripts/pr-description.test.cjs": {
+    "mtime": 1793199641.0136845,
+    "seen": 1794491587.7391691,
+    "ast_hash": "3ef047129631392d530a332ae9db13ee",
+    "semantic_hash": "3ef047129631392d530a332ae9db13ee"
+  },
+  ".github/workflows/android.yml": {
+    "mtime": 1793543987.3085,
+    "seen": 1794491587.73917,
+    "ast_hash": "51bae9ff898a19eaecdc15c3a3716d34",
+    "semantic_hash": "51bae9ff898a19eaecdc15c3a3716d34"
+  },
+  ".github/workflows/automation-checks.yml": {
+    "mtime": 1793199641.0143497,
+    "seen": 1794491587.739172,
+    "ast_hash": "0cdc726352189f7eb49c3a1e1bd62f71",
+    "semantic_hash": "0cdc726352189f7eb49c3a1e1bd62f71"
+  },
+  ".github/workflows/ios.yml": {
+    "mtime": 1793976884.51652,
+    "seen": 1794491587.7391732,
+    "ast_hash": "0c0aa6e96dea71d857b927c1dc9b474b",
+    "semantic_hash": "0c0aa6e96dea71d857b927c1dc9b474b"
+  },
+  ".github/workflows/pr-description.yml": {
+    "mtime": 1793199641.0145817,
+    "seen": 1794491587.739174,
+    "ast_hash": "7784c73d6bf3a40c529fca09564280ff",
+    "semantic_hash": "7784c73d6bf3a40c529fca09564280ff"
+  },
+  "android/app/build.gradle": {
+    "mtime": 1793976884.5173593,
+    "seen": 1794491587.7391748,
+    "ast_hash": "6e60533ff1b2509205a1d68138a5346c",
+    "semantic_hash": "6e60533ff1b2509205a1d68138a5346c"
+  },
+  "android/app/src/main/java/id/poncol/tvcompanion/app/BootReceiver.kt": {
+    "mtime": 1793976884.5180552,
+    "seen": 1794491587.739176,
+    "ast_hash": "a04f2b9ce2b483613718ce894e51534b",
+    "semantic_hash": "a04f2b9ce2b483613718ce894e51534b"
+  },
+  "android/app/src/main/java/id/poncol/tvcompanion/app/MainActivity.kt": {
+    "mtime": 1793278232.8591607,
+    "seen": 1794491587.739177,
+    "ast_hash": "07429a3615f830f2f9cf5ff409d9a167",
+    "semantic_hash": "07429a3615f830f2f9cf5ff409d9a167"
+  },
+  "android/app/src/main/java/id/poncol/tvcompanion/app/TVCompanionApplication.kt": {
+    "mtime": 1793976884.5184813,
+    "seen": 1794491587.739178,
+    "ast_hash": "84e8fa213eda186b1486bbf01a062499",
+    "semantic_hash": "84e8fa213eda186b1486bbf01a062499"
+  },
+  "android/build.gradle": {
+    "mtime": 1793122696.7346785,
+    "seen": 1794491587.739179,
+    "ast_hash": "a64dc3df882f01bbb13735799060fcba",
+    "semantic_hash": "a64dc3df882f01bbb13735799060fcba"
+  },
+  "android/core/designsystem/build.gradle": {
+    "mtime": 1793122696.7371488,
+    "seen": 1794491587.73918,
+    "ast_hash": "743d4693b88ca4da6cce689eca2cedd0",
+    "semantic_hash": "743d4693b88ca4da6cce689eca2cedd0"
+  },
+  "android/core/designsystem/src/main/java/id/poncol/tvcompanion/designsystem/TvUi.kt": {
+    "mtime": 1793124893.0949705,
+    "seen": 1794491587.739182,
+    "ast_hash": "d6128ca878befadfa06b5a865fba41f5",
+    "semantic_hash": "d6128ca878befadfa06b5a865fba41f5"
+  },
+  "android/core/domain/build.gradle": {
+    "mtime": 1793122696.736642,
+    "seen": 1794491587.7391832,
+    "ast_hash": "8d7846cb29c7ec7271b69b95a3a106af",
+    "semantic_hash": "8d7846cb29c7ec7271b69b95a3a106af"
+  },
+  "android/core/domain/src/main/java/id/poncol/tvcompanion/application/LightController.kt": {
+    "mtime": 1793278232.997331,
+    "seen": 1794491587.7391841,
+    "ast_hash": "addaedad1562239939ad3bf499f80c10",
+    "semantic_hash": "addaedad1562239939ad3bf499f80c10"
+  },
+  "android/core/domain/src/main/java/id/poncol/tvcompanion/application/NotificationController.kt": {
+    "mtime": 1793123995.598871,
+    "seen": 1794491587.7391849,
+    "ast_hash": "df1a815bac5a729a4a5a4c2a24434cdb",
+    "semantic_hash": "df1a815bac5a729a4a5a4c2a24434cdb"
+  },
+  "android/core/domain/src/main/java/id/poncol/tvcompanion/domain/AutoStartSettings.kt": {
+    "mtime": 1793976884.5187263,
+    "seen": 1794491587.7391858,
+    "ast_hash": "db2d7b5f2b090a7d747cb0b951212b56",
+    "semantic_hash": "db2d7b5f2b090a7d747cb0b951212b56"
+  },
+  "android/core/domain/src/main/java/id/poncol/tvcompanion/domain/Light.kt": {
+    "mtime": 1793278232.997506,
+    "seen": 1794491587.739187,
+    "ast_hash": "403f75c455ac0b7cd297237df4ca93c5",
+    "semantic_hash": "403f75c455ac0b7cd297237df4ca93c5"
+  },
+  "android/core/domain/src/main/java/id/poncol/tvcompanion/domain/NotificationEvent.kt": {
+    "mtime": 1793123278.2081473,
+    "seen": 1794491587.739188,
+    "ast_hash": "0696a4f3166c53a47601b8c87e616fea",
+    "semantic_hash": "0696a4f3166c53a47601b8c87e616fea"
+  },
+  "android/core/domain/src/main/java/id/poncol/tvcompanion/domain/NotificationPorts.kt": {
+    "mtime": 1793198717.3271742,
+    "seen": 1794491587.739189,
+    "ast_hash": "0621873cfe8b7b21e06def43da42b251",
+    "semantic_hash": "0621873cfe8b7b21e06def43da42b251"
+  },
+  "android/core/domain/src/main/java/id/poncol/tvcompanion/domain/ReceiverSnapshot.kt": {
+    "mtime": 1793198717.3274689,
+    "seen": 1794491587.73919,
+    "ast_hash": "5476990027f4a09819c18ce6e28aa995",
+    "semantic_hash": "5476990027f4a09819c18ce6e28aa995"
+  },
+  "android/core/domain/src/main/java/id/poncol/tvcompanion/domain/airplay/AirPlayReceiver.kt": {
+    "mtime": 1793543987.309165,
+    "seen": 1794491587.739191,
+    "ast_hash": "69822f2055e2ffb6c5a97afcdbb4524e",
+    "semantic_hash": "69822f2055e2ffb6c5a97afcdbb4524e"
+  },
+  "android/core/domain/src/test/java/id/poncol/tvcompanion/application/LightControllerTest.kt": {
+    "mtime": 1793278232.9977033,
+    "seen": 1794491587.739192,
+    "ast_hash": "5ff8eb443f48c818d2276f2f9576f5ab",
+    "semantic_hash": "5ff8eb443f48c818d2276f2f9576f5ab"
+  },
+  "android/core/domain/src/test/java/id/poncol/tvcompanion/application/NotificationControllerTest.kt": {
+    "mtime": 1793198717.3279986,
+    "seen": 1794491587.7391932,
+    "ast_hash": "c4c3ea32aa5f8caad63e73b9596db641",
+    "semantic_hash": "c4c3ea32aa5f8caad63e73b9596db641"
+  },
+  "android/core/domain/src/test/java/id/poncol/tvcompanion/domain/EventQueueTest.kt": {
+    "mtime": 1793123278.206724,
+    "seen": 1794491587.7391942,
+    "ast_hash": "ed8bf44672995a30639d2ff21d3e19fa",
+    "semantic_hash": "ed8bf44672995a30639d2ff21d3e19fa"
+  },
+  "android/features/airplay/build.gradle": {
+    "mtime": 1793278232.862617,
+    "seen": 1794491587.7391949,
+    "ast_hash": "211cce7b582a467dc75269b2c5040f36",
+    "semantic_hash": "211cce7b582a467dc75269b2c5040f36"
+  },
+  "android/features/airplay/src/main/java/id/poncol/tvcompanion/airplay/feature/AirPlayPresentation.kt": {
+    "mtime": 1793278232.8638554,
+    "seen": 1794491587.7391958,
+    "ast_hash": "99aa3f01464108aba855a0d7f5cfb656",
+    "semantic_hash": "99aa3f01464108aba855a0d7f5cfb656"
+  },
+  "android/features/airplay/src/main/java/id/poncol/tvcompanion/airplay/feature/AirPlaySettingsActivity.kt": {
+    "mtime": 1793976884.5192301,
+    "seen": 1794491587.739197,
+    "ast_hash": "949e39b77f13e557ad065c32d00660ab",
+    "semantic_hash": "949e39b77f13e557ad065c32d00660ab"
+  },
+  "android/features/airplay/src/main/java/id/poncol/tvcompanion/airplay/feature/AndroidAirPlayControl.kt": {
+    "mtime": 1793278232.864737,
+    "seen": 1794491587.739198,
+    "ast_hash": "eff84bf72de6971a751473d45776bee4",
+    "semantic_hash": "eff84bf72de6971a751473d45776bee4"
+  },
+  "android/features/airplay/src/test/java/id/poncol/tvcompanion/airplay/feature/AirPlayPresentationTest.kt": {
+    "mtime": 1793278232.8659186,
+    "seen": 1794491587.7392,
+    "ast_hash": "58c64a41d857f2c7a86a75dcd3c4432d",
+    "semantic_hash": "58c64a41d857f2c7a86a75dcd3c4432d"
+  },
+  "android/features/notifications/build.gradle": {
+    "mtime": 1793122696.7382882,
+    "seen": 1794491587.739201,
+    "ast_hash": "3a7df9f12c8651f7fa915ca758952acd",
+    "semantic_hash": "3a7df9f12c8651f7fa915ca758952acd"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/infrastructure/AndroidNotificationRuntime.kt": {
+    "mtime": 1793198717.3283544,
+    "seen": 1794491587.739202,
+    "ast_hash": "d899ca4d45d08ee48f609744be7c4315",
+    "semantic_hash": "d899ca4d45d08ee48f609744be7c4315"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/infrastructure/EventGate.kt": {
+    "mtime": 1793976884.5201998,
+    "seen": 1794491587.739203,
+    "ast_hash": "34f48862cec15d66b36df7c6a9e4c369",
+    "semantic_hash": "34f48862cec15d66b36df7c6a9e4c369"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/infrastructure/LocalServer.kt": {
+    "mtime": 1793198717.3286088,
+    "seen": 1794491587.7392042,
+    "ast_hash": "3916d19c3486ecabc023b5618a9f55b9",
+    "semantic_hash": "3916d19c3486ecabc023b5618a9f55b9"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/infrastructure/PairingStore.kt": {
+    "mtime": 1793123404.4626079,
+    "seen": 1794491587.7392051,
+    "ast_hash": "007ad14cda3688e70cc9e85b2544118f",
+    "semantic_hash": "007ad14cda3688e70cc9e85b2544118f"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/infrastructure/ReceiverService.kt": {
+    "mtime": 1793198717.3288407,
+    "seen": 1794491587.7392058,
+    "ast_hash": "c1012ae1989a1ada9b6846bd8097c657",
+    "semantic_hash": "c1012ae1989a1ada9b6846bd8097c657"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/infrastructure/ReceiverSession.kt": {
+    "mtime": 1793198717.3291888,
+    "seen": 1794491587.739207,
+    "ast_hash": "c594b2d01b92a8da9714f42c01062389",
+    "semantic_hash": "c594b2d01b92a8da9714f42c01062389"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/infrastructure/ReceiverSettings.kt": {
+    "mtime": 1793123278.2515802,
+    "seen": 1794491587.739208,
+    "ast_hash": "e0d5e1e11123d21b778010eb6fa5167d",
+    "semantic_hash": "e0d5e1e11123d21b778010eb6fa5167d"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/infrastructure/ReceiverStatusStore.kt": {
+    "mtime": 1793198717.329438,
+    "seen": 1794491587.739209,
+    "ast_hash": "44a426970e2e1f50d4e26dae5a81cf76",
+    "semantic_hash": "44a426970e2e1f50d4e26dae5a81cf76"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/presentation/AndroidNotificationOverlay.kt": {
+    "mtime": 1793976884.5204926,
+    "seen": 1794491587.73921,
+    "ast_hash": "e1ccb7c8ef92b2f3e58410fe892adda8",
+    "semantic_hash": "e1ccb7c8ef92b2f3e58410fe892adda8"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/presentation/NotificationCard.kt": {
+    "mtime": 1793976884.5208278,
+    "seen": 1794491587.739211,
+    "ast_hash": "b59e0040cdc91bec3974b6c5e56fbec0",
+    "semantic_hash": "b59e0040cdc91bec3974b6c5e56fbec0"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/presentation/NotificationSettingsActivity.kt": {
+    "mtime": 1793976884.5211277,
+    "seen": 1794491587.739213,
+    "ast_hash": "168d6481425de700e6238accb10384ac",
+    "semantic_hash": "168d6481425de700e6238accb10384ac"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/presentation/ReceiverStatusText.kt": {
+    "mtime": 1793198717.3302705,
+    "seen": 1794491587.7392142,
+    "ast_hash": "632c1b54f7e7f9a96ace28e571cc5e53",
+    "semantic_hash": "632c1b54f7e7f9a96ace28e571cc5e53"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/presentation/UrgentContentPolicy.kt": {
+    "mtime": 1793976884.5214915,
+    "seen": 1794491587.7392151,
+    "ast_hash": "249ce67655f84dcdaa4f9deaba386d83",
+    "semantic_hash": "249ce67655f84dcdaa4f9deaba386d83"
+  },
+  "android/features/notifications/src/main/java/id/poncol/tvcompanion/notifications/presentation/UrgentNotificationCard.kt": {
+    "mtime": 1793976884.5218577,
+    "seen": 1794491587.7392159,
+    "ast_hash": "ff772d6fa9a02f06ecf596020fd404ff",
+    "semantic_hash": "ff772d6fa9a02f06ecf596020fd404ff"
+  },
+  "android/features/notifications/src/test/java/id/poncol/tvcompanion/notifications/EventGateTest.kt": {
+    "mtime": 1793976884.5226126,
+    "seen": 1794491587.7392168,
+    "ast_hash": "35817940e032641fa7b1b03857075731",
+    "semantic_hash": "35817940e032641fa7b1b03857075731"
+  },
+  "android/features/notifications/src/test/java/id/poncol/tvcompanion/notifications/LocalServerTest.kt": {
+    "mtime": 1793123278.2506907,
+    "seen": 1794491587.739218,
+    "ast_hash": "5af47c85becf2e2596abeab1103d278e",
+    "semantic_hash": "5af47c85becf2e2596abeab1103d278e"
+  },
+  "android/features/notifications/src/test/java/id/poncol/tvcompanion/notifications/infrastructure/ReceiverSessionTest.kt": {
+    "mtime": 1793976884.522951,
+    "seen": 1794491587.739219,
+    "ast_hash": "688f4730006f64b24bd054eed941f0eb",
+    "semantic_hash": "688f4730006f64b24bd054eed941f0eb"
+  },
+  "android/features/notifications/src/test/java/id/poncol/tvcompanion/notifications/presentation/UrgentContentPolicyTest.kt": {
+    "mtime": 1793976884.5234342,
+    "seen": 1794491587.73922,
+    "ast_hash": "611ebf835908b93af9b7a67645d6d049",
+    "semantic_hash": "611ebf835908b93af9b7a67645d6d049"
+  },
+  "android/features/smart-home/build.gradle": {
+    "mtime": 1793122696.7379608,
+    "seen": 1794491587.739221,
+    "ast_hash": "505af4321cd27859a32e2c5d1321482d",
+    "semantic_hash": "505af4321cd27859a32e2c5d1321482d"
+  },
+  "android/features/smart-home/src/main/java/id/poncol/tvcompanion/smarthome/ColorControls.kt": {
+    "mtime": 1793278232.9978633,
+    "seen": 1794491587.739222,
+    "ast_hash": "1546c15e2b5aba81f891023119fef508",
+    "semantic_hash": "1546c15e2b5aba81f891023119fef508"
+  },
+  "android/features/smart-home/src/main/java/id/poncol/tvcompanion/smarthome/LightScreen.kt": {
+    "mtime": 1793278232.9980505,
+    "seen": 1794491587.739223,
+    "ast_hash": "188651e2602d9c6421ec414939af15d0",
+    "semantic_hash": "188651e2602d9c6421ec414939af15d0"
+  },
+  "android/features/smart-home/src/test/java/id/poncol/tvcompanion/smarthome/ColorControlsTest.kt": {
+    "mtime": 1793278232.998616,
+    "seen": 1794491587.7392251,
+    "ast_hash": "bd57e518edc6483e1526241a24d83770",
+    "semantic_hash": "bd57e518edc6483e1526241a24d83770"
+  },
+  "android/gradlew": {
+    "mtime": 1793111322.8391893,
+    "seen": 1794491587.739226,
+    "ast_hash": "f092910dfa8e47c5a37a452c3f6baf8a",
+    "semantic_hash": "f092910dfa8e47c5a37a452c3f6baf8a"
+  },
+  "android/integrations/airplay-runtime/build.gradle": {
+    "mtime": 1793278232.8684628,
+    "seen": 1794491587.7392268,
+    "ast_hash": "3c4d20b50e1137b233d8b8ceb63bccfe",
+    "semantic_hash": "3c4d20b50e1137b233d8b8ceb63bccfe"
+  },
+  "android/integrations/airplay-runtime/src/main/java/id/poncol/tvcompanion/airplay/runtime/AirPlayPlaybackActivity.kt": {
+    "mtime": 1793543987.3099177,
+    "seen": 1794491587.739228,
+    "ast_hash": "e5ca44d4eb8c8963d1430c55130f7637",
+    "semantic_hash": "e5ca44d4eb8c8963d1430c55130f7637"
+  },
+  "android/integrations/airplay-runtime/src/main/java/id/poncol/tvcompanion/airplay/runtime/AirPlayService.kt": {
+    "mtime": 1793976884.5238795,
+    "seen": 1794491587.739229,
+    "ast_hash": "dd570bbf2cda23353649ed3cf61b9b73",
+    "semantic_hash": "dd570bbf2cda23353649ed3cf61b9b73"
+  },
+  "android/integrations/airplay-runtime/src/main/java/id/poncol/tvcompanion/airplay/runtime/ReceiverEngine.java": {
+    "mtime": 1793543987.310309,
+    "seen": 1794491587.73923,
+    "ast_hash": "d107e1d013e10f721562261ad35e09ab",
+    "semantic_hash": "d107e1d013e10f721562261ad35e09ab"
+  },
+  "android/integrations/airplay-runtime/src/main/java/id/poncol/tvcompanion/airplay/runtime/ReceiverEngineProvider.java": {
+    "mtime": 1793278232.8704417,
+    "seen": 1794491587.7392309,
+    "ast_hash": "7206f19a5dd7c7acf4d240644cf16921",
+    "semantic_hash": "7206f19a5dd7c7acf4d240644cf16921"
+  },
+  "android/integrations/airplay-runtime/src/main/java/id/poncol/tvcompanion/airplay/runtime/ReceiverSession.kt": {
+    "mtime": 1793543987.3105044,
+    "seen": 1794491587.739232,
+    "ast_hash": "0825a686fdd2f2c6d2fdc030df43acc2",
+    "semantic_hash": "0825a686fdd2f2c6d2fdc030df43acc2"
+  },
+  "android/integrations/airplay-runtime/src/main/java/id/poncol/tvcompanion/airplay/runtime/VideoPresentationPolicy.kt": {
+    "mtime": 1793278232.8710432,
+    "seen": 1794491587.739233,
+    "ast_hash": "d42dcf8dac889ce59b4cc212f6abbcb7",
+    "semantic_hash": "d42dcf8dac889ce59b4cc212f6abbcb7"
+  },
+  "android/integrations/airplay-runtime/src/test/java/id/poncol/tvcompanion/airplay/runtime/ReceiverSessionTest.kt": {
+    "mtime": 1793543987.3109293,
+    "seen": 1794491587.739234,
+    "ast_hash": "c01da3eee47275c1f93df5cc8b12af14",
+    "semantic_hash": "c01da3eee47275c1f93df5cc8b12af14"
+  },
+  "android/integrations/airplay-runtime/src/test/java/id/poncol/tvcompanion/airplay/runtime/VideoPresentationPolicyTest.kt": {
+    "mtime": 1793278232.8728263,
+    "seen": 1794491587.7392352,
+    "ast_hash": "876eac2fb1b37fd1b3f7966a45ab1374",
+    "semantic_hash": "876eac2fb1b37fd1b3f7966a45ab1374"
+  },
+  "android/integrations/tuya-lan/build.gradle": {
+    "mtime": 1793122696.7375517,
+    "seen": 1794491587.739236,
+    "ast_hash": "a33681861462771f6a796a4c7be1a021",
+    "semantic_hash": "a33681861462771f6a796a4c7be1a021"
+  },
+  "android/integrations/tuya-lan/src/main/java/id/poncol/tvcompanion/tuya/Credentials.java": {
+    "mtime": 1793122696.7397234,
+    "seen": 1794491587.7392378,
+    "ast_hash": "64fdc293bf0965043712e07203012c45",
+    "semantic_hash": "64fdc293bf0965043712e07203012c45"
+  },
+  "android/integrations/tuya-lan/src/main/java/id/poncol/tvcompanion/tuya/DeadlineInput.java": {
+    "mtime": 1793198717.3310351,
+    "seen": 1794491587.739239,
+    "ast_hash": "3c59a7c8f6dbfb24dccf841fd44b9404",
+    "semantic_hash": "3c59a7c8f6dbfb24dccf841fd44b9404"
+  },
+  "android/integrations/tuya-lan/src/main/java/id/poncol/tvcompanion/tuya/Tuya35.java": {
+    "mtime": 1793278232.998828,
+    "seen": 1794491587.73924,
+    "ast_hash": "7ccee79d7187d9314508dbec2be2df45",
+    "semantic_hash": "7ccee79d7187d9314508dbec2be2df45"
+  },
+  "android/integrations/tuya-lan/src/main/java/id/poncol/tvcompanion/tuya/TuyaColorCodec.kt": {
+    "mtime": 1793278232.99897,
+    "seen": 1794491587.739241,
+    "ast_hash": "fd288a028ff0c8101215ba57422b5606",
+    "semantic_hash": "fd288a028ff0c8101215ba57422b5606"
+  },
+  "android/integrations/tuya-lan/src/main/java/id/poncol/tvcompanion/tuya/TuyaLightGateway.kt": {
+    "mtime": 1793278232.9991632,
+    "seen": 1794491587.739242,
+    "ast_hash": "fcc22fd017fbb47eb498261b1bc397dd",
+    "semantic_hash": "fcc22fd017fbb47eb498261b1bc397dd"
+  },
+  "android/integrations/tuya-lan/src/test/java/id/poncol/tvcompanion/tuya/DeadlineInputTest.java": {
+    "mtime": 1793198717.3317544,
+    "seen": 1794491587.739243,
+    "ast_hash": "ee0a9373a647e040ede8eed090e86e1a",
+    "semantic_hash": "ee0a9373a647e040ede8eed090e86e1a"
+  },
+  "android/integrations/tuya-lan/src/test/java/id/poncol/tvcompanion/tuya/ProtocolTest.java": {
+    "mtime": 1793122696.7403145,
+    "seen": 1794491587.739244,
+    "ast_hash": "ab7257038045afee9cf54a964ff4192c",
+    "semantic_hash": "ab7257038045afee9cf54a964ff4192c"
+  },
+  "android/integrations/tuya-lan/src/test/java/id/poncol/tvcompanion/tuya/TuyaColorTest.kt": {
+    "mtime": 1793278232.999343,
+    "seen": 1794491587.739245,
+    "ast_hash": "910448458c24d7c2e1c603abda8e5b2c",
+    "semantic_hash": "910448458c24d7c2e1c603abda8e5b2c"
+  },
+  "android/integrations/tuya-lan/src/test/java/id/poncol/tvcompanion/tuya/TuyaLightGatewayTest.kt": {
+    "mtime": 1793198717.3320215,
+    "seen": 1794491587.7392461,
+    "ast_hash": "304a2cf1bd067bcc0ab5b4c233f8e231",
+    "semantic_hash": "304a2cf1bd067bcc0ab5b4c233f8e231"
+  },
+  "android/integrations/uxplay-native/build.gradle": {
+    "mtime": 1793543987.3111086,
+    "seen": 1794491587.739247,
+    "ast_hash": "340a0bef89a32ceb56e41ccc3aa014ac",
+    "semantic_hash": "340a0bef89a32ceb56e41ccc3aa014ac"
+  },
+  "android/integrations/uxplay-native/src/main/cpp/audio_formats.h": {
+    "mtime": 1793278232.8759336,
+    "seen": 1794491587.739248,
+    "ast_hash": "53ae9175394aa28aee38042fa4e435b0",
+    "semantic_hash": "53ae9175394aa28aee38042fa4e435b0"
+  },
+  "android/integrations/uxplay-native/src/main/cpp/audio_output.cpp": {
+    "mtime": 1793278402.8715591,
+    "seen": 1794491587.739249,
+    "ast_hash": "ac4afab4981422b7c7b1858b9b59039c",
+    "semantic_hash": "ac4afab4981422b7c7b1858b9b59039c"
+  },
+  "android/integrations/uxplay-native/src/main/cpp/audio_output.h": {
+    "mtime": 1793278232.8763838,
+    "seen": 1794491587.73925,
+    "ast_hash": "92379e5c32126a618ab4d40f4c293e09",
+    "semantic_hash": "92379e5c32126a618ab4d40f4c293e09"
+  },
+  "android/integrations/uxplay-native/src/main/cpp/h264_config.h": {
+    "mtime": 1793278232.876665,
+    "seen": 1794491587.739251,
+    "ast_hash": "d9f4a9e9703306c5a313206efcd1e83f",
+    "semantic_hash": "d9f4a9e9703306c5a313206efcd1e83f"
+  },
+  "android/integrations/uxplay-native/src/main/cpp/playout_clock.h": {
+    "mtime": 1793278232.8768437,
+    "seen": 1794491587.7392519,
+    "ast_hash": "3a4b369faa1dcd488ac913a1901b70db",
+    "semantic_hash": "3a4b369faa1dcd488ac913a1901b70db"
+  },
+  "android/integrations/uxplay-native/src/main/cpp/receiver_jni.cpp": {
+    "mtime": 1793543987.3119724,
+    "seen": 1794491587.739254,
+    "ast_hash": "8ebb648050d0cd8121f8819603e93951",
+    "semantic_hash": "8ebb648050d0cd8121f8819603e93951"
+  },
+  "android/integrations/uxplay-native/src/main/cpp/video_preroll.h": {
+    "mtime": 1793278232.8772852,
+    "seen": 1794491587.739255,
+    "ast_hash": "6deabbfa563607921f51baab974322a9",
+    "semantic_hash": "6deabbfa563607921f51baab974322a9"
+  },
+  "android/integrations/uxplay-native/src/main/java/id/poncol/tvcompanion/uxplay/HlsPlayback.kt": {
+    "mtime": 1793543987.3121696,
+    "seen": 1794491587.7392561,
+    "ast_hash": "c679fffff818c842c87d11f48d9f7716",
+    "semantic_hash": "c679fffff818c842c87d11f48d9f7716"
+  },
+  "android/integrations/uxplay-native/src/main/java/id/poncol/tvcompanion/uxplay/HlsProgress.kt": {
+    "mtime": 1793543987.3123074,
+    "seen": 1794491587.739257,
+    "ast_hash": "08cd27d4a51ae422ad68f191c2fbb30d",
+    "semantic_hash": "08cd27d4a51ae422ad68f191c2fbb30d"
+  },
+  "android/integrations/uxplay-native/src/main/java/id/poncol/tvcompanion/uxplay/UxPlayReceiverEngine.java": {
+    "mtime": 1793543987.31251,
+    "seen": 1794491587.739258,
+    "ast_hash": "e27892b350f9a860749af8db132c2167",
+    "semantic_hash": "e27892b350f9a860749af8db132c2167"
+  },
+  "android/integrations/uxplay-native/src/test/cpp/media_path_test.cpp": {
+    "mtime": 1793278402.87217,
+    "seen": 1794491587.7392588,
+    "ast_hash": "f0f272efb2483dab77e043b174186da1",
+    "semantic_hash": "f0f272efb2483dab77e043b174186da1"
+  },
+  "android/integrations/uxplay-native/src/test/java/id/poncol/tvcompanion/uxplay/HlsProgressTest.kt": {
+    "mtime": 1793543987.3131614,
+    "seen": 1794491587.73926,
+    "ast_hash": "66a5ddaecd4cc28696ea7497e7e1fc1d",
+    "semantic_hash": "66a5ddaecd4cc28696ea7497e7e1fc1d"
+  },
+  "android/ipc/airplay-contract/build.gradle": {
+    "mtime": 1793278232.8782299,
+    "seen": 1794491587.7392619,
+    "ast_hash": "dc58c40b8b25cf505c5ac9874c816dc4",
+    "semantic_hash": "dc58c40b8b25cf505c5ac9874c816dc4"
+  },
+  "android/ipc/airplay-contract/src/main/java/id/poncol/tvcompanion/airplay/ipc/AirPlayWire.kt": {
+    "mtime": 1793543987.3133838,
+    "seen": 1794491587.739263,
+    "ast_hash": "1be0d3ee76926fb0287420c7de5b8b67",
+    "semantic_hash": "1be0d3ee76926fb0287420c7de5b8b67"
+  },
+  "android/ipc/airplay-contract/src/test/java/id/poncol/tvcompanion/airplay/ipc/AirPlayWireTest.kt": {
+    "mtime": 1793543987.3135946,
+    "seen": 1794491587.739264,
+    "ast_hash": "84869a1d30debefbb26bc49d10fd1d41",
+    "semantic_hash": "84869a1d30debefbb26bc49d10fd1d41"
+  },
+  "android/scripts/provision.py": {
+    "mtime": 1793123079.139294,
+    "seen": 1794491587.739265,
+    "ast_hash": "bde2e23a04aac9e6f18a2a85647cb419",
+    "semantic_hash": "bde2e23a04aac9e6f18a2a85647cb419"
+  },
+  "android/settings.gradle": {
+    "mtime": 1793278232.8804364,
+    "seen": 1794491587.7392662,
+    "ast_hash": "c50631bd1e58333edcc3941a672d27f8",
+    "semantic_hash": "c50631bd1e58333edcc3941a672d27f8"
+  },
+  "experiments/airplay-lab/app/build.gradle": {
+    "mtime": 1793278232.8862922,
+    "seen": 1794491587.739267,
+    "ast_hash": "a680304d09707cba76aaebf20dc7e235",
+    "semantic_hash": "a680304d09707cba76aaebf20dc7e235"
+  },
+  "experiments/airplay-lab/app/src/main/java/id/poncol/tvcompanion/airplaylab/LabActivity.java": {
+    "mtime": 1793278232.8868868,
+    "seen": 1794491587.739268,
+    "ast_hash": "15cd777696ace5badc7f21e6d94119f6",
+    "semantic_hash": "15cd777696ace5badc7f21e6d94119f6"
+  },
+  "experiments/airplay-lab/app/src/main/java/id/poncol/tvcompanion/airplaylab/LabApplication.java": {
+    "mtime": 1793278232.8871646,
+    "seen": 1794491587.739269,
+    "ast_hash": "771458a10f56e5f1dd23b957728fb242",
+    "semantic_hash": "771458a10f56e5f1dd23b957728fb242"
+  },
+  "experiments/airplay-lab/prepare_native.py": {
+    "mtime": 1793278232.888223,
+    "seen": 1794491587.73927,
+    "ast_hash": "fd7e6341dfcb7bb3f3e5c542997a0d3c",
+    "semantic_hash": "fd7e6341dfcb7bb3f3e5c542997a0d3c"
+  },
+  "ios/TVCompanion/App/CompanionApp.swift": {
+    "mtime": 1793976884.52723,
+    "seen": 1794491587.739271,
+    "ast_hash": "6dcd634833e3ab44b9cafde5b9189805",
+    "semantic_hash": "6dcd634833e3ab44b9cafde5b9189805"
+  },
+  "ios/TVCompanion/App/TVSetupView.swift": {
+    "mtime": 1793976884.5275137,
+    "seen": 1794491587.7392719,
+    "ast_hash": "074980ae11808b65c3bdbea174e2c192",
+    "semantic_hash": "074980ae11808b65c3bdbea174e2c192"
+  },
+  "ios/TVCompanion/App/TVStore.swift": {
+    "mtime": 1793976884.5277722,
+    "seen": 1794491587.739273,
+    "ast_hash": "217c8a8bd30feb1ad1c5079e3d13fec8",
+    "semantic_hash": "217c8a8bd30feb1ad1c5079e3d13fec8"
+  },
+  "ios/TVCompanion/Assets.xcassets/AppIcon.appiconset/Contents.json": {
+    "mtime": 1793976884.5287507,
+    "seen": 1794491587.739275,
+    "ast_hash": "67425efba4ad62a4368a0fc76becea74",
+    "semantic_hash": "67425efba4ad62a4368a0fc76becea74"
+  },
+  "ios/TVCompanion/Features/Notifications/NotificationSenderView.swift": {
+    "mtime": 1793976884.52907,
+    "seen": 1794491587.739276,
+    "ast_hash": "5a682dc46aba7f0fb86b6734902bebd9",
+    "semantic_hash": "5a682dc46aba7f0fb86b6734902bebd9"
+  },
+  "ios/TVCompanion/Features/Notifications/NotificationViewModel.swift": {
+    "mtime": 1793976884.529467,
+    "seen": 1794491587.7392771,
+    "ast_hash": "dcd7afa8a22f269c8e13eab10529e3bd",
+    "semantic_hash": "dcd7afa8a22f269c8e13eab10529e3bd"
+  },
+  "ios/TVCompanion/Features/Remote/RemoteView.swift": {
+    "mtime": 1793976884.5298126,
+    "seen": 1794491587.739278,
+    "ast_hash": "71a03733d7ef28b4ffa992a7b3d6d27c",
+    "semantic_hash": "71a03733d7ef28b4ffa992a7b3d6d27c"
+  },
+  "ios/TVCompanion/Features/Remote/RemoteViewModel.swift": {
+    "mtime": 1793976884.5301223,
+    "seen": 1794491587.739279,
+    "ast_hash": "44e4c6e41ff5b52c8d30c0b0f3c49641",
+    "semantic_hash": "44e4c6e41ff5b52c8d30c0b0f3c49641"
+  },
+  "ios/TVCompanion/Infrastructure/CredentialStore.swift": {
+    "mtime": 1793976884.5307455,
+    "seen": 1794491587.73928,
+    "ast_hash": "21849ae78ee4de71aa5ff598d15ca102",
+    "semantic_hash": "21849ae78ee4de71aa5ff598d15ca102"
+  },
+  "ios/TVCompanion/Infrastructure/GoogleTVRemote.swift": {
+    "mtime": 1793976884.5309916,
+    "seen": 1794491587.739281,
+    "ast_hash": "39d3a99faeee05f4aeaf4cc44985dea3",
+    "semantic_hash": "39d3a99faeee05f4aeaf4cc44985dea3"
+  },
+  "ios/TVCompanion/Infrastructure/NotificationHTTPClient.swift": {
+    "mtime": 1793976884.5312254,
+    "seen": 1794491587.739282,
+    "ast_hash": "028ca0af000b4b501c78b1b9b2217774",
+    "semantic_hash": "028ca0af000b4b501c78b1b9b2217774"
+  },
+  "ios/TVCompanion/Infrastructure/TLSChannel.swift": {
+    "mtime": 1793976884.5314605,
+    "seen": 1794491587.7392828,
+    "ast_hash": "3820a536a262734895a96b2d41422c0f",
+    "semantic_hash": "3820a536a262734895a96b2d41422c0f"
+  },
+  "ios/TVCompanion/Infrastructure/TVDiscovery.swift": {
+    "mtime": 1793976884.531964,
+    "seen": 1794491587.739284,
+    "ast_hash": "1f777b3c77e033fff2a134dcd450da34",
+    "semantic_hash": "1f777b3c77e033fff2a134dcd450da34"
+  },
+  "ios/TVCompanionAudio/Package.swift": {
+    "mtime": 1793976884.5323741,
+    "seen": 1794491587.739285,
+    "ast_hash": "c4a23c6463fbc72e93ea3b91d4e686c7",
+    "semantic_hash": "c4a23c6463fbc72e93ea3b91d4e686c7"
+  },
+  "ios/TVCompanionAudio/Sources/TVCompanionAudio/VoicePCMEncoder.swift": {
+    "mtime": 1793976884.5326583,
+    "seen": 1794491587.739286,
+    "ast_hash": "7403e1cf103d6ef3dd389e9c69c81ad8",
+    "semantic_hash": "7403e1cf103d6ef3dd389e9c69c81ad8"
+  },
+  "ios/TVCompanionAudio/Tests/TVCompanionAudioTests/VoicePCMEncoderTests.swift": {
+    "mtime": 1793976884.5330586,
+    "seen": 1794491587.7392871,
+    "ast_hash": "1a63f2c0163248dfa5b96e2aec0edcdd",
+    "semantic_hash": "1a63f2c0163248dfa5b96e2aec0edcdd"
+  },
+  "ios/TVCompanionKit/Package.swift": {
+    "mtime": 1793976884.5332546,
+    "seen": 1794491587.739288,
+    "ast_hash": "020b1cdbdd6abc6474a3c15bddcfe4c8",
+    "semantic_hash": "020b1cdbdd6abc6474a3c15bddcfe4c8"
+  },
+  "ios/TVCompanionKit/Sources/TVCompanionKit/Notifications.swift": {
+    "mtime": 1793976884.5338361,
+    "seen": 1794491587.739289,
+    "ast_hash": "4af1a8fb534a66b678b0148b5bf45a11",
+    "semantic_hash": "4af1a8fb534a66b678b0148b5bf45a11"
+  },
+  "ios/TVCompanionKit/Sources/TVCompanionKit/PairingWire.swift": {
+    "mtime": 1793976884.534061,
+    "seen": 1794491587.73929,
+    "ast_hash": "24cb13da7a9eec22a72772ea1e700563",
+    "semantic_hash": "24cb13da7a9eec22a72772ea1e700563"
+  },
+  "ios/TVCompanionKit/Sources/TVCompanionKit/RemoteWire.swift": {
+    "mtime": 1793976884.534374,
+    "seen": 1794491587.739291,
+    "ast_hash": "f5148fd5219ba436e624da532100a58b",
+    "semantic_hash": "f5148fd5219ba436e624da532100a58b"
+  },
+  "ios/TVCompanionKit/Tests/TVCompanionKitTests/CompanionTests.swift": {
+    "mtime": 1793976884.5347729,
+    "seen": 1794491587.739292,
+    "ast_hash": "3565c724c88e831b9d1ed4517447c5dd",
+    "semantic_hash": "3565c724c88e831b9d1ed4517447c5dd"
+  },
+  "scripts/check-airplay-native.py": {
+    "mtime": 1793278402.8728817,
+    "seen": 1794491587.7392929,
+    "ast_hash": "9791b84cfa118e80022be70f824c241d",
+    "semantic_hash": "9791b84cfa118e80022be70f824c241d"
+  },
+  "scripts/generate_brand_assets.py": {
+    "mtime": 1793124945.4885168,
+    "seen": 1794491587.739294,
+    "ast_hash": "d62b38c0c105979eb7387ac2bb270ca2",
+    "semantic_hash": "d62b38c0c105979eb7387ac2bb270ca2"
+  },
+  "scripts/generate_ios_app_icon.swift": {
+    "mtime": 1793976884.5354557,
+    "seen": 1794491587.739295,
+    "ast_hash": "6da134a8214b69f829d4a665dd4a905f",
+    "semantic_hash": "6da134a8214b69f829d4a665dd4a905f"
+  },
+  "scripts/prepare-airplay-native.py": {
+    "mtime": 1793976884.5363188,
+    "seen": 1794491587.739296,
+    "ast_hash": "8e516352ada2b4aa774679ef0d2ec964",
+    "semantic_hash": "8e516352ada2b4aa774679ef0d2ec964"
+  },
+  "CONTRIBUTING.md": {
+    "mtime": 1793199641.0148473,
+    "seen": 1794491587.739297,
+    "ast_hash": "637effc832133f27d830f8459ba1f74d",
+    "semantic_hash": "637effc832133f27d830f8459ba1f74d"
+  },
+  "README.md": {
+    "mtime": 1793977270.829457,
+    "seen": 1794491587.739298,
+    "ast_hash": "df8db75ef3d8f73fde4ee66fe2eae374",
+    "semantic_hash": "df8db75ef3d8f73fde4ee66fe2eae374"
+  },
+  "SECURITY.md": {
+    "mtime": 1793123052.776595,
+    "seen": 1794491587.739299,
+    "ast_hash": "eb372a8bd4d6526f87e13b0092b7a8df",
+    "semantic_hash": "eb372a8bd4d6526f87e13b0092b7a8df"
+  },
+  "android/integrations/uxplay-native/src/main/cpp/CMakeLists.txt": {
+    "mtime": 1793278402.8713362,
+    "seen": 1794491587.7393012,
+    "ast_hash": "f6c1c28e6f7cad903530b5cbc7ac5889",
+    "semantic_hash": "f6c1c28e6f7cad903530b5cbc7ac5889"
+  },
+  "brand/README.md": {
+    "mtime": 1793976884.5242147,
+    "seen": 1794491587.739302,
+    "ast_hash": "a1f69d44bb27150dcd965134d6f05010",
+    "semantic_hash": "a1f69d44bb27150dcd965134d6f05010"
+  },
+  "contracts/client-commands-draft.md": {
+    "mtime": 1793198717.332448,
+    "seen": 1794491587.7393029,
+    "ast_hash": "cffaa15f98d5e9d846d62d89836ffce2",
+    "semantic_hash": "cffaa15f98d5e9d846d62d89836ffce2"
+  },
+  "contracts/external-receiver-control-draft.md": {
+    "mtime": 1793278232.8807936,
+    "seen": 1794491587.7393038,
+    "ast_hash": "2950af54c7f7d3b819e3a3db09b0729f",
+    "semantic_hash": "2950af54c7f7d3b819e3a3db09b0729f"
+  },
+  "contracts/notifications-v1.md": {
+    "mtime": 1793976884.5245354,
+    "seen": 1794491587.739305,
+    "ast_hash": "aa3c91b3dd4763b32d7e7d7b61fce50a",
+    "semantic_hash": "aa3c91b3dd4763b32d7e7d7b61fce50a"
+  },
+  "docs/ANDROID_SETUP.md": {
+    "mtime": 1793278232.9995322,
+    "seen": 1794491587.739306,
+    "ast_hash": "1a62513d895314b65094cc00e255ab98",
+    "semantic_hash": "1a62513d895314b65094cc00e255ab98"
+  },
+  "docs/ARCHITECTURE.md": {
+    "mtime": 1793976884.5248356,
+    "seen": 1794491587.739307,
+    "ast_hash": "c484a2bb551e8fd74184516e47b8ba4f",
+    "semantic_hash": "c484a2bb551e8fd74184516e47b8ba4f"
+  },
+  "docs/BARDI_COLOR_CONTROL.md": {
+    "mtime": 1793278232.9998717,
+    "seen": 1794491587.739308,
+    "ast_hash": "b7a1d0b78f4f2b176a7186d644f57691",
+    "semantic_hash": "b7a1d0b78f4f2b176a7186d644f57691"
+  },
+  "docs/DECISIONS.md": {
+    "mtime": 1793543987.3140087,
+    "seen": 1794491587.739309,
+    "ast_hash": "342cff12c7fb902bc11903a2f565ff4b",
+    "semantic_hash": "342cff12c7fb902bc11903a2f565ff4b"
+  },
+  "docs/DESIGN.md": {
+    "mtime": 1793278233.0000467,
+    "seen": 1794491587.73931,
+    "ast_hash": "dc9ed4da2eaa8953cb673e36a8beab42",
+    "semantic_hash": "dc9ed4da2eaa8953cb673e36a8beab42"
+  },
+  "docs/LICENSE_COMPLIANCE.md": {
+    "mtime": 1793543987.3142204,
+    "seen": 1794491587.7393112,
+    "ast_hash": "aa868dd5e3a1571e49fbf23b12ac2275",
+    "semantic_hash": "aa868dd5e3a1571e49fbf23b12ac2275"
+  },
+  "docs/PROVENANCE.md": {
+    "mtime": 1793543987.3143992,
+    "seen": 1794491587.7393122,
+    "ast_hash": "66490ee12bc58fdcf7491dfaa29f8d4c",
+    "semantic_hash": "66490ee12bc58fdcf7491dfaa29f8d4c"
+  },
+  "docs/REPOSITORY_AUTOMATION.md": {
+    "mtime": 1793199641.0151649,
+    "seen": 1794491587.739313,
+    "ast_hash": "127a584442e6ed460877a6488cc636d7",
+    "semantic_hash": "127a584442e6ed460877a6488cc636d7"
+  },
+  "docs/UI_UX_RESEARCH.md": {
+    "mtime": 1793124305.563875,
+    "seen": 1794491587.7393138,
+    "ast_hash": "4f57239adfe5a90b85b570784def4d93",
+    "semantic_hash": "4f57239adfe5a90b85b570784def4d93"
+  },
+  "docs/VERIFICATION.md": {
+    "mtime": 1793977270.829911,
+    "seen": 1794491587.739315,
+    "ast_hash": "fdc9ce07112a704102c233bd9a0000ec",
+    "semantic_hash": "fdc9ce07112a704102c233bd9a0000ec"
+  },
+  "docs/phase-1/CURRENT_ARCHITECTURE.md": {
+    "mtime": 1793278232.8835602,
+    "seen": 1794491587.739316,
+    "ast_hash": "9a56ded398fcc285b64473490e282eda",
+    "semantic_hash": "9a56ded398fcc285b64473490e282eda"
+  },
+  "docs/phase-1/IMPLEMENTATION_CHANGELOG.md": {
+    "mtime": 1793278232.8838692,
+    "seen": 1794491587.739317,
+    "ast_hash": "52c91d764fe8407c76a544d0bdd6b6e7",
+    "semantic_hash": "52c91d764fe8407c76a544d0bdd6b6e7"
+  },
+  "docs/phase-1/MIGRATION_PLAN.md": {
+    "mtime": 1793278232.8842013,
+    "seen": 1794491587.7393181,
+    "ast_hash": "2cb1d17561de44984b732539b59305cb",
+    "semantic_hash": "2cb1d17561de44984b732539b59305cb"
+  },
+  "docs/phase-1/TARGET_ARCHITECTURE.md": {
+    "mtime": 1793278232.8845453,
+    "seen": 1794491587.739319,
+    "ast_hash": "6c72cdb681cc32d04cd8f0da912ffb3b",
+    "semantic_hash": "6c72cdb681cc32d04cd8f0da912ffb3b"
+  },
+  "docs/phase-2/AUDIO_AND_BACKGROUND.md": {
+    "mtime": 1793278402.8726695,
+    "seen": 1794491587.73932,
+    "ast_hash": "15c01d63aee6a04dc2a699d2cdeab34a",
+    "semantic_hash": "15c01d63aee6a04dc2a699d2cdeab34a"
+  },
+  "docs/phase-2/PLAN.md": {
+    "mtime": 1793278232.8851256,
+    "seen": 1794491587.739321,
+    "ast_hash": "810a43e6a63f833422d9f78e065a4ab8",
+    "semantic_hash": "810a43e6a63f833422d9f78e065a4ab8"
+  },
+  "docs/phase-2/RECEIVER_BOUNDARY_REVIEW.md": {
+    "mtime": 1793278232.885458,
+    "seen": 1794491587.7393222,
+    "ast_hash": "1a0ac3eb51ae0725cd4a3df5e4ba81c9",
+    "semantic_hash": "1a0ac3eb51ae0725cd4a3df5e4ba81c9"
+  },
+  "docs/phase-2/SESSION_AND_APP_VIDEO_REVIEW.md": {
+    "mtime": 1793543987.3148253,
+    "seen": 1794491587.739323,
+    "ast_hash": "988f3a1e1ccfb0a414867d2931f63fec",
+    "semantic_hash": "988f3a1e1ccfb0a414867d2931f63fec"
+  },
+  "docs/phase-2/SINGLE_APK_INTEGRATION.md": {
+    "mtime": 1793278232.885708,
+    "seen": 1794491587.7393239,
+    "ast_hash": "05706084904eec85c92c5f29f1dfac81",
+    "semantic_hash": "05706084904eec85c92c5f29f1dfac81"
+  },
+  "docs/phase-2/TV_RECEIVER_EXPERIMENT.md": {
+    "mtime": 1793278232.8859084,
+    "seen": 1794491587.739325,
+    "ast_hash": "b6008853a6496fd867b9506d1b885189",
+    "semantic_hash": "b6008853a6496fd867b9506d1b885189"
+  },
+  "docs/phase-3/IOS_REMOTE_REDESIGN.md": {
+    "mtime": 1793977270.8303556,
+    "seen": 1794491587.739326,
+    "ast_hash": "6b84efc29ff17ae21c517ec7b9f721e5",
+    "semantic_hash": "6b84efc29ff17ae21c517ec7b9f721e5"
+  },
+  "docs/phase-3/README.md": {
+    "mtime": 1793977270.830761,
+    "seen": 1794491587.739327,
+    "ast_hash": "5366fcbf8ceabd4fd92d4ccaa362d343",
+    "semantic_hash": "5366fcbf8ceabd4fd92d4ccaa362d343"
+  },
+  "experiments/airplay-lab/README.md": {
+    "mtime": 1793278232.8861353,
+    "seen": 1794491587.739328,
+    "ast_hash": "c393309860409f0ce33e32d858baebc8",
+    "semantic_hash": "c393309860409f0ce33e32d858baebc8"
+  },
+  "ios/README.md": {
+    "mtime": 1793977270.8311424,
+    "seen": 1794491587.739329,
+    "ast_hash": "430f5b5cd6c92e8819416ba1c8a0c6f5",
+    "semantic_hash": "430f5b5cd6c92e8819416ba1c8a0c6f5"
+  },
+  "brand/banner.svg": {
+    "mtime": 1793124945.5595808,
+    "seen": 1794491587.73933,
+    "ast_hash": "d6e9de44367354fcf79c8701b2cf07c3",
+    "semantic_hash": "d6e9de44367354fcf79c8701b2cf07c3"
+  },
+  "brand/mark.svg": {
+    "mtime": 1793124945.5595038,
+    "seen": 1794491587.739331,
+    "ast_hash": "e48215b64a961b05d9a77d0e72c4af56",
+    "semantic_hash": "e48215b64a961b05d9a77d0e72c4af56"
+  },
+  "ios/TVCompanion/Assets.xcassets/AppIcon.appiconset/AppIcon.png": {
+    "mtime": 1793976884.5283337,
+    "seen": 1794491587.7393322,
+    "ast_hash": "f96285ac62cba277fa89ffd2874f0d1d",
+    "semantic_hash": "f96285ac62cba277fa89ffd2874f0d1d"
+  }
+}
