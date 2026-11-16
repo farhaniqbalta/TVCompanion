@@ -13,8 +13,7 @@ object AmbientShaders {
         "uBeatAges", "uBeatCount", "uBase", "uPalette", "uDitherSeed",
     )
 
-    private val SHARED = """#version 300 es
-uniform highp vec2 uRes;
+    private val SHARED = """uniform highp vec2 uRes;
 uniform highp float uAspect;
 uniform highp vec4 uPhase;
 uniform highp float uLevel;
@@ -32,16 +31,14 @@ float sq(float x){ return x*x; }
 highp float hash12(highp vec2 p){ highp vec3 p3=fract(vec3(p.xyx)*0.1031); p3+=dot(p3,p3.yzx+33.33); return fract((p3.x+p3.y)*p3.z); }
 """
 
-    private val VERTEX_HEAD = SHARED + """precision highp float;
-in vec2 aPos;
+    private val VERTEX_HEAD = "#version 300 es\nprecision highp float;\n" + SHARED + """in vec2 aPos;
 out highp vec2 vP;
 """
 
     private const val DEFAULT_VERTEX_BODY =
         "void main(){ vP = vec2(aPos.x * 0.5 * uAspect, aPos.y * 0.5); gl_Position = vec4(aPos, 0.0, 1.0); }\n"
 
-    private val FRAGMENT_HEAD = SHARED + """precision mediump float;
-in highp vec2 vP;
+    private val FRAGMENT_HEAD = "#version 300 es\nprecision mediump float;\n" + SHARED + """in highp vec2 vP;
 out vec4 fragColor;
 vec3 finish(vec3 col, highp vec2 p){
   col *= 1.0 + 0.08*uPulse;

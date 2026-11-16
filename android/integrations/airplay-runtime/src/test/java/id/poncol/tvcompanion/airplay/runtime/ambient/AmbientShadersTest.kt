@@ -28,4 +28,29 @@ class AmbientShadersTest {
         val bad = Regex("""uPhase\.[xyzw]\s*\*\s*\d*\.\d*[1-9]""")
         dir.listFiles()!!.forEach { assertNull(it.name, bad.find(it.readText())) }
     }
+    private fun allSources() = listOf("aurora", "ripples", "dusk", "missing").map { AmbientShaders.assemble(it, read) }
+        .flatMap { listOf(it.look to ("vert" to it.vertex), it.look to ("frag" to it.fragment)) }
+
+    @Test fun precisionPrecedesFirstFloatDeclaration() {
+        allSources().forEach { (look, st) ->
+            assertTrue("$look ${st.first}", st.second.lines()[1].startsWith("precision "))
+        }
+    }
+
+    @Test fun assembledShadersCompileWithGlslc() {
+        val glslc = System.getenv("AMBIENT_GLSLC")
+        org.junit.Assume.assumeTrue(glslc != null)
+        allSources().forEach { (look, st) ->
+            val (stage, src) = st
+            val f = java.io.File.createTempFile("ambient-$look-", ".$stage")
+            val out = java.io.File.createTempFile("ambient-$look-", ".spv")
+            f.writeText(src.replaceFirst("#version 300 es", "#version 310 es"))
+            val p = ProcessBuilder(glslc, "-x", "glsl", "--target-env=opengl", "-std=310es",
+                "-fshader-stage=${if (stage == "vert") "vert" else "frag"}", "-fauto-map-locations",
+                "-c", f.path, "-o", out.path).redirectErrorStream(true).start()
+            val log = p.inputStream.bufferedReader().readText()
+            assertEquals("$look $stage: $log", 0, p.waitFor())
+            f.delete(); out.delete()
+        }
+    }
 }
