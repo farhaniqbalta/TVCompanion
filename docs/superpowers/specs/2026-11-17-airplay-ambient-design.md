@@ -116,7 +116,7 @@ It must be a strictly optional extra. **Current AirPlay behaviour stays exactly 
   - Refractory gap: 280 ms.
   - Each onset records `beatCount++` and `lastBeatPlayoutNs`: the playout time of the analysed window's newest sample, not the analysis time.
 - **Snapshot.** A latest-only snapshot containing `generation`, `hasRecentAudio`, `rms`, `peak`, `bands[16]`, `beatCount`, `lastBeatPlayoutNs` and `lastBeatPlayoutNs[−1..−3]`.
-  - Published with a seqlock or double buffer of atomics, so the reader never blocks the writer.
+  - Published under a short mutex shared only by the analyzer thread and the GL reader; each side holds it for a 25-float copy. The audio thread never touches it.
   - `hasRecentAudio` goes false after 400 ms without PCM.
 - **FFT.** A small internal radix-2 real FFT, covered by host tests. No new third-party dependency, so `LICENSE_COMPLIANCE.md` is unaffected. *(My call: avoids pinning and licensing KissFFT for about 80 lines of code.)*
 
