@@ -57,7 +57,7 @@ It must be a strictly optional extra. **Current AirPlay behaviour stays exactly 
 | Drawing | GLES in the UxPlay `.so` via 4 `nativeGl*` JNI calls | `GLES30` in a `GLSurfaceView.Renderer` |
 | GPU cost | Same shader, same cost | Same shader, same cost |
 | CPU per frame | — | About 15 uniform calls plus 1 JNI read: tens of µs out of 33 ms |
-| Failure blast radius | A GL crash kills `:airplay` and the music | A Kotlin error is caught, and Ambient closes |
+| Failure blast radius | A GL crash kills `:airplay` and the music | A Kotlin or GL error is caught, and Ambient closes (driver crashes are not isolated in either option) |
 | Coupling | Every look change rebuilds the GPL receiver `.so` | Looks are asset files; the native side holds only analysis |
 
 - **B was chosen** by the user, on the advisor's and Fable's recommendation.
@@ -72,19 +72,18 @@ It must be a strictly optional extra. **Current AirPlay behaviour stays exactly 
 
 ### 5.1 User flow and screen composition
 
-- **Entry point.** On the waiting page, an **Ambient** button appears (styled with `TvUi.button`) when `snapshot.audioActive && !snapshot.videoActive`.
+- **Entry point.** On the waiting page, an **Ambient** button appears (styled with `TvUi.button`) whenever a sender is connected (`snapshot.connection != NONE`) and `!snapshot.videoActive`. It also shows while the music is paused.
 - **Opening Ambient.**
   - Add a `GLSurfaceView` to the frame **above** the video view, using `setZOrderMediaOverlay(true)`.
   - Set `waiting` and `controls` to `GONE`.
   - Set `FLAG_KEEP_SCREEN_ON`.
   - The video `SurfaceView` stays attached and VISIBLE, and is never touched.
 - **Back while Ambient is open.** Closes Ambient and restores the waiting page. Music continues. A second Back follows the existing behaviour.
-- **Automatic close.** Ambient closes, then the existing behaviour runs, when any of these happens:
-  - `videoActive` becomes true;
-  - `audioActive` becomes false (after features have faded);
-  - the session is replaced or the screen stops;
-  - the analysis source reports closed;
-  - the look or EGL setup fails.
+- **Closing is the remote's job (user decision).** Pausing the song, the receiver's 1-second `AUDIO_STOPPED`, focus loss, a sender disconnect or a session replacement do **not** close Ambient. It eases into its calm idle drift, and wakes when PCM returns. If the analysis source closes, Ambient re-subscribes when a new source opens.
+- **The only automatic closes:**
+  - `videoActive` becomes true. Video must take over the screen unchanged.
+  - The playback screen itself stops or finishes, under existing behaviour.
+  - The look or EGL setup fails.
 - **Activity stop.** Ambient closes first. Nothing persists, and Ambient never reopens automatically.
 - **Overscan hint.** A one-line hint ("Back to close") sits inside a 5% safe margin and fades after 4 s. There is no other on-screen text.
 
@@ -101,6 +100,7 @@ It must be a strictly optional extra. **Current AirPlay behaviour stays exactly 
 - **Forbidden in the tap:** allocation, logging, JNI, blocking locks, FFT.
 - **Resets.** Clear the ring and bump an analysis `generation` whenever `version` changes or the stream is released, and on `end()`, `flush()`, `focus(false)` and receiver destroy.
 - **Data integrity.** The tap reads only. PCM sent to AAudio is unchanged.
+- **Volume.** The tap also receives the current `gain × duck` multiplier. The analyzer divides it back out, so visuals look the same whether the iPhone volume is high or low. When the multiplier is 0 (muted), the analyzer treats the input as silence and the view goes idle. *(My call: ambient light shouldn't fade just because the music is played quietly.)*
 
 ### 5.3 Native analyzer
 
@@ -172,13 +172,15 @@ It must be a strictly optional extra. **Current AirPlay behaviour stays exactly 
   - A pulse whose age is negative has not happened yet and is ignored.
   - The pulse fires when the beat is **heard**, not when it is analysed.
   - `AMBIENT_SYNC_OFFSET_MS` is one constant, default 0, tuned by ear on the TV.
+  - **If the visuals still lag the sound after tuning,** audio is **never** delayed. Instead, CP3 may add beat **prediction**: estimate the tempo from recent beat intervals and fire the predicted next beat early by the measured lag. Any beat that actually arrives re-anchors the prediction. *(My call: this keeps the anti-goal intact.)*
 - **Idle.** When `hasRecentAudio` is false, everything eases over 1.5 s to intensity 0.35, speed 0.5× and no pulse.
 - **Reduced motion.** Follows the system "remove animations" setting (animator duration scale = 0):
   - drift speed drops to 0.25×;
   - there is no positional beat response, only a brightness change of at most 5%;
   - the dither seed is static.
   - *(My call: no in-app toggle in v1.)*
-- **Errors.** Any exception, shader compile/link failure or `CLOSED` status ends with GL resources released on the GL thread and Ambient closed. AirPlay is never affected.
+- **Errors.** Every `GLSurfaceView.Renderer` callback body is wrapped in try/catch. Any exception, shader compile/link failure or `CLOSED` status ends with GL resources released on the GL thread and Ambient closed.
+  - **Known limit.** A GPU-driver crash or a hung GL thread would still take down `:airplay` and the music. Isolating against that would need a separate process, which this design rejects. The risk exists only while Ambient is open.
 
 ### 5.7 Swappable look contract (v1)
 
@@ -196,6 +198,7 @@ It must be a strictly optional extra. **Current AirPlay behaviour stays exactly 
   - `uPhase` (vec4, wrapped);
   - `uLevel`, `uBass`, `uMid`, `uHigh`, `uPulse`, `uReduced`;
   - `uBeatAges` (vec4, seconds; ≥ 99 means none);
+  - `uBeatCount` (float, running count of heard beats, so a look can assign successive beats to different elements; mod 2^20);
   - `uBase`, `uPalette[4]` (mint, gold, teal, pale; squared on the CPU);
   - `uDitherSeed`.
 - **Geometry (fixed).**
@@ -214,6 +217,10 @@ It must be a strictly optional extra. **Current AirPlay behaviour stays exactly 
 - **Varyings.** Six: `vP`, heights (vec3 highp), shimmer (vec3), and three tints (vec3).
 - **Fragment shader.** Per ribbon: one rational falloff and two constant-edge smoothsteps, then `finish()`.
 - **Look.** Same as the approved preview: three soft ribbons in the lower area; bass lifts them, highs add shimmer, and each heard beat sends a crest along them.
+  - **Reference.** The approved preview is saved as `docs/superpowers/specs/2026-11-17-airplay-ambient-preview.html`. Its `aurora` and `ripples` entries are the visual reference for ribbon heights and widths, crest speed and width, tint mapping, shimmer frequency and palette assignment. Its JavaScript holds the band mapping, smoothing and onset logic.
+  - **Not a straight copy.** Before porting, two preview defects must be fixed:
+    - lines 137–138 multiply wrapped phases by non-integer factors;
+    - drift runs 6× faster than the TV speed.
 - **Cost (Fable estimate, unmeasured).** About 100–110 scalar operations per pixel, with no trig or exp per pixel.
 - **Columns.** 128 keeps shimmer interpolation error under 1% brightness. Do not go below 128.
 
@@ -245,7 +252,7 @@ It must be a strictly optional extra. **Current AirPlay behaviour stays exactly 
   - generation reset;
   - subscription lifetime: open/close/open, double close, and receiver destroy before close.
 - **Kotlin unit tests:**
-  - Ambient open/close policy: opening is allowed only when audio is active and video is not; video starting closes Ambient; a stale open epoch is rejected;
+  - Ambient open/close policy: opening is allowed only when a sender is connected and video is not active; pause, `AUDIO_STOPPED`, disconnect and session replacement keep it open; video starting closes it; a stale open epoch is rejected;
   - smoothing and phase-wrap maths.
 - **On the TV (user confirmation, as in earlier phases):**
   - **CP1:** Ambient layering over the untouched video view with a synthetic signal. Toggle 20×. Video arriving while Ambient is open shows video. Back keeps the music playing. With "Keep the current connection" off, the session survives opening and closing Ambient.
