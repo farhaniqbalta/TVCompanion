@@ -5,7 +5,9 @@ import android.content.*
 import android.os.*
 import android.view.*
 import android.view.accessibility.AccessibilityManager
+import android.util.Log
 import android.widget.*
+import id.poncol.tvcompanion.airplay.runtime.ambient.*
 import id.poncol.tvcompanion.designsystem.TvUi
 import id.poncol.tvcompanion.domain.airplay.*
 
@@ -25,6 +27,12 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     private lateinit var controls: View
     private lateinit var returnButton: Button
     private lateinit var retry: Button
+    private lateinit var frame: FrameLayout
+    private lateinit var ambientButton: Button
+    private var ambient: AmbientView? = null
+    @Volatile private var ambientSub: AmbientSubscription? = null   // read on the GL thread
+    private var ambientHint: TextView? = null
+    private val epoch = AmbientEpoch()
     private val main = Handler(Looper.getMainLooper())
     private val hideControls = Runnable { if (snapshot.videoActive) { controls.clearFocus(); controls.visibility = View.GONE } }
     private var consumedKey: Int? = null
@@ -40,7 +48,7 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     override fun onCreate(saved: Bundle?) {
         super.onCreate(saved)
         val ui = TvUi(this)
-        val frame = FrameLayout(this)
+        frame = FrameLayout(this)
         val video = SurfaceView(this).also { it.holder.addCallback(this) }
         frame.addView(video, FrameLayout.LayoutParams(-1, -1))
         val page = ui.page()
@@ -52,6 +60,7 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         detail = ui.text(page, getString(R.string.airplay_runtime_instructions), 18f)
         retry = ui.button(page, getString(R.string.airplay_runtime_retry)) { retryPlayback() }.apply { visibility = View.GONE }
         waitingHint = ui.text(page, "", 16f)
+        ambientButton = ui.button(page, getString(R.string.airplay_runtime_ambient)) { openAmbient() }.apply { visibility = View.GONE }
         ui.button(page, getString(R.string.airplay_runtime_return)) { finish() }
         ui.button(page, getString(R.string.airplay_runtime_stop_action)) { stopAndLeave() }
         waiting = ScrollView(this).apply { isFillViewport = true; addView(page) }
@@ -100,6 +109,8 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     private fun render(state: AirPlaySnapshot) {
         val hadVideo = snapshot.videoActive
         snapshot = state
+        if (AmbientPolicy.mustClose(state)) closeAmbient()
+        ambientButton.visibility = if (AmbientPolicy.canOpen(state)) View.VISIBLE else View.GONE
         title.setText(when {
             state.issue == AirPlayIssue.PROTECTED_CONTENT -> R.string.airplay_runtime_protected_video
             state.issue == AirPlayIssue.MEDIA_UNSUPPORTED -> R.string.airplay_runtime_unsupported_video
@@ -139,6 +150,40 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         } else if (!state.videoActive && hadVideo) {
             main.removeCallbacks(hideControls); controls.visibility = View.GONE
         }
+        if (ambient != null) { waiting.visibility = View.GONE; controls.visibility = View.GONE }
+    }
+    private fun openAmbient() {
+        if (ambient != null) return
+        val token = epoch.next()
+        ambientSub = SyntheticAmbientSubscription()   // Task 6: real source
+        val view = AmbientView(this, { ambientSub }) { e ->
+            if (epoch.isCurrent(token)) { Log.w("TVCAmbient", "closing ambient", e); closeAmbient() }
+        }
+        ambient = view
+        frame.addView(view, FrameLayout.LayoutParams(-1, -1))
+        val dm = resources.displayMetrics
+        ambientHint = TextView(this).apply {
+            setText(R.string.airplay_runtime_ambient_hint); textSize = 16f; setTextColor(0xccf2f5f4.toInt())
+            frame.addView(this, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.END).apply {
+                setMargins(dm.widthPixels / 20, dm.heightPixels / 20, dm.widthPixels / 20, dm.heightPixels / 20)
+            })
+            animate().alpha(0f).setStartDelay(4000).setDuration(600)
+        }
+        main.removeCallbacks(hideControls)
+        waiting.visibility = View.GONE; controls.visibility = View.GONE
+        view.requestFocus()
+        view.begin()
+    }
+    private fun closeAmbient() {
+        val view = ambient ?: return
+        epoch.invalidate()
+        ambient = null
+        view.end()   // blocks until the GL thread pauses, so the subscription is no longer read
+        frame.removeView(view)
+        ambientHint?.let { it.animate().cancel(); frame.removeView(it) }; ambientHint = null
+        ambientSub?.close(); ambientSub = null
+        render(snapshot)
+        ambientButton.requestFocus()
     }
     private fun unavailable() {
         main.removeCallbacks(hideControls)
@@ -161,6 +206,11 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         }
     }
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (ambient != null) when (event.keyCode) {
+            KeyEvent.KEYCODE_BACK -> { if (event.action == KeyEvent.ACTION_UP) closeAmbient(); return true }
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN,
+            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> return true
+        }
         if (consumedKey == event.keyCode) {
             if (event.action == KeyEvent.ACTION_UP) consumedKey = null
             return true
@@ -181,6 +231,7 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) { }
     override fun surfaceDestroyed(holder: SurfaceHolder) { display = null; host?.detachDisplay() }
     override fun onStop() {
+        closeAmbient()
         active = false; main.removeCallbacksAndMessages(null)
         host?.detachDisplay(); host = null
         if (bound) { unbindService(connection); bound = false }
