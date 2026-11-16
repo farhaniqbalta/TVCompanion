@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Host-side deterministic media checks. No TV, network, private data or benchmarks."""
+"""Host-side deterministic media and ambient (PCM tap, FFT) checks. No TV, network, private data or benchmarks."""
 from pathlib import Path
 import os
 import sys
@@ -8,6 +8,13 @@ import tempfile
 root = Path(__file__).resolve().parents[1]
 module = root / 'android/integrations/uxplay-native'
 codec = module / '.native/alac/codec'
+cpp = module / 'src/main/cpp'
+with tempfile.TemporaryDirectory(prefix='tvcompanion-ambient-check-') as temporary:
+    binary = Path(temporary) / 'ambient-check'
+    subprocess.run([os.environ.get('CXX', 'c++'), '-std=c++17', '-pthread', '-I' + str(cpp),
+                    str(module / 'src/test/cpp/ambient_test.cpp'), *map(str, sorted((cpp / 'ambient').glob('*.cpp'))),
+                    '-o', str(binary)], check=True)
+    subprocess.run([str(binary)], check=True)
 if not codec.exists():
     raise SystemExit('Prepare native dependencies first with scripts/prepare-airplay-native.py')
 endian_flag = '-DTARGET_RT_LITTLE_ENDIAN=' + ('1' if sys.byteorder == 'little' else '0')
