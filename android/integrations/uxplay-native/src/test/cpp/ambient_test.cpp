@@ -199,6 +199,7 @@ int main() {
         assert(status == 0 && o[1] == 1.0f && o[20] > 0 && o[0] == (float)(src.tap().generation() % 1048576));
         for (int i = 2; i < 25; ++i) assert(std::isfinite(o[i]));
         assert(o[21] != 99000.0f);
+        assert(src.analyses() > 0);  // debug stat counts extractor runs
         src.tap().reset();  // generation change clears the snapshot
         for (int i = 0; i < 200 && o[20] != 0; ++i) { std::this_thread::sleep_for(std::chrono::milliseconds(5)); src.read(o, steadyNs()); }
         assert(o[20] == 0 && o[0] == (float)(src.tap().generation() % 1048576) && o[21] == 99000.0f);

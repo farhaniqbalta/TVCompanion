@@ -162,8 +162,3 @@ Device checks on the project's MT5867 / Mali-G31 Android 14 TV (1280x720), run o
 - **CP3, NOT TESTED:** pause, low volume, stop/restart and sender takeover with Ambient open.
 - **Kept looks, NOT TESTED (deferred by user):** loading `ripples`, `dusk` and `strings` on the TV, including `strings` on-device. A kept look could fail on Mali undetected until it is switched to; `ACTIVE_LOOK` remains `aurora`.
 - **No-Ambient regression, NOT TESTED (deferred by user):** Screen Mirroring video, background listening, sender takeover and HLS app video with Ambient never opened.
-
-Known gaps:
-
-- The debug log lacks native analyzer statistics (tap dropped count, analyses per second) called for by the spec; it is recorded for the final fix wave.
-- A rare reset race in the native analyzer can stall bands/beats until the new stream passes the old sample count (one-line guard pending in the branch's final review fix wave).

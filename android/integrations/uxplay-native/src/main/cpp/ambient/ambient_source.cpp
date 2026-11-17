@@ -11,7 +11,13 @@ bool AmbientSource::subscribe() {
         publish(AmbientFeatures{}, tap_.generation());
         tap_.setEnabled(true);
         stop_ = false;  // thread not running: no other accessor
-        thread_ = std::thread(&AmbientSource::run, this);
+        try {
+            thread_ = std::thread(&AmbientSource::run, this);
+        } catch (...) {
+            tap_.setEnabled(false);
+            subscribers_ = 0;
+            throw;
+        }
     }
     return true;
 }
@@ -65,10 +71,13 @@ void AmbientSource::run() {
         int64_t newest = 0;
         uint64_t total = 0;
         const bool ok = tap_.latest(window_, 1024, newest, total);
+        // reset() bumps generation before marking the clear: a read in between returns the old total.
+        if (total < lastTotal) lastTotal = 0;
         // latest() does not say which generation it read: a reset during the copy invalidates the window.
         if (ok && tap_.generation() == before && total >= lastTotal + 512) {
             lastTotal = total;
             extractor_.process(window_, newest, features);
+            analyses_.fetch_add(1, std::memory_order_relaxed);
             publish(features, generation);
         }
         lock.lock();

@@ -23,6 +23,7 @@ public:
     void close();          // idempotent: closed=true, disable tap, join thread
     // Fills AmbientFrame layout (25 floats). Returns 0 OK, 1 STALE (no PCM for 400 ms), 2 CLOSED.
     int read(float *out, int64_t nowMonotonicNs);
+    uint32_t analyses() const { return analyses_.load(std::memory_order_relaxed); }  // debug stat
 
 private:
     void run();
@@ -34,6 +35,7 @@ private:
     int subscribers_ = 0;
     std::thread thread_;
     std::atomic<bool> closed_{false};
+    std::atomic<uint32_t> analyses_{0};
     std::mutex wakeMutex_;            // guards stop_
     std::condition_variable wake_;
     bool stop_ = false;
