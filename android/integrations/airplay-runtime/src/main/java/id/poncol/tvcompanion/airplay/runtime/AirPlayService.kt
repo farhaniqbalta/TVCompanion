@@ -1,6 +1,7 @@
 package id.poncol.tvcompanion.airplay.runtime
 
 import android.app.*
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.*
@@ -76,7 +77,7 @@ class AirPlayService : Service() {
         if (enabled) {
             if (session.snapshot.phase == AirPlayPhase.STOPPING) return AirPlayResult(false, AirPlayIssue.BUSY)
             // Notification permission/channel availability is a product requirement. TV firmware may hide the notification; app controls remain available.
-            if (!getSystemService(NotificationManager::class.java).areNotificationsEnabled() || getSystemService(NotificationManager::class.java).getNotificationChannel(CHANNEL)?.importance == NotificationManager.IMPORTANCE_NONE) return AirPlayResult(false, AirPlayIssue.UNAVAILABLE)
+            if (!canHoldInBackground(this)) return AirPlayResult(false, AirPlayIssue.UNAVAILABLE)
             try {
                 if (!foreground) {
                     if (!fromBoot) startForegroundService(Intent(this, AirPlayService::class.java).setAction(ACTION_HOLD))
@@ -92,6 +93,10 @@ class AirPlayService : Service() {
     private fun applyListeningDefault(startedForeground: Boolean): Boolean {
         if (!listeningDefault.claim()) return false
         return setKeepAvailable(true, fromBoot = startedForeground).accepted
+    }
+    /** A startForegroundService caller must see startForeground even when the service then declines to hold. */
+    private fun settleForegroundStart() {
+        if (!foreground) try { updateForeground(session.snapshot); stopForeground(STOP_FOREGROUND_REMOVE) } catch (_: RuntimeException) { }
     }
     private fun stopIfIdle() {
         if (surface == null && !session.heldInBackground && session.snapshot.phase in listOf(AirPlayPhase.STOPPED, AirPlayPhase.FAILED)) stopSelf()
@@ -176,11 +181,11 @@ class AirPlayService : Service() {
             if ((application as AutoStartSettings).airplayOnBoot) {
                 listeningDefault.claim()
                 val started = setKeepAvailable(true, fromBoot = true)
-                if (started.accepted) session.setBackgroundOptions(true, true, true) else stopSelf()
-            } else stopSelf()
+                if (started.accepted) session.setBackgroundOptions(true, true, true) else { settleForegroundStart(); stopSelf() }
+            } else { settleForegroundStart(); stopSelf() }
         }
         // Failure (e.g. notifications blocked) leaves listening Off silently; the settings screen shows the hint.
-        else if (intent?.action == ACTION_APP_START) { if (!applyListeningDefault(startedForeground = true)) stopIfIdle() }
+        else if (intent?.action == ACTION_APP_START) { if (!applyListeningDefault(startedForeground = true)) { settleForegroundStart(); stopIfIdle() } }
         else if (intent?.action == ACTION_HOLD && session.heldInBackground) updateForeground(session.snapshot)
         return START_NOT_STICKY
     }
@@ -200,6 +205,14 @@ class AirPlayService : Service() {
         /** Started by the app (launcher open or package update): applies the Background listening default. */
         const val ACTION_APP_START = "id.poncol.tvcompanion.airplay.APP_START"
         private val listeningDefault = OnceGate()
+        /** The gate Background listening applies; check it before startForegroundService so the service can always hold. */
+        fun canHoldInBackground(context: Context): Boolean {
+            val manager = context.getSystemService(NotificationManager::class.java)
+            return foregroundAllowed(manager.areNotificationsEnabled(), manager.getNotificationChannel(CHANNEL)?.importance)
+        }
+        /** A missing channel is fine: the service creates it before posting. */
+        internal fun foregroundAllowed(notificationsEnabled: Boolean, channelImportance: Int?) =
+            notificationsEnabled && channelImportance != NotificationManager.IMPORTANCE_NONE
         private const val CHANNEL = "airplay_receiver"
         private const val NOTIFICATION = 200
         private const val ACTION_STOP = "id.poncol.tvcompanion.airplay.STOP"
