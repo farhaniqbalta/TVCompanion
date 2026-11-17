@@ -36,7 +36,14 @@ class AmbientMotionTest {
         m.update(frame(beatAgeMs = -40f), AmbientStatus.OK, 1f / 30f, 0f)
         assertEquals(99f, m.beatAges[0], 0f)
         m.update(frame(beatAgeMs = 50f), AmbientStatus.OK, 1f / 30f, 0.033f)
-        assertEquals(0.05f, m.beatAges[0], 0.001f); assertTrue(m.pulse > 0.3f)
+        assertEquals((50f - AmbientMotion.SYNC_OFFSET_MS) / 1000f, m.beatAges[0], 0.001f); assertTrue(m.pulse > 0.3f)
+    }
+    @Test fun unheardNewestBeatCompactsHeardBeatsForward() {
+        val m = AmbientMotion(false)
+        val f = frame(beatAgeMs = -40f).also { it[AmbientFrame.BEAT_AGE_MS + 1] = 400f; it[AmbientFrame.BEAT_AGE_MS + 2] = 900f }
+        m.update(f, AmbientStatus.OK, 1f / 30f, 0f)
+        assertEquals(-25f, AmbientMotion.SYNC_OFFSET_MS, 0f)
+        assertArrayEquals(floatArrayOf(0.425f, 0.925f, 99f, 99f), m.beatAges, 0.001f)
     }
     @Test fun reducedMotionHasNoPulseAndStaticDither() {
         val m = AmbientMotion(true)

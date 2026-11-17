@@ -17,10 +17,13 @@ class AmbientMotion(private val reduced: Boolean) {
 
     fun update(frame: FloatArray, status: AmbientStatus, dtSec: Float, timeSec: Float) {
         val idle = status != AmbientStatus.OK || frame[AmbientFrame.HAS_RECENT] == 0f
+        var heard = 0   // unheard (future) beats are skipped so slot 0 is the newest heard beat
         for (i in 0..3) {
-            val ms = frame[AmbientFrame.BEAT_AGE_MS + i] - SYNC_OFFSET_MS
-            beatAges[i] = if (ms < 0f) 99f else ms / 1000f
+            val raw = frame[AmbientFrame.BEAT_AGE_MS + i]
+            val ms = raw - SYNC_OFFSET_MS
+            if (ms >= 0f && raw < 99000f) beatAges[heard++] = ms / 1000f
         }
+        for (i in heard..3) beatAges[i] = 99f
         if (idle) {
             level = ease(level, 0f, dtSec, IDLE_RELEASE, IDLE_RELEASE); bass = ease(bass, 0f, dtSec, IDLE_RELEASE, IDLE_RELEASE)
             mid = ease(mid, 0.5f, dtSec, IDLE_RELEASE, IDLE_RELEASE); high = ease(high, 0f, dtSec, IDLE_RELEASE, IDLE_RELEASE)
@@ -47,7 +50,7 @@ class AmbientMotion(private val reduced: Boolean) {
         cur + (target - cur) * (1f - exp(-dt * 1000f / (if (target > cur) attackMs else releaseMs)))
 
     companion object {
-        const val SYNC_OFFSET_MS = 0f
+        const val SYNC_OFFSET_MS = -25f
         private const val IDLE_RELEASE = 1500f
         private val TWO_PI = 2f * Math.PI.toFloat()
         private val RATES = floatArrayOf(0.11f, 0.083f, 0.047f, 0.031f)
