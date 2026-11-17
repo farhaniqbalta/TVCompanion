@@ -43,6 +43,7 @@ class AmbientView(
 
     fun end() {
         Choreographer.getInstance().removeFrameCallback(frameCallback)
+        queueEvent { renderer.releaseGl() }   // runs before onPause tears the context down
         onPause()
     }
 }

@@ -43,6 +43,11 @@ internal class AmbientRenderer(
     private var maxIntervalNs = 0L
     private var sumDrawNs = 0L
     private var maxDrawNs = 0L
+    private var gpuQueries: IntArray? = null   // debug only; null when GL_EXT_disjoint_timer_query is missing
+    private var gpuFrame = 0L
+    private var gpuSamples = 0
+    private var sumGpuNs = 0L
+    private var maxGpuNs = 0L
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) = guard {
         val bits = IntArray(1).also { glGetIntegerv(GL_RED_BITS, it, 0) }[0]
@@ -61,7 +66,17 @@ internal class AmbientRenderer(
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(0, 2, GL_FLOAT, false, 0, 0)
         startNs = System.nanoTime(); lastNs = startNs; statStartNs = startNs; statusNs = startNs
-        if (debug && !loggedInfo) { loggedInfo = true; Log.d(TAG, "GL_RED_BITS=$bits look=$linked") }
+        if (debug) {
+            val ext = glGetString(GL_EXTENSIONS) ?: ""
+            gpuQueries = null; gpuFrame = 0   // ids from a lost context are not ours to delete
+            if ("GL_EXT_disjoint_timer_query" in ext) gpuQueries = IntArray(3).also { glGenQueries(3, it, 0) }
+            if (!loggedInfo) {
+                loggedInfo = true
+                Log.d(TAG, "GL_RED_BITS=$bits look=$linked")
+                Log.d(TAG, "GL_EXTENSIONS=$ext")
+                if (gpuQueries == null) Log.d(TAG, "gpu timer unavailable")
+            }
+        }
     }
 
     /** GL thread (via queueEvent). The old program is replaced; onSurfaceCreated reloads lookName after context loss. */
@@ -117,9 +132,35 @@ internal class AmbientRenderer(
         glUniform4fv(loc[U_BEAT_AGES], 1, motion.beatAges, 0)
         glUniform1f(loc[U_BEAT_COUNT], motion.beatCount)
         glUniform1f(loc[U_DITHER], motion.ditherSeed)
+        val q = gpuQueries
+        if (q != null) {
+            val slot = (gpuFrame % q.size).toInt()
+            if (gpuFrame >= q.size) readGpu(q[slot])   // issued q.size frames ago, so normally ready without stalling
+            glBeginQuery(GL_TIME_ELAPSED_EXT, q[slot])
+        }
         glDrawArrays(GL_TRIANGLE_STRIP, 0, VERTEX_COUNT)
+        if (q != null) { glEndQuery(GL_TIME_ELAPSED_EXT); gpuFrame++ }
         if (debug) stats(now, System.nanoTime() - now)
         lastNs = now
+    }
+
+    /** GL thread (via queueEvent, before the context goes). */
+    fun releaseGl() = guard {
+        gpuQueries?.let { glDeleteQueries(it.size, it, 0) }
+        gpuQueries = null
+    }
+
+    private fun readGpu(query: Int) {
+        val buf = IntArray(1)
+        glGetQueryObjectuiv(query, GL_QUERY_RESULT_AVAILABLE, buf, 0)
+        if (buf[0] == 0) return
+        glGetIntegerv(GL_GPU_DISJOINT_EXT, buf, 0)
+        val disjoint = buf[0] != 0
+        glGetQueryObjectuiv(query, GL_QUERY_RESULT, buf, 0)   // read anyway so the query is consumed
+        if (disjoint) return
+        val ns = buf[0].toLong() and 0xFFFFFFFFL
+        gpuSamples++; sumGpuNs += ns
+        if (ns > maxGpuNs) maxGpuNs = ns
     }
 
     private fun stats(now: Long, drawNs: Long) {
@@ -129,8 +170,10 @@ internal class AmbientRenderer(
         if (drawNs > maxDrawNs) maxDrawNs = drawNs
         if (now - statStartNs < 10_000_000_000L) return
         Log.d(TAG, "frames=$statFrames interval mean=${sumIntervalNs / statFrames / 1000}us max=${maxIntervalNs / 1000}us " +
-            "draw mean=${sumDrawNs / statFrames / 1000}us max=${maxDrawNs / 1000}us")
+            "draw mean=${sumDrawNs / statFrames / 1000}us max=${maxDrawNs / 1000}us" +
+            if (gpuSamples > 0) " gpu mean=${sumGpuNs / gpuSamples / 1000}us max=${maxGpuNs / 1000}us n=$gpuSamples" else "")
         statStartNs = now; statFrames = 0; sumIntervalNs = 0; maxIntervalNs = 0; sumDrawNs = 0; maxDrawNs = 0
+        gpuSamples = 0; sumGpuNs = 0; maxGpuNs = 0
     }
 
     private inline fun guard(block: () -> Unit) {
@@ -165,6 +208,8 @@ internal class AmbientRenderer(
 
     private companion object {
         const val TAG = "TVCAmbient"
+        const val GL_TIME_ELAPSED_EXT = 0x88BF   // GL_EXT_disjoint_timer_query
+        const val GL_GPU_DISJOINT_EXT = 0x8FBB
         val VERTEX_COUNT = 2 * (AmbientShaders.COLUMNS + 1)
         val U_RES = u("uRes")
         val U_ASPECT = u("uAspect")

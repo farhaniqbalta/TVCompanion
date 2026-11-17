@@ -2,7 +2,7 @@
 const float N = 22.0;   // must match strings.frag
 // All beat math depends only on uniforms, so it runs per vertex. Per beat: the plucked string, its two decay
 // envelopes, and the wobble of the plucked string and its two neighbours (the only strings a pluck moves).
-// Measured on Mali-G31: doing this per pixel ran out of registers and halved the frame rate.
+// Measured on Mali-G31: per-pixel beat math was too much ALU for Mali-G31 at 720p (measured).
 flat out highp vec4 vPid; flat out vec4 vE1; flat out vec4 vE2;
 flat out vec4 vCm; flat out vec4 vC0; flat out vec4 vCp;
 float wobble(highp float s, highp float age){

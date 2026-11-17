@@ -16,8 +16,8 @@ class AmbientShadersTest {
             assertTrue(it.contains("highp float age")); assertTrue(it.contains("hash12(vec2(")); assertTrue(it.contains("cos("))
         }
         read("strings.frag")!!.let {
-            // Regression guard (measured on Mali-G31): beat code evaluated per string per pixel exhausted
-            // registers (2 strings x 4 branched beats = 15 fps). The pixel stage must stay hash-, trig- and branch-free for beats.
+            // Regression guard: per-pixel beat math was too much ALU for Mali-G31 at 720p (measured;
+            // 2 strings x 4 branched beats = 15 fps). The pixel stage must stay hash-, trig- and branch-free for beats.
             assertFalse(it.contains("hash12(")); assertFalse(it.contains("cos(")); assertFalse(it.contains("if("))
             assertFalse(it.contains("uBeatCount"))
         }

@@ -3,7 +3,7 @@ const float N = 22.0;
 flat in highp vec4 vPid; flat in vec4 vE1; flat in vec4 vE2;   // from strings.vert
 flat in vec4 vCm; flat in vec4 vC0; flat in vec4 vCp;          // wobble of plucked string -1 / 0 / +1
 vec3 stringGlow(highp float xs, float v, highp float s, highp float cell, float lvl){
-  // All four beats at once, branch- and trig-free (keeps Mali-G31 within its register budget).
+  // All four beats at once, branch- and trig-free (per-pixel beat math was too much ALU for Mali-G31 at 720p (measured)).
   highp vec4 k = vec4(s) - vPid;                                  // this string's offset from each plucked one
   vec4 bw = max(vec4(0.0), 1.0-abs(k)*0.65);                      // plucked string + its two neighbours
   vec4 c = mix(mix(vCm, vC0, step(-0.5, k)), vCp, step(0.5, k));  // this string's wobble for each beat
