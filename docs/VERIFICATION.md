@@ -141,3 +141,26 @@ On 2026-11-04, the iPhone/iPad remote gained an explicit text entry field and TV
 The Phase 3 iOS remote redesign merged through PR #7. The user reports that **all requested closeout checks passed** on the home setup: iPhone/iPad pairing and alternating use, reconnect after background/relaunch/Wi-Fi return/TV reboot, remote keys and focused keyboard input; normal `alert` and urgent `alert2` delivery with separate PIN and TV presentation/dismissal/expiry/ordering/privacy; notification and AirPlay opt-in reboot startup plus lamp/notification/AirPlay regressions; and voice command with microphone cleanup after Stop, backgrounding and interruption. This supersedes earlier pending-device notes for those tested flows.
 
 Phase 3 is accepted for the tested setup by user report. Device OS, TV firmware and Remote Service versions, logs and screenshots were not supplied, and the development agent did not install or run UI/device tests. Older-receiver rejection, TV wake behavior, unusual TLS/certificate failures, wider device compatibility and store-release readiness remain outside this acceptance. Phase 2 reverse-sender takeover and iPad YouTube compatibility retain their separate scope.
+
+## AirPlay Ambient mode — 2026-11-17
+
+Branch `docs/airplay-visualizer-assessment`, code through `5953481`. Design: [Ambient spec](superpowers/specs/2026-11-17-airplay-ambient-design.md); see [Ambient mode](ARCHITECTURE.md#ambient-mode).
+
+Executed locally for this entry (JDK 17, Android SDK 34):
+
+```sh
+python3 scripts/check-airplay-native.py && cd android && ./gradlew :app:assembleDebug :app:testDebugUnitTest :integrations:airplay-runtime:testDebugUnitTest :integrations:uxplay-native:testDebugUnitTest
+```
+
+- Native checks passed, including the ambient host checks (16 kick onsets, 1 onset on a sustained tone, 4 end-to-end beats).
+- `BUILD SUCCESSFUL` (221 tasks, 15 executed, the rest up to date from earlier runs in this session). The test result files contain 116 cases with zero failures/errors. The only warning is the known armeabi-v7a-only native library notice.
+
+Device checks on the project's MT5867 / Mali-G31 Android 14 TV (1280x720), run over adb with the user driving the sender:
+
+- **CP1, PASS:** Ambient button hidden with no sender and shown with one; aurora renders with `GL_RED_BITS=8` and no fallback to the built-in look; frame interval mean 33.2-33.3 ms (max 38.7-41.6 ms), draw mean 1.1-1.9 ms, so **720p is kept and no 540p fallback is needed**; 20 open/close cycles with music playing left audio and the `:airplay` process unchanged; 5 open/close cycles with "Keep session connected" off kept the session; Screen Mirroring while Ambient was open closed Ambient and showed the mirrored video (user-confirmed).
+- **CP3, partial:** aurora on live music held 30 fps (33.3 ms mean, draw about 1.2 ms) with no crash or audio failure logged over 50 s. The user said the visual is "a bit off on upbeat songs, okay for now", so beat sync on fast tempos is not tuned and **`AMBIENT_SYNC_OFFSET_MS` stays 0**.
+- **CP3, NOT TESTED:** pause, low volume, stop/restart and sender takeover with Ambient open.
+- **Kept looks, NOT TESTED (deferred by user):** loading `ripples`, `dusk` and `strings` on the TV, including `strings` on-device. A kept look could fail on Mali undetected until it is switched to; `ACTIVE_LOOK` remains `aurora`.
+- **No-Ambient regression, NOT TESTED (deferred by user):** Screen Mirroring video, background listening, sender takeover and HLS app video with Ambient never opened.
+
+Known gap: the debug log lacks native analyzer statistics (tap dropped count, analyses per second) called for by the spec; it is recorded for the final fix wave.

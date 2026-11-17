@@ -87,3 +87,24 @@ AirPlay settings derive their view state in a pure feature-owned presentation ma
 The Bardi color preview extends the same light boundary with pure HSV models and explicit color/white-mode commands. Capability checks and one-operation ownership stay in the controller; pure step/preset policy stays in the smart-home feature; DPS24 parsing and atomic grouped DPS21/DPS24 writes stay in the Tuya adapter. Fresh preconditions and a separate readback are required, with no optimistic state or automatic power-on. See [Bardi color control](BARDI_COLOR_CONTROL.md).
 
 The 0.7 candidate adds a receiver-local platform HLS player behind the selected UxPlay implementation, not a new feature-wide dependency. Native request/player callbacks stay within `:airplay`; the main process receives only v5 capability/status/error metadata. A sender-replacement transition preserves the receiver owner while old workers are cleaned up before new setup. The mirror codec waits for HLS display release. No media URLs or buffers enter Binder/domain APIs. See [sender/app-video review](phase-2/SESSION_AND_APP_VIDEO_REVIEW.md).
+
+## Ambient mode
+
+Ambient is an optional full-screen audio visualizer for AirPlay audio-only sessions. It is entirely local to `:airplay`; no audio, features or GL types cross Binder, and `IAirPlayReceiver.aidl`, `IAirPlayEvents.aidl` and `AirPlayWire` are unchanged. See the [design spec](superpowers/specs/2026-11-17-airplay-ambient-design.md).
+
+```text
+audio output path -> tap (try_lock ring) -> analyzer thread (FFT, bands, onsets)
+  -> latest-only snapshot -> JNI read on GL thread -> smoothing + one draw call
+```
+
+Thread ownership:
+
+- **Audio thread:** only the tap. It downmixes into a preallocated ring under `try_lock`, drops input when contended and never allocates, logs, calls JNI or blocks. PCM sent to AAudio is unchanged.
+- **Analyzer thread:** owned by the receiver's analysis source. It starts with the first Ambient subscription and is joined when the last closes or before the receiver is destroyed. It publishes a 25-float snapshot under a short mutex shared only with the GL reader.
+- **Engine `worker` executor:** opens and closes subscriptions.
+- **GL thread:** one JNI read per drawn frame into a reused array, then smoothing, uniform upload and a draw. Every renderer callback is wrapped; any failure releases GL resources and closes Ambient.
+- **Main thread:** receives open results and owns the view.
+
+Beat times are playout times, corrected by one constant `AMBIENT_SYNC_OFFSET_MS` (currently 0). Audio is never delayed to match visuals.
+
+Look contract v1: looks are assets in `airplay-runtime/src/main/assets/ambient/` (`<name>.frag`, optional `<name>.vert`), starting with `// ambient-contract: 1`. The host prepends the prelude, fixed uniforms and `finish(col, p)`; files with another contract number are rejected, and a compile/link failure falls back to the built-in look. The shipped looks are `aurora` (active, a constant in `AmbientShaders.ACTIVE_LOOK`), plus `ripples`, `dusk` and `strings` (kept, not user-selectable).
