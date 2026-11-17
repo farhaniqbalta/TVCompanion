@@ -3,7 +3,8 @@ package id.poncol.tvcompanion.airplay.runtime.ambient
 /** Assembles GLSL ES 3.00 sources: shared prelude + a look body loaded from assets/ambient. */
 object AmbientShaders {
     const val CONTRACT = "// ambient-contract: 1"
-    const val ACTIVE_LOOK = "aurora"
+    const val DEFAULT_LOOK = "aurora"
+    val LOOKS: List<String> = listOf("aurora", "strings", "dusk", "ripples")
     const val COLUMNS = 128
 
     data class Sources(val vertex: String, val fragment: String, val look: String)
@@ -58,6 +59,11 @@ void main(){
   fragColor = vec4(finish(col, vP), 1.0);
 }
 """
+
+    fun resolve(saved: String?): String = saved?.takeIf { it in LOOKS } ?: DEFAULT_LOOK
+
+    fun cycle(current: String, step: Int): String =
+        LOOKS[Math.floorMod(LOOKS.indexOf(resolve(current)) + step, LOOKS.size)]
 
     fun assemble(look: String, read: (String) -> String?): Sources {
         val frag = read("$look.frag")?.takeIf { it.startsWith(CONTRACT) }

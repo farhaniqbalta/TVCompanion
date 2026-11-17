@@ -16,6 +16,10 @@
     <string name="airplay_runtime_retry">Retry playback</string>
     <string name="airplay_runtime_ambient">Ambient</string>
     <string name="airplay_runtime_ambient_hint">Back to close</string>
+    <string name="airplay_runtime_ambient_look_aurora">Aurora</string>
+    <string name="airplay_runtime_ambient_look_strings">Strings</string>
+    <string name="airplay_runtime_ambient_look_dusk">Slow Dusk</string>
+    <string name="airplay_runtime_ambient_look_ripples">Ripples</string>
     <string name="airplay_runtime_return">Leave playback</string>
     <string name="airplay_runtime_stop_action">Stop AirPlay</string>
     <string name="airplay_runtime_leave_stops">Back leaves playback and ends this session. Background listening can remain on.</string>

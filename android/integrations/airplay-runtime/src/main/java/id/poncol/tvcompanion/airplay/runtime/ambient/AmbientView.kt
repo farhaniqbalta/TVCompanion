@@ -8,6 +8,7 @@ import android.view.Choreographer
 /** Full-screen GL layer above the video SurfaceView. Call begin()/end() on main. */
 class AmbientView(
     context: Context,
+    look: String,
     subscription: () -> AmbientSubscription?,
     onStatus: (AmbientStatus) -> Unit,
     onFailure: (Throwable) -> Unit,
@@ -20,16 +21,20 @@ class AmbientView(
         }
     }
 
+    private val renderer = AmbientRenderer(context, look, subscription, onStatus, onFailure)
+
     init {
         setEGLContextClientVersion(3)
         setEGLConfigChooser(8, 8, 8, 0, 0, 0)
         holder.setFormat(PixelFormat.RGBX_8888)
         setZOrderMediaOverlay(true)
-        setRenderer(AmbientRenderer(context, subscription, onStatus, onFailure))
+        setRenderer(renderer)
         renderMode = RENDERMODE_WHEN_DIRTY
         isFocusable = true
         isFocusableInTouchMode = true
     }
+
+    fun setLook(name: String) = queueEvent { renderer.useLook(name) }
 
     fun begin() {
         onResume()

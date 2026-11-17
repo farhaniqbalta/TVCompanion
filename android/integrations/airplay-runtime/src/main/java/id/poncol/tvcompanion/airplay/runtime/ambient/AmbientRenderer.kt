@@ -2,6 +2,7 @@ package id.poncol.tvcompanion.airplay.runtime.ambient
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import android.opengl.EGL14
 import android.opengl.GLES30.*
 import android.opengl.GLSurfaceView
 import android.os.Handler
@@ -16,6 +17,7 @@ import javax.microedition.khronos.opengles.GL10
 /** GL thread only. Every GL id is recreated in onSurfaceCreated (context is not preserved). */
 internal class AmbientRenderer(
     private val context: Context,
+    private var lookName: String,
     private val subscription: () -> AmbientSubscription?,
     private val onStatus: (AmbientStatus) -> Unit,   // main thread, at most once per second
     private val onFailure: (Throwable) -> Unit,
@@ -45,14 +47,8 @@ internal class AmbientRenderer(
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) = guard {
         val bits = IntArray(1).also { glGetIntegerv(GL_RED_BITS, it, 0) }[0]
         if (bits < 8) throw IllegalStateException("GL_RED_BITS=$bits")
-        val look = AmbientShaders.assemble(AmbientShaders.ACTIVE_LOOK) { name ->
-            runCatching { context.assets.open("ambient/$name").bufferedReader().use { it.readText() } }.getOrNull()
-        }
-        program = try { link(look) } catch (e: RuntimeException) {
-            Log.w(TAG, "look ${look.look} failed, using builtin", e)
-            link(AmbientShaders.assemble("__builtin__") { null })
-        }
-        AmbientShaders.UNIFORMS.forEachIndexed { i, name -> loc[i] = glGetUniformLocation(program, name) }
+        program = 0   // ids from a lost context are not ours to delete
+        val linked = loadLook()
         val verts = ByteBuffer.allocateDirect(VERTEX_COUNT * 2 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
         for (i in 0..AmbientShaders.COLUMNS) {
             val x = -1f + 2f * i / AmbientShaders.COLUMNS
@@ -64,12 +60,39 @@ internal class AmbientRenderer(
         glBufferData(GL_ARRAY_BUFFER, VERTEX_COUNT * 2 * 4, verts, GL_STATIC_DRAW)
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(0, 2, GL_FLOAT, false, 0, 0)
+        startNs = System.nanoTime(); lastNs = startNs; statStartNs = startNs; statusNs = startNs
+        if (debug && !loggedInfo) { loggedInfo = true; Log.d(TAG, "GL_RED_BITS=$bits look=$linked") }
+    }
+
+    /** GL thread (via queueEvent). The old program is replaced; onSurfaceCreated reloads lookName after context loss. */
+    fun useLook(name: String) = guard {
+        lookName = name
+        if (EGL14.eglGetCurrentContext() == EGL14.EGL_NO_CONTEXT) return@guard   // onSurfaceCreated will load it
+        val linked = loadLook()
+        glUniform2f(loc[U_RES], width, height)
+        glUniform1f(loc[U_ASPECT], width / height)
+        if (debug) Log.d(TAG, "look=$linked")
+    }
+
+    /** Links lookName (falling back to builtin), makes it current and sets the per-program constant uniforms. */
+    private fun loadLook(): String {
+        val look = AmbientShaders.assemble(lookName) { name ->
+            runCatching { context.assets.open("ambient/$name").bufferedReader().use { it.readText() } }.getOrNull()
+        }
+        var linked = look.look
+        val p = try { link(look) } catch (e: RuntimeException) {
+            Log.w(TAG, "look ${look.look} failed, using builtin", e)
+            linked = "builtin"
+            link(AmbientShaders.assemble("__builtin__") { null })
+        }
+        if (program != 0) glDeleteProgram(program)
+        program = p
+        AmbientShaders.UNIFORMS.forEachIndexed { i, name -> loc[i] = glGetUniformLocation(program, name) }
         glUseProgram(program)
         glUniform3fv(loc[U_BASE], 1, BASE, 0)
         glUniform3fv(loc[U_PALETTE], 4, PALETTE, 0)
         glUniform1f(loc[U_REDUCED], if (reduced) 1f else 0f)
-        startNs = System.nanoTime(); lastNs = startNs; statStartNs = startNs; statusNs = startNs
-        if (debug && !loggedInfo) { loggedInfo = true; Log.d(TAG, "GL_RED_BITS=$bits look=${look.look}") }
+        return linked
     }
 
     override fun onSurfaceChanged(gl: GL10?, w: Int, h: Int) = guard {

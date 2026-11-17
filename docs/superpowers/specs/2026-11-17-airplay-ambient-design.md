@@ -19,6 +19,7 @@ It must be a strictly optional extra. **Current AirPlay behaviour stays exactly 
 
 **Non-goals (v1)**
 - Look picker UI, settings toggle, palette editor, or metadata/album art.
+  - *Amendment 2026-11-17: a D-pad look picker (LEFT/RIGHT while Ambient is open, choice remembered) was added by user request; see §5.7.*
 - HLS / app-video audio. It plays through Android `MediaPlayer` and never reaches the native sink.
 - iPhone/Mac control, AIDL changes, remote API, Bardi lamp sync, quality tiers, 60 fps.
 - The handoff's benchmark campaign (`dumpsys` reports, 30-minute soaks, p95 tables). The project's docs record that CPU/RAM benchmarking is not wanted.
@@ -187,6 +188,7 @@ It must be a strictly optional extra. **Current AirPlay behaviour stays exactly 
 - **Files.** Looks are assets in `airplay-runtime/src/main/assets/ambient/`: `<name>.frag`, plus an optional `<name>.vert`.
   - v1 ships `aurora.frag` and `aurora.vert`, plus three kept looks the user also liked: `ripples.frag`, `dusk.frag` (+ optional `dusk.vert`) and `strings.frag`. Ripples, Dusk and Strings are not selectable in v1. Their reference is the `ripples` and `dusk` entries in the all-looks preview (`2026-11-17-airplay-ambient-preview-all.html`) and, for Strings, the `strings` entry in `2026-11-17-airplay-ambient-preview-strings.html`.
   - The active look is a constant (`aurora`).
+  - *Amendment 2026-11-17 (user request): LEFT/RIGHT on the D-pad now cycles `aurora`, `strings`, `dusk`, `ripples` while Ambient is open; the choice is remembered (default `aurora`).*
 - **Header.** The first line of each file is `// ambient-contract: 1`. Mismatched files are rejected.
 - **Host prelude.** The host prepends the same prelude to both stages:
   - `#version 300 es` and precision lines;

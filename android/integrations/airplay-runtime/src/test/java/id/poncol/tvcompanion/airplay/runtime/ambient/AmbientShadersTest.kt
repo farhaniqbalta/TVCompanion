@@ -31,7 +31,21 @@ class AmbientShadersTest {
         val bad = Regex("""uPhase\.[xyzw]\s*\*\s*\d*\.\d*[1-9]""")
         dir.listFiles()!!.forEach { assertNull(it.name, bad.find(it.readText())) }
     }
-    private fun allSources() = listOf("aurora", "ripples", "dusk", "strings", "missing").map { AmbientShaders.assemble(it, read) }
+    @Test fun cycleWrapsBothWays() {
+        assertEquals("aurora", AmbientShaders.cycle("ripples", 1))
+        assertEquals("ripples", AmbientShaders.cycle("aurora", -1))
+        assertEquals("strings", AmbientShaders.cycle("aurora", 1))
+    }
+    @Test fun unknownLookFallsBackToDefault() {
+        assertEquals("aurora", AmbientShaders.resolve(null))
+        assertEquals("aurora", AmbientShaders.resolve("nope"))
+        assertEquals("dusk", AmbientShaders.resolve("dusk"))
+        assertEquals("strings", AmbientShaders.cycle("nope", 1))
+    }
+    @Test fun everyListedLookHasAnAsset() {
+        AmbientShaders.LOOKS.forEach { assertTrue(it, java.io.File(dir, "$it.frag").exists()) }
+    }
+    private fun allSources() = (AmbientShaders.LOOKS + "missing").map { AmbientShaders.assemble(it, read) }
         .flatMap { listOf(it.look to ("vert" to it.vertex), it.look to ("frag" to it.fragment)) }
 
     @Test fun precisionPrecedesFirstFloatDeclaration() {

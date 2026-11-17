@@ -32,6 +32,8 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     private var ambient: AmbientView? = null
     @Volatile private var ambientSub: AmbientSubscription? = null   // read on the GL thread
     private var ambientHint: TextView? = null
+    private var lookLabel: TextView? = null
+    private var look = AmbientShaders.DEFAULT_LOOK
     private val epoch = AmbientEpoch()
     private val reopen = AmbientReopen()
     private val main = Handler(Looper.getMainLooper())
@@ -155,25 +157,44 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     }
     private fun openAmbient() {
         if (ambient != null) return
+        look = AmbientShaders.resolve(getSharedPreferences("ambient", MODE_PRIVATE).getString("look", null))
         lateinit var view: AmbientView
-        view = AmbientView(this, { ambientSub }, { status -> if (ambient === view) onAmbientStatus(status) }) { e ->
+        view = AmbientView(this, look, { ambientSub }, { status -> if (ambient === view) onAmbientStatus(status) }) { e ->
             if (ambient === view) { Log.w("TVCAmbient", "closing ambient", e); closeAmbient() }
         }
         ambient = view
         requestAmbient()
         frame.addView(view, FrameLayout.LayoutParams(-1, -1))
-        val dm = resources.displayMetrics
-        ambientHint = TextView(this).apply {
-            setText(R.string.airplay_runtime_ambient_hint); textSize = 16f; setTextColor(0xccf2f5f4.toInt())
-            frame.addView(this, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.END).apply {
-                setMargins(dm.widthPixels / 20, dm.heightPixels / 20, dm.widthPixels / 20, dm.heightPixels / 20)
-            })
+        ambientHint = ambientText(Gravity.END).apply {
+            setText(R.string.airplay_runtime_ambient_hint)
             animate().alpha(0f).setStartDelay(4000).setDuration(600)
         }
+        lookLabel = ambientText(Gravity.START).apply { alpha = 0f }
         main.removeCallbacks(hideControls)
         waiting.visibility = View.GONE; controls.visibility = View.GONE
         view.requestFocus()
         view.begin()
+    }
+    /** Overlay text inside the 5% safe margin, bottom corner. */
+    private fun ambientText(side: Int): TextView {
+        val dm = resources.displayMetrics
+        return TextView(this).apply {
+            textSize = 16f; setTextColor(0xccf2f5f4.toInt())
+            frame.addView(this, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or side).apply {
+                setMargins(dm.widthPixels / 20, dm.heightPixels / 20, dm.widthPixels / 20, dm.heightPixels / 20)
+            })
+        }
+    }
+    private fun switchLook(step: Int) {
+        val view = ambient ?: return
+        look = AmbientShaders.cycle(look, step)
+        getSharedPreferences("ambient", MODE_PRIVATE).edit().putString("look", look).apply()
+        view.setLook(look)
+        lookLabel?.run {
+            setText(LOOK_NAMES[AmbientShaders.LOOKS.indexOf(look)])
+            animate().cancel(); alpha = 1f
+            animate().alpha(0f).setStartDelay(2000).setDuration(600)
+        }
     }
     /** Until the result arrives the renderer sees no subscription and shows idle. */
     private fun requestAmbient() {
@@ -192,7 +213,8 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         ambient = null
         view.end()   // blocks until the GL thread pauses, so the subscription is no longer read
         frame.removeView(view)
-        ambientHint?.let { it.animate().cancel(); frame.removeView(it) }; ambientHint = null
+        listOfNotNull(ambientHint, lookLabel).forEach { it.animate().cancel(); frame.removeView(it) }
+        ambientHint = null; lookLabel = null
         ambientSub?.close(); ambientSub = null
         render(snapshot)
         ambientButton.requestFocus()
@@ -220,8 +242,13 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (ambient != null) when (event.keyCode) {
             KeyEvent.KEYCODE_BACK -> { if (event.action == KeyEvent.ACTION_UP) closeAmbient(); return true }
-            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN,
-            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> return true
+            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                // repeatCount 0 only: holding the key must not spin through looks
+                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0)
+                    switchLook(if (event.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) 1 else -1)
+                return true
+            }
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> return true
         }
         if (consumedKey == event.keyCode) {
             if (event.action == KeyEvent.ACTION_UP) consumedKey = null
@@ -248,5 +275,10 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         host?.detachDisplay(); host = null
         if (bound) { unbindService(connection); bound = false }
         super.onStop(); finish()
+    }
+    private companion object {
+        /** Display names, in AmbientShaders.LOOKS order. */
+        val LOOK_NAMES = intArrayOf(R.string.airplay_runtime_ambient_look_aurora, R.string.airplay_runtime_ambient_look_strings,
+            R.string.airplay_runtime_ambient_look_dusk, R.string.airplay_runtime_ambient_look_ripples)
     }
 }
