@@ -21,8 +21,7 @@ class MainActivity : Activity() {
     private var homeFocus = 0
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Once per process, so a receiver the user stops stays stopped until the app process restarts.
-        if (!defaultsStarted) { defaultsStarted = true; BootReceiver.startDefaults(this) { startService(it) } }
+        BootReceiver.startDefaults(this) { startService(it) }
         if (savedInstanceState?.getBoolean("light") == true ||
             (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0 && intent.getBooleanExtra("open_light", false))) showLight() else showHome()
     }
@@ -84,5 +83,4 @@ class MainActivity : Activity() {
     }
     override fun onRestart() { super.onRestart(); if (restoreLight) showLight() else showHome() }
     override fun onDestroy() { releaseLight(); super.onDestroy() }
-    private companion object { var defaultsStarted = false }
 }

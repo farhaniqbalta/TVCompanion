@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import id.poncol.tvcompanion.airplay.runtime.AirPlayService
+import id.poncol.tvcompanion.airplay.runtime.OnceGate
 import id.poncol.tvcompanion.domain.AutoStartSettings
 import id.poncol.tvcompanion.notifications.infrastructure.ReceiverService
 
@@ -31,9 +32,11 @@ class BootReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        /** Starts the notification receiver and AirPlay Background listening defaults, with the boot path's permission gates. */
+        private val defaults = OnceGate()
+        /** Starts the notification receiver and AirPlay Background listening defaults once per process, with the boot path's
+         *  permission gates, so a receiver the user stops stays stopped until the app process restarts. */
         fun startDefaults(context: Context, startAirPlay: (Intent) -> Unit) {
-            if (!context.getSystemService(NotificationManager::class.java).areNotificationsEnabled()) return
+            if (!context.getSystemService(NotificationManager::class.java).areNotificationsEnabled() || !defaults.claim()) return
             if (Settings.canDrawOverlays(context)) {
                 try { context.startForegroundService(Intent(context, ReceiverService::class.java)) }
                 catch (_: RuntimeException) { /* The settings Start button remains available. */ }

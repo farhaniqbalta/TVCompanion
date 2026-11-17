@@ -90,8 +90,7 @@ class AirPlayService : Service() {
     }
     /** Background listening defaults on once per :airplay process; a later user Off is not overridden in that process. */
     private fun applyListeningDefault(startedForeground: Boolean): Boolean {
-        if (listeningDefaultApplied) return false
-        listeningDefaultApplied = true
+        if (!listeningDefault.claim()) return false
         return setKeepAvailable(true, fromBoot = startedForeground).accepted
     }
     private fun stopIfIdle() {
@@ -175,7 +174,7 @@ class AirPlayService : Service() {
         if (intent?.action == ACTION_STOP) session.stop()
         else if (intent?.action == ACTION_BOOT_START) {
             if ((application as AutoStartSettings).airplayOnBoot) {
-                listeningDefaultApplied = true
+                listeningDefault.claim()
                 val started = setKeepAvailable(true, fromBoot = true)
                 if (started.accepted) session.setBackgroundOptions(true, true, true) else stopSelf()
             } else stopSelf()
@@ -200,7 +199,7 @@ class AirPlayService : Service() {
         const val ACTION_BOOT_START = "id.poncol.tvcompanion.airplay.BOOT_START"
         /** Started by the app (launcher open or package update): applies the Background listening default. */
         const val ACTION_APP_START = "id.poncol.tvcompanion.airplay.APP_START"
-        private var listeningDefaultApplied = false
+        private val listeningDefault = OnceGate()
         private const val CHANNEL = "airplay_receiver"
         private const val NOTIFICATION = 200
         private const val ACTION_STOP = "id.poncol.tvcompanion.airplay.STOP"
