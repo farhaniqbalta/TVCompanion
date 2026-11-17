@@ -10,6 +10,7 @@
 #include <android/log.h>
 #include <media/NdkMediaCodec.h>
 #include <media/NdkMediaFormat.h>
+#include <dlfcn.h>
 #include <atomic>
 #include <chrono>
 #include <cstring>
@@ -28,7 +29,7 @@ struct Receiver {
     JavaVM *vm = nullptr;
     jobject observer = nullptr;
     jmethodID notify = nullptr;
-    jmethodID hlsCommand = nullptr, hlsInfo = nullptr, hlsVolume = nullptr;
+    jmethodID hlsCommand = nullptr, hlsInfo = nullptr, hlsVolume = nullptr, videoSize = nullptr;
     std::atomic<bool> replacing{false}, hlsActive{false}, hlsReleasePending{false};
     ANativeWindow *window = nullptr;
     raop_t *server = nullptr;
@@ -52,6 +53,15 @@ struct Receiver {
         bool attach = vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) == JNI_EDETACHED;
         if (attach && vm->AttachCurrentThread(&env, nullptr) != JNI_OK) return;
         env->CallVoidMethod(observer, notify, code);
+        if (env->ExceptionCheck()) env->ExceptionClear();
+        if (attach) vm->DetachCurrentThread();
+    }
+    void size(int width, int height) {
+        if (closing) return;
+        JNIEnv *env = nullptr;
+        const bool attach = vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) == JNI_EDETACHED;
+        if (attach && vm->AttachCurrentThread(&env, nullptr) != JNI_OK) return;
+        env->CallVoidMethod(observer, videoSize, width, height);
         if (env->ExceptionCheck()) env->ExceptionClear();
         if (attach) vm->DetachCurrentThread();
     }
@@ -205,6 +215,22 @@ int codec(void *p, video_codec_t kind, unsigned short, unsigned short,
     if (!r->window) { r->event(8); }
     return 0;
 }
+// Displayed picture size, so the UI can letterbox portrait senders instead of stretching them.
+// AMediaFormat_getRect is API 28+ (minSdk 26): resolve it at runtime, else use the coded size.
+void reportOutputSize(Receiver *r) {
+    AMediaFormat *format = AMediaCodec_getOutputFormat(r->decoder);
+    if (!format) return;
+    int32_t w = 0, h = 0, left = 0, top = 0, right = 0, bottom = 0;
+    AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_WIDTH, &w);
+    AMediaFormat_getInt32(format, AMEDIAFORMAT_KEY_HEIGHT, &h);
+    using GetRect = bool (*)(AMediaFormat *, const char *, int32_t *, int32_t *, int32_t *, int32_t *);
+    static const auto getRect = reinterpret_cast<GetRect>(dlsym(RTLD_DEFAULT, "AMediaFormat_getRect"));
+    if (getRect && getRect(format, "crop", &left, &top, &right, &bottom) && right >= left && bottom >= top) {
+        w = right - left + 1; h = bottom - top + 1;
+    }
+    AMediaFormat_delete(format);
+    if (w > 0 && h > 0) r->size(w, h);
+}
 void feedVideo(Receiver *r, const uint8_t *data, size_t size, int64_t pts) {
     if (!r->decoder) return;
     // Match the upstream continuous-stream path: intra-refresh/non-IDR frames are valid input.
@@ -213,6 +239,8 @@ void feedVideo(Receiver *r, const uint8_t *data, size_t size, int64_t pts) {
         AMediaCodecBufferInfo info{};
         for (int n = 0; n < 16; n++) {
             ssize_t index = AMediaCodec_dequeueOutputBuffer(r->decoder, &info, 0);
+            if (index == AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED) { reportOutputSize(r); continue; }
+            if (index == AMEDIACODEC_INFO_OUTPUT_BUFFERS_CHANGED) continue;
             if (index < 0) break;
             const int64_t target = info.presentationTimeUs * 1000;
             if (tvc::expired(target, monotonicNs())) { AMediaCodec_releaseOutputBuffer(r->decoder, index, false); continue; }
@@ -313,8 +341,9 @@ Java_id_poncol_tvcompanion_uxplay_UxPlayReceiverEngine_nativeStart(JNIEnv *env, 
     r->notify = env->GetMethodID(type, "onNativeState", "(I)V");
     r->hlsCommand = env->GetMethodID(type, "onNativeHlsCommand", "(ILjava/lang/String;FI)V");
     r->hlsInfo = env->GetMethodID(type, "onNativeHlsInfo", "()[D");
-    r->hlsVolume = env->GetMethodID(type, "onNativeHlsVolume", "(F)V"); env->DeleteLocalRef(type);
-    if (!r->notify || !r->hlsCommand || !r->hlsInfo || !r->hlsVolume) { destroy(env, r); return 0; }
+    r->hlsVolume = env->GetMethodID(type, "onNativeHlsVolume", "(F)V");
+    r->videoSize = env->GetMethodID(type, "onNativeVideoSize", "(II)V"); env->DeleteLocalRef(type);
+    if (!r->notify || !r->hlsCommand || !r->hlsInfo || !r->hlsVolume || !r->videoSize) { destroy(env, r); return 0; }
     r->audio.reset(new tvc::AudioOutput([r](int code) { r->event(code); }));
     r->audio->setAmbientTap(&r->ambient->tap());
     const char *key = env->GetStringUTFChars(path, nullptr);

@@ -11,3 +11,10 @@ internal class VideoPresentationPolicy {
     }
     fun disconnected() { handled = false }
 }
+
+/** Largest size with the picture's aspect ratio that fits the screen; null means fill it. */
+internal fun fitVideo(videoW: Int, videoH: Int, screenW: Int, screenH: Int): Pair<Int, Int>? {
+    if (videoW <= 0 || videoH <= 0 || screenW <= 0 || screenH <= 0) return null
+    return if (videoW.toLong() * screenH > videoH.toLong() * screenW) screenW to (screenW.toLong() * videoH / videoW).toInt()
+    else (screenH.toLong() * videoW / videoH).toInt() to screenH
+}

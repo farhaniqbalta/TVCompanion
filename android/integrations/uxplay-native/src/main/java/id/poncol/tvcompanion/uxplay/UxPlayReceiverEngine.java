@@ -58,7 +58,7 @@ public final class UxPlayReceiverEngine implements ReceiverEngine, AmbientSource
                 hlsActive = false; audioRequested = false; abandonFocus();
                 worker.execute(() -> { if (!closed && handle != 0) nativeHlsEnded(handle); });
             }
-        });
+        }, (width, height) -> { if (!closed && observer != null) observer.onVideoSize(width, height); });
     }
     @Override public void start(String receiverName, Observer observer) {
         this.observer = observer;
@@ -151,6 +151,9 @@ public final class UxPlayReceiverEngine implements ReceiverEngine, AmbientSource
                 default: deliver(State.MEDIA_UNSUPPORTED);
             }
         });
+    }
+    private void onNativeVideoSize(int width, int height) {
+        main.post(() -> { if (!closed && observer != null) observer.onVideoSize(width, height); });
     }
     private double[] onNativeHlsInfo() { return hls.info(); }
     private void onNativeHlsVolume(float value) { main.post(() -> { if (!closed) hls.volume(value); }); }

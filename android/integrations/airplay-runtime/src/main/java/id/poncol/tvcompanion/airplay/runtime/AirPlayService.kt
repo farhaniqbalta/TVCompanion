@@ -19,6 +19,8 @@ class AirPlayService : Service() {
     private var surface: Surface? = null
     private var engine: ReceiverEngine? = null
     private var displayObserver: ((AirPlaySnapshot) -> Unit)? = null
+    private var sizeObserver: ((Int, Int) -> Unit)? = null
+    private var videoSize: Pair<Int, Int>? = null
     private var destroyed = false
     private var foreground = false
     private val videoPresentation = VideoPresentationPolicy()
@@ -108,8 +110,14 @@ class AirPlayService : Service() {
         return session.start(surface?.isValid == true) { emit ->
             videoPresentation.disconnected()
             val created = (application as ReceiverEngineProvider).createReceiverEngine(); engine = created
+            videoSize = null
             try {
-                created.start(name) { state -> main.post {
+                created.start(name, object : ReceiverEngine.Observer {
+                override fun onVideoSize(width: Int, height: Int) {
+                    if (destroyed || engine !== created || videoSize == width to height) return
+                    videoSize = width to height; sizeObserver?.invoke(width, height)
+                }
+                override fun onState(state: ReceiverEngine.State) { main.post {
                     if (destroyed || engine !== created) return@post
                     emit(when (state) {
                         ReceiverEngine.State.SESSION_REPLACED -> ReceiverSession.Signal.REPLACED
@@ -135,6 +143,7 @@ class AirPlayService : Service() {
                         else -> Unit
                     }
                 } }
+                })
                 created.setAudioEnabled(session.audioAllowed)
                 created.setDiscoverable(session.discoverable)
                 created.attachSurface(surface)
@@ -154,10 +163,11 @@ class AirPlayService : Service() {
         override fun setBackgroundOptions(id: Long, keepSession: Boolean, backgroundAudio: Boolean, autoOpenVideo: Boolean, client: IAirPlayEvents) { main.post { if (!destroyed) result(client, id, session.setBackgroundOptions(keepSession, backgroundAudio, autoOpenVideo)) } }
         override fun stop(id: Long, client: IAirPlayEvents) { main.post { if (!destroyed) result(client, id, session.stop()) } }
         // Local methods are deliberately absent from AIDL; a Surface never crosses processes.
-        fun attachDisplay(target: Surface, observer: (AirPlaySnapshot) -> Unit) {
+        fun attachDisplay(target: Surface, observer: (AirPlaySnapshot) -> Unit, onVideoSize: (Int, Int) -> Unit) {
             check(Looper.myLooper() == Looper.getMainLooper())
             val changed = surface !== target
             surface = target; displayObserver = observer; session.attachDisplay(); if (changed) engine?.attachSurface(target); observer(session.snapshot)
+            sizeObserver = onVideoSize; videoSize?.let { (w, h) -> onVideoSize(w, h) }
         }
         fun beginPlayback(name: String): AirPlayResult = start(name)
         fun stopPlayback(): AirPlayResult = session.stop()
@@ -165,7 +175,7 @@ class AirPlayService : Service() {
         fun openAmbient(callback: AmbientCallback) {
             (engine as? AmbientSource)?.openAmbient(callback) ?: main.post { callback.onOpened(null) }
         }
-        fun detachDisplay() { displayObserver = null; surface = null; engine?.attachSurface(null); session.detachDisplay() }
+        fun detachDisplay() { displayObserver = null; sizeObserver = null; surface = null; engine?.attachSurface(null); session.detachDisplay() }
     }
     private val binder = ReceiverBinder()
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

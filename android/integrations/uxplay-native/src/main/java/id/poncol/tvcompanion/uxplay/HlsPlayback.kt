@@ -10,8 +10,9 @@ import android.view.Surface
 import id.poncol.tvcompanion.airplay.runtime.ReceiverEngine.State
 
 /** Implementation-local HLS player. All player operations stay on :airplay's main thread. */
-class HlsPlayback(context: Context, private val listener: Listener) : AutoCloseable {
+class HlsPlayback(context: Context, private val listener: Listener, private val sizeListener: SizeListener) : AutoCloseable {
     fun interface Listener { fun onState(state: State) }
+    fun interface SizeListener { fun onVideoSize(width: Int, height: Int) }
     private val context = context.applicationContext
     private val main = Handler(Looper.getMainLooper())
     private var player: MediaPlayer? = null
@@ -62,7 +63,9 @@ class HlsPlayback(context: Context, private val listener: Listener) : AutoClosea
             Log.i("TVCAirPlay", "stage=HLS_PREPARED")
         }
         created.setOnVideoSizeChangedListener { current, width, height ->
-            if (player === current && !closed && width.toLong() * height > 1280L * 720) fail(State.MEDIA_UNSUPPORTED)
+            if (player !== current || closed) return@setOnVideoSizeChangedListener
+            if (width.toLong() * height > 1280L * 720) fail(State.MEDIA_UNSUPPORTED)
+            else if (width > 0 && height > 0) sizeListener.onVideoSize(width, height)
         }
         created.setOnInfoListener { current, what, _ ->
             if (player !== current || closed) return@setOnInfoListener true

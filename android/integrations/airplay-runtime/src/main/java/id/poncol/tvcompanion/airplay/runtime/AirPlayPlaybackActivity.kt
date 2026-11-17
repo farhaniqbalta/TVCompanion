@@ -28,6 +28,8 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     private lateinit var returnButton: Button
     private lateinit var retry: Button
     private lateinit var frame: FrameLayout
+    private lateinit var video: SurfaceView
+    private var videoSize: Pair<Int, Int>? = null
     private lateinit var ambientButton: Button
     private var ambient: AmbientView? = null
     @Volatile private var ambientSub: AmbientSubscription? = null   // read on the GL thread
@@ -49,9 +51,12 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     override fun onCreate(saved: Bundle?) {
         super.onCreate(saved)
         val ui = TvUi(this)
-        frame = FrameLayout(this)
-        val video = SurfaceView(this).also { it.holder.addCallback(this) }
-        frame.addView(video, FrameLayout.LayoutParams(-1, -1))
+        frame = FrameLayout(this).apply {
+            setBackgroundColor(android.graphics.Color.BLACK)   // letterbox bars
+            addOnLayoutChangeListener { _, l, t, r, b, oldL, oldT, oldR, oldB -> if (r - l != oldR - oldL || b - t != oldB - oldT) fitVideoView() }
+        }
+        video = SurfaceView(this).also { it.holder.addCallback(this) }
+        frame.addView(video, FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))
         val page = ui.page()
         ui.eyebrow(page, getString(R.string.airplay_runtime_eyebrow))
         ui.text(page, getString(R.string.airplay_runtime_receiver_name), 34f, true)
@@ -95,17 +100,23 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     private fun attach() {
         val target = display?.takeIf { it.isValid } ?: return
         val service = host ?: return
-        service.attachDisplay(target) { state ->
+        service.attachDisplay(target, { state ->
             if (!active) return@attachDisplay
             render(state)
             if (waitingForStop && state.phase == AirPlayPhase.STOPPED) {
                 waitingForStop = false
                 main.post { if (active) host?.beginPlayback(getString(R.string.airplay_runtime_receiver_name)) }
             }
-        }
+        }) { w, h -> if (active) { videoSize = w to h; fitVideoView() } }
         val result = service.beginPlayback(getString(R.string.airplay_runtime_receiver_name))
         waitingForStop = result.issue == AirPlayIssue.BUSY && snapshot.phase == AirPlayPhase.STOPPING
         if (!result.accepted && result.issue != AirPlayIssue.BUSY) unavailable()
+    }
+    // Resize only (never re-add or hide): that keeps the Surface, so the decoder is not reset.
+    private fun fitVideoView() {
+        val (w, h) = videoSize?.let { (vw, vh) -> fitVideo(vw, vh, frame.width, frame.height) } ?: (-1 to -1)
+        val params = video.layoutParams as FrameLayout.LayoutParams
+        if (params.width != w || params.height != h) { params.width = w; params.height = h; video.layoutParams = params }
     }
     private fun render(state: AirPlaySnapshot) {
         val hadVideo = snapshot.videoActive
