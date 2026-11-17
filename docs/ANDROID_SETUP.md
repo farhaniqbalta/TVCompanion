@@ -28,7 +28,7 @@ Opening light controls reads status only. Use the remote to control the lamp aft
 
 ## Notification setup
 
-Open Notifications from Home. Preview cards locally before granting overlays. Grant display-over-other-apps permission and explicitly start the receiver. It can be paused from settings or its ongoing notification. After reboot or force stop, open the app and start manually.
+Open Notifications from Home. Preview cards locally before granting overlays. Grant display-over-other-apps permission; once granted, the receiver starts whenever TVCompanion is opened and after an app update. It can be paused from settings or its ongoing notification and then stays paused until the app process restarts. After reboot, it starts only if *Start after TV reboot* is on; otherwise open the app.
 
 The screen shows local addresses, default port 8766, and the per-install PIN. Configure a sender using [notification v1](../contracts/notifications-v1.md). Changing the PIN or port pauses the receiver; update senders before starting it again. Privacy mode is the initial default. No message history is stored.
 
@@ -40,7 +40,7 @@ The app is installed and the user has confirmed basic functionality. The 0.2.0 U
 
 ## AirPlay preview
 
-Open AirPlay from the dashboard, then Open receiver. Select **TVCompanion** in the sender’s Screen Mirroring controls; Mac can use a separate extended display. The playback Activity and receiver service share `:airplay`; leaving playback stops networking unless Keep available after leaving is enabled in AirPlay settings. That option uses a foreground service with visible Open/Stop controls, defaults off and does not restart after reboot/app restart. No receiver starts merely from the home card.
+Open AirPlay from the dashboard, then Open receiver. Select **TVCompanion** in the sender’s Screen Mirroring controls; Mac can use a separate extended display. The playback Activity and receiver service share `:airplay`; leaving playback stops networking unless Keep available after leaving is enabled in AirPlay settings. That option (Background listening) uses a foreground service with visible Open/Stop controls. It and Background audio default on: opening TVCompanion or updating the app starts listening (notification permission required), once per process, and turning it off holds until the app process restarts. A first install starts on first launch; after reboot it follows *Start after TV reboot*.
 
 Use the trusted LAN and non-sensitive content. The audio candidate supports AAC-ELD/AAC-LC, ALAC and PCM at 44.1 kHz stereo, with device review pending. App-specific HLS video playback is not implemented. This native preview targets `armeabi-v7a`, matching the validated TV; general ABI/device coverage and distribution licensing remain release work. Read [actual integration evidence and limits](phase-2/SINGLE_APK_INTEGRATION.md).
 

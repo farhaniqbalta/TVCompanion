@@ -10,6 +10,11 @@ class ReceiverSessionTest {
         override fun stop(released: () -> Unit) { closes++; this.released = released }
         fun completeStop() { released!!.invoke() }
     }
+    @Test fun backgroundAudioAndSessionRetentionDefaultOnWithoutListening() {
+        val session = ReceiverSession {}
+        assertTrue(session.snapshot.backgroundAudio); assertTrue(session.snapshot.keepSession)
+        assertFalse(session.snapshot.keepAvailable); assertFalse(session.audioAllowed)
+    }
     @Test fun noNativeWorkWithoutLocalDisplay() {
         val session = ReceiverSession {}; var created = false
         assertEquals(AirPlayIssue.DISPLAY_REQUIRED, session.start(false) { created = true; Engine() }.issue)
@@ -153,6 +158,7 @@ class ReceiverSessionTest {
 
     @Test fun retainedSessionDoesNotRequireBackgroundDiscoveryOrAudio() {
         val session = ReceiverSession {}; val engine = Engine(); lateinit var emit: (ReceiverSession.Signal) -> Unit
+        session.setBackgroundOptions(true, false, true)
         session.start(true) { emit = it; engine }; emit(ReceiverSession.Signal.CONNECTED)
         session.detachDisplay()
         assertTrue(session.heldInBackground); assertFalse(session.discoverable); assertFalse(session.audioAllowed)

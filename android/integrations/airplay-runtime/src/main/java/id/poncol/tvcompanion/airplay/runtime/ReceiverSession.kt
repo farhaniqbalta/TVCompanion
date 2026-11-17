@@ -5,7 +5,7 @@ import id.poncol.tvcompanion.domain.airplay.*
 internal class ReceiverSession(private val capabilities: AirPlayCapabilities = AirPlayCapabilities(), private val publish: (AirPlaySnapshot) -> Unit) {
     interface Lease { fun stop(released: () -> Unit) }
     enum class Signal { READY, CONNECTED, VIDEO, AUDIO, AUDIO_STOPPED, AUDIO_UNAVAILABLE, DISPLAY_REQUIRED, REPLACED, APP_VIDEO, APP_VIDEO_FAILED, MEDIA_UNSUPPORTED, PROTECTED_CONTENT, DISCONNECTED, FAILED }
-    var snapshot = AirPlaySnapshot(availability = AirPlayAvailability.AVAILABLE, capabilities = capabilities)
+    var snapshot = AirPlaySnapshot(availability = AirPlayAvailability.AVAILABLE, capabilities = capabilities, backgroundAudio = true)
         private set
     private var lease: Lease? = null
     private var generation = 0L

@@ -88,6 +88,15 @@ class AirPlayService : Service() {
         }
         return session.setKeepAvailable(false)
     }
+    /** Background listening defaults on once per :airplay process; a later user Off is not overridden in that process. */
+    private fun applyListeningDefault(startedForeground: Boolean): Boolean {
+        if (listeningDefaultApplied) return false
+        listeningDefaultApplied = true
+        return setKeepAvailable(true, fromBoot = startedForeground).accepted
+    }
+    private fun stopIfIdle() {
+        if (surface == null && !session.heldInBackground && session.snapshot.phase in listOf(AirPlayPhase.STOPPED, AirPlayPhase.FAILED)) stopSelf()
+    }
     private fun presentIncomingVideo() {
         // A foreground service alone is not a background Activity-launch exemption.
         // Use the existing user-granted overlay permission on the validated Android TV versions.
@@ -166,18 +175,21 @@ class AirPlayService : Service() {
         if (intent?.action == ACTION_STOP) session.stop()
         else if (intent?.action == ACTION_BOOT_START) {
             if ((application as AutoStartSettings).airplayOnBoot) {
+                listeningDefaultApplied = true
                 val started = setKeepAvailable(true, fromBoot = true)
                 if (started.accepted) session.setBackgroundOptions(true, true, true) else stopSelf()
             } else stopSelf()
         }
+        // Failure (e.g. notifications blocked) leaves listening Off silently; the settings screen shows the hint.
+        else if (intent?.action == ACTION_APP_START) { if (!applyListeningDefault(startedForeground = true)) stopIfIdle() }
         else if (intent?.action == ACTION_HOLD && session.heldInBackground) updateForeground(session.snapshot)
         return START_NOT_STICKY
     }
-    override fun onUnbind(intent: Intent?): Boolean {
-        if (surface == null && !session.heldInBackground && session.snapshot.phase in listOf(AirPlayPhase.STOPPED, AirPlayPhase.FAILED)) stopSelf()
-        return false
+    override fun onUnbind(intent: Intent?): Boolean { stopIfIdle(); return false }
+    override fun onBind(intent: Intent?): IBinder {
+        main.post { if (!destroyed) applyListeningDefault(startedForeground = false) }
+        return binder
     }
-    override fun onBind(intent: Intent?) = binder
     override fun onDestroy() {
         destroyed = true; surface = null; displayObserver = null
         session.close(); clients.kill(); main.removeCallbacksAndMessages(null)
@@ -186,6 +198,9 @@ class AirPlayService : Service() {
     }
     companion object {
         const val ACTION_BOOT_START = "id.poncol.tvcompanion.airplay.BOOT_START"
+        /** Started by the app (launcher open or package update): applies the Background listening default. */
+        const val ACTION_APP_START = "id.poncol.tvcompanion.airplay.APP_START"
+        private var listeningDefaultApplied = false
         private const val CHANNEL = "airplay_receiver"
         private const val NOTIFICATION = 200
         private const val ACTION_STOP = "id.poncol.tvcompanion.airplay.STOP"
