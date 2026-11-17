@@ -6,6 +6,8 @@ import android.content.pm.ServiceInfo
 import android.os.*
 import android.view.Surface
 import id.poncol.tvcompanion.airplay.ipc.*
+import id.poncol.tvcompanion.airplay.runtime.ambient.AmbientCallback
+import id.poncol.tvcompanion.airplay.runtime.ambient.AmbientSource
 import id.poncol.tvcompanion.domain.airplay.*
 import id.poncol.tvcompanion.domain.AutoStartSettings
 
@@ -159,6 +161,10 @@ class AirPlayService : Service() {
         }
         fun beginPlayback(name: String): AirPlayResult = start(name)
         fun stopPlayback(): AirPlayResult = session.stop()
+        /** Main thread. The callback always runs on main, with null when no receiver can serve it. */
+        fun openAmbient(callback: AmbientCallback) {
+            (engine as? AmbientSource)?.openAmbient(callback) ?: main.post { callback.onOpened(null) }
+        }
         fun detachDisplay() { displayObserver = null; surface = null; engine?.attachSurface(null); session.detachDisplay() }
     }
     private val binder = ReceiverBinder()

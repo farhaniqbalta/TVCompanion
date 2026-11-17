@@ -1,6 +1,7 @@
 #include "audio_output.h"
 #include "playout_clock.h"
 #include "audio_formats.h"
+#include "ambient/ambient_tap.h"
 #include <aaudio/AAudio.h>
 #include <android/log.h>
 #include <media/NdkMediaCodec.h>
@@ -37,6 +38,7 @@ struct AudioOutput::Impl {
     std::atomic<bool> allowed{false}, broken{false}, needsFocus{true}, received{false}, decodeReported{false};
     std::atomic<float> gain{1}, duck{1};
     std::atomic<int> reportedMute{-1};
+    std::atomic<AmbientTap *> tap{nullptr};
     explicit Impl(std::function<void(int)> callback) : event(std::move(callback)) {}
     ~Impl() {
         { std::lock_guard<std::mutex> lock(mutex); closing = true; queue.clear(); }
@@ -53,6 +55,7 @@ struct AudioOutput::Impl {
             if (stream) { AAudioStream_requestStop(stream); AAudioStream_close(stream); stream = nullptr; }
             if (decoder) { AMediaCodec_stop(decoder); AMediaCodec_delete(decoder); decoder = nullptr; }
             alac.reset(); playing = false;
+            if (auto *t = tap.load(std::memory_order_relaxed)) t->reset();
         };
         auto fail = [&]() { __android_log_print(ANDROID_LOG_WARN, "TVCAirPlay", "stage=AUDIO_OUTPUT_FAILED"); release(); broken = true; event(6); event(7); };
         auto open = [&]() -> bool {
@@ -128,6 +131,7 @@ struct AudioOutput::Impl {
                 int result = AAudioStream_write(stream, samples.data() + offset * channels, count, 20000000);
                 if (result < 0) return false;
                 if (result == 0) return true; // Bounded wait; never spin or grow a backlog.
+                if (auto *t = tap.load(std::memory_order_relaxed)) t->submit(samples.data() + offset * channels, result, multiplier, nextStart + int64_t(offset) * 1000000000 / rate, rate);
                 offset += result;
                 if (!playing) { playing = true; __android_log_print(ANDROID_LOG_INFO, "TVCAirPlay", "stage=FIRST_AUDIO_OUTPUT"); event(5); }
             }
@@ -237,6 +241,7 @@ void AudioOutput::volume(float decibels) {
     if (impl->reportedMute.exchange(muted) != muted) __android_log_print(ANDROID_LOG_INFO, "TVCAirPlay", "stage=%s", muted ? "AUDIO_SENDER_MUTED" : "AUDIO_SENDER_UNMUTED");
 }
 void AudioOutput::flush() { std::lock_guard<std::mutex> lock(impl->mutex); impl->queue.clear(); ++impl->version; impl->wake.notify_all(); }
+void AudioOutput::setAmbientTap(AmbientTap *tap) { impl->tap.store(tap, std::memory_order_relaxed); }
 void AudioOutput::end() {
     focus(false, 1);
     { std::lock_guard<std::mutex> lock(impl->mutex); impl->type = 0; ++impl->version; impl->queue.clear(); }

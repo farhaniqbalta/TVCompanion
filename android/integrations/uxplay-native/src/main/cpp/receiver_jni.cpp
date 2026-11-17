@@ -5,6 +5,7 @@
 #include "playout_clock.h"
 #include "h264_config.h"
 #include "video_preroll.h"
+#include "receiver_ambient.h"
 #include <android/native_window_jni.h>
 #include <android/log.h>
 #include <media/NdkMediaCodec.h>
@@ -35,6 +36,7 @@ struct Receiver {
     AMediaCodec *decoder = nullptr;
     std::mutex video;
     std::unique_ptr<tvc::AudioOutput> audio;
+    std::shared_ptr<tvc::AmbientSource> ambient = std::make_shared<tvc::AmbientSource>();
     tvc::H264Config config;
     tvc::VideoPreroll preroll;
     unsigned short port = 0;
@@ -288,12 +290,18 @@ void destroy(JNIEnv *env, Receiver *r) {
     if (r->discovery) { dnssd_unregister_airplay(r->discovery); dnssd_unregister_raop(r->discovery); }
     if (r->server) raop_destroy(r->server); // Joins receiver workers before releasing callback targets.
     if (r->discovery) dnssd_destroy(r->discovery);
-    r->audio.reset();
+    r->audio.reset();   // joins the audio worker, the only user of the raw tap pointer
+    r->ambient->close();   // open subscriptions keep their own reference and read CLOSED
     { std::lock_guard<std::mutex> lock(r->video); r->dropDecoder(); }
     if (r->window) ANativeWindow_release(r->window);
     if (r->observer) env->DeleteGlobalRef(r->observer);
     delete r;
 }
+}
+
+std::shared_ptr<tvc::AmbientSource> tvc::receiverAmbient(jlong handle) {
+    auto *r = reinterpret_cast<Receiver *>(handle);
+    return r ? r->ambient : nullptr;
 }
 
 extern "C" JNIEXPORT jlong JNICALL
@@ -308,6 +316,7 @@ Java_id_poncol_tvcompanion_uxplay_UxPlayReceiverEngine_nativeStart(JNIEnv *env, 
     r->hlsVolume = env->GetMethodID(type, "onNativeHlsVolume", "(F)V"); env->DeleteLocalRef(type);
     if (!r->notify || !r->hlsCommand || !r->hlsInfo || !r->hlsVolume) { destroy(env, r); return 0; }
     r->audio.reset(new tvc::AudioOutput([r](int code) { r->event(code); }));
+    r->audio->setAmbientTap(&r->ambient->tap());
     const char *key = env->GetStringUTFChars(path, nullptr);
     const char *id = env->GetStringUTFChars(identity, nullptr);
     raop_callbacks_t callbacks{};

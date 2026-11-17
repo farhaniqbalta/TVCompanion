@@ -44,3 +44,6 @@ experiments/airplay-lab/.native/
 
 # Shared native engine cache (downloaded sources, notices, binaries)
 android/integrations/uxplay-native/.native/
+
+# Brainstorming companion scratch
+.superpowers/

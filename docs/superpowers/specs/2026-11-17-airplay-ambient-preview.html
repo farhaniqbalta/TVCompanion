@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ambient Looks</title>
+<style>
+  :root { --bg:#0b1216; --panel:#121d23; --text:#e9efed; --muted:#93a5a0; --mint:#A2E3D0; --gold:#EFD29A; --line:#22323a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif; }
+  main { max-width:1180px; margin:0 auto; padding:20px 16px 40px; }
+  h2 { margin:0 0 4px; font-size:22px; }
+  .subtitle { color:var(--muted); margin:0 0 16px; }
+  .stage { position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:10px; overflow:hidden; border:1px solid var(--line); }
+  canvas { width:100%; height:100%; display:block; }
+  .beatdot { position:absolute; right:14px; top:12px; width:12px; height:12px; border-radius:50%; background:var(--gold); opacity:0; transition:opacity .05s; }
+  .hint { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); pointer-events:none; text-align:center; padding:16px; }
+  .bar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:14px 0; }
+  button, label.file { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 14px; font:inherit; cursor:pointer; }
+  button:hover, label.file:hover { border-color:var(--mint); }
+  label.file input { display:none; }
+  .toggle { color:var(--muted); display:flex; gap:6px; align-items:center; }
+  .options { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
+  .option { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; cursor:pointer; display:flex; gap:12px; }
+  .option.selected { border-color:var(--mint); box-shadow:0 0 0 1px var(--mint) inset; }
+  .letter { font-weight:700; color:var(--gold); font-size:18px; }
+  .option h3 { margin:0 0 4px; font-size:16px; }
+  .option p { margin:0; color:var(--muted); font-size:14px; }
+  .meters { display:flex; gap:14px; color:var(--muted); font-variant-numeric:tabular-nums; font-size:13px; }
+  .note { color:var(--muted); font-size:13px; margin-top:16px; }
+</style>
+</head>
+<body>
+<main>
+  <h2>Which ambient look feels right?</h2>
+  <p class="subtitle">Load a song (or use the demo beat), then switch looks. Every look gets the same audio inputs, so each one is a separate, swappable shader.</p>
+
+  <div class="stage">
+    <canvas id="c" width="1280" height="720"></canvas>
+    <div class="beatdot" id="beatdot"></div>
+    <div class="hint" id="hint">Load a song or press “Demo beat” to start the audio.</div>
+  </div>
+
+  <div class="bar">
+    <label class="file">Load song…<input type="file" id="file" accept="audio/*"></label>
+    <button id="demo">Demo beat</button>
+    <button id="pause">Pause</button>
+    <label class="toggle"><input type="checkbox" id="marker"> Show beat marker</label>
+    <label class="toggle"><input type="checkbox" id="reduced"> Reduced motion</label>
+    <span class="meters" id="meters"></span>
+  </div>
+
+  <div class="options">
+    <div class="option selected" data-choice="a-glow" onclick="pick(this,'glow')">
+      <div class="letter">A</div><div><h3>Drifting glow field</h3><p>Large soft pools of mint and gold drift and blend; they swell gently on each beat.</p></div>
+    </div>
+    <div class="option" data-choice="b-aurora" onclick="pick(this,'aurora')">
+      <div class="letter">B</div><div><h3>Aurora ribbons</h3><p>Soft bands of light wave across the lower screen; a crest travels along them on the beat.</p></div>
+    </div>
+    <div class="option" data-choice="c-ripples" onclick="pick(this,'ripples')">
+      <div class="letter">C</div><div><h3>Ripples from the gold dot</h3><p>Each beat sends a wide, soft ring out from a gold point, echoing the logo.</p></div>
+    </div>
+  </div>
+
+  <p class="note">Browser preview only: it shows the look, not how smoothly the TV will run it. Rendered at 1280×720, 30 fps, like the TV target.</p>
+</main>
+
+<script>
+// ---- Shared uniform contract (same for every look) -------------------------
+// uRes, uPhase(vec4 wrapped drift phases), uLevel, uBass, uMid, uHigh,
+// uPulse, uBeatAges(vec4 seconds since last 4 beats), uBase, uPalette[4],
+// uReduced, uDitherSeed
+const COMMON = `#version 300 es
+precision mediump float;
+uniform highp vec2 uRes;
+uniform highp vec4 uPhase;
+uniform float uLevel, uBass, uMid, uHigh, uPulse, uReduced;
+uniform highp vec4 uBeatAges;
+uniform vec3 uBase;
+uniform vec3 uPalette[4];   // mint, gold, teal, pale  (gamma-2 linear)
+uniform highp float uDitherSeed;
+out vec4 fragColor;
+highp float hash12(highp vec2 p){ highp vec3 p3=fract(vec3(p.xyx)*0.1031); p3+=dot(p3,p3.yzx+33.33); return fract((p3.x+p3.y)*p3.z); }
+vec3 finish(vec3 col, highp vec2 p){
+  col *= 1.0 + 0.08*uPulse;
+  col *= 1.0 - 0.35*dot(p,p);
+  col  = col/(1.0+0.4*col);
+  col  = sqrt(max(col,0.0));
+  col += (hash12(gl_FragCoord.xy + uDitherSeed) - 0.5)/255.0;
+  return col;
+}
+`;
+
+const LOOKS = {
+glow: COMMON + `
+float pool(highp vec2 w, highp vec2 c, float r, float k){ highp vec2 d=w-c; float f=1.0/(1.0+dot(d,d)/(r*r)); return f*f*k; }
+void main(){
+  highp vec2 uv=gl_FragCoord.xy/uRes; float a=uRes.x/uRes.y;
+  highp vec2 p=vec2((uv.x-0.5)*a, uv.y-0.5);
+  float warp = mix(0.04+0.04*uHigh, 0.04, uReduced);
+  highp vec2 w=p;
+  w += warp    *vec2(sin(p.y*2.3+uPhase.x), sin(p.x*1.9+uPhase.y));
+  w += warp*0.5*vec2(sin(p.y*4.1+uPhase.z), sin(p.x*3.7+uPhase.w));
+  float swell = (1.0-uReduced)*(0.12*uBass + 0.08*uPulse);
+  float push  = (1.0-uReduced)*0.02*uPulse;
+  float lvl = 0.55+0.45*uLevel;
+  // Lissajous centres live in the look itself so looks stay swappable.
+  highp vec2 c0=vec2(sin(uPhase.x+0.3)*0.36*a, sin(uPhase.y*1.3+1.1)*0.28);
+  highp vec2 c1=vec2(sin(uPhase.y+2.4)*0.34*a, sin(uPhase.z*1.7+0.2)*0.30);
+  highp vec2 c2=vec2(sin(uPhase.z+4.0)*0.30*a, sin(uPhase.w*1.1+2.7)*0.26);
+  highp vec2 c3=vec2(sin(uPhase.w+5.1)*0.38*a, sin(uPhase.x*0.9+3.9)*0.32);
+  c0+=normalize(c0+1e-4)*push; c1+=normalize(c1+1e-4)*push;
+  float mg = 0.15*(uMid-0.5)*2.0;
+  vec3 col=uBase;
+  col += uPalette[0]*pool(w,c0,0.42*(1.0+swell),(0.55+mg)*lvl*(1.0+0.2*uBass));
+  col += uPalette[1]*pool(w,c1,0.36*(1.0+swell),(0.45-mg)*lvl*(1.0+0.2*uBass));
+  col += uPalette[2]*pool(w,c2,0.60,0.70*lvl);
+  col += uPalette[3]*pool(w,c3,0.30,0.25*uHigh*lvl);
+  fragColor=vec4(finish(col,p),1.0);
+}`,
+
+aurora: COMMON + `
+float ribbon(float dy, float width){ float t=dy/width; return 1.0/(1.0+t*t); }
+void main(){
+  highp vec2 uv=gl_FragCoord.xy/uRes; float a=uRes.x/uRes.y;
+  highp vec2 p=vec2((uv.x-0.5)*a, uv.y-0.5);
+  float lvl=0.55+0.45*uLevel;
+  float lift=(1.0-uReduced)*0.05*uBass;
+  float age=uBeatAges.x;
+  float crestX = -0.6*a + age*1.4*a;                 // travels left -> right after each beat
+  float cx = (p.x-crestX)*3.0;   // pow() of a negative base is undefined in GLSL
+  float crest = (1.0-uReduced)*exp(-cx*cx)*exp(-age*1.6);
+  vec3 col=uBase;
+  for(int k=0;k<3;k++){
+    float fk=float(k);
+    highp float y = -0.18+0.11*fk + lift
+      + 0.06*sin(p.x*(1.1+0.3*fk)+uPhase.x*(1.0+fk*0.4)+fk*1.7)
+      + 0.03*sin(p.x*(2.6+0.5*fk)-uPhase.y*(1.3+fk*0.2));
+    y += 0.03*crest;
+    float dy=p.y-y;
+    float soft = ribbon(dy, 0.05+0.015*fk) * smoothstep(0.35,-0.05,dy);   // fade upward
+    float shimmer = 1.0 + (1.0-uReduced)*0.25*uHigh*sin(p.x*38.0+uPhase.z*9.0+fk)*smoothstep(0.0,0.05,dy);
+    vec3 tint = mix(uPalette[0], uPalette[1], clamp(0.5+0.5*sin(p.x*0.8+uPhase.w+fk*1.3)+0.2*(uMid-0.5),0.0,1.0));
+    tint = mix(tint, uPalette[2], 0.35*fk/2.0);
+    col += tint*soft*shimmer*(0.42-0.08*fk)*lvl*(1.0+0.4*crest);
+  }
+  fragColor=vec4(finish(col,p),1.0);
+}`,
+
+ripples: COMMON + `
+float ring(float d, float age){
+  if(age>2.4) return 0.0;
+  float r = 0.04 + age*0.32;
+  float w = 0.035 + age*0.03;
+  float t = (d-r)/w;
+  return exp(-t*t) * (1.0-age/2.4) * (1.0-age/2.4);
+}
+void main(){
+  highp vec2 uv=gl_FragCoord.xy/uRes; float a=uRes.x/uRes.y;
+  highp vec2 p=vec2((uv.x-0.5)*a, uv.y-0.5);
+  highp vec2 c=vec2(0.02*sin(uPhase.x), 0.03+0.02*sin(uPhase.y));
+  float d=length(p-c);
+  float lvl=0.55+0.45*uLevel;
+  vec3 col=uBase;
+  col += uPalette[2]*0.55*lvl/(1.0+d*d*6.0);                    // calm teal field
+  float rings = 0.0;
+  if(uReduced<0.5){ rings = ring(d,uBeatAges.x)+ring(d,uBeatAges.y)+ring(d,uBeatAges.z)+ring(d,uBeatAges.w); }
+  col += mix(uPalette[0],uPalette[3],0.3)*rings*0.45*lvl;
+  float dotR = 0.018*(1.0+(1.0-uReduced)*0.35*uBass);
+  float dotF = smoothstep(dotR*1.6, dotR*0.6, d);
+  col += uPalette[1]*(dotF*0.9 + 0.25*lvl/(1.0+d*d/(dotR*dotR*30.0)));
+  fragColor=vec4(finish(col,p),1.0);
+}`
+};
+
+const VERT = `#version 300 es
+void main(){ vec2 v=vec2((gl_VertexID<<1)&2, gl_VertexID&2); gl_Position=vec4(v*2.0-1.0,0.0,1.0); }`;
+
+// ---- GL setup --------------------------------------------------------------
+const canvas=document.getElementById('c');
+const gl=canvas.getContext('webgl2',{antialias:false,depth:false,stencil:false});
+const hint=document.getElementById('hint');
+if(!gl){ hint.textContent='This browser has no WebGL2, so the preview cannot run.'; }
+function compile(type,src){ const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const programs={};
+for(const [name,src] of Object.entries(LOOKS)){
+  try{ const pr=gl.createProgram(); gl.attachShader(pr,compile(gl.VERTEX_SHADER,VERT)); gl.attachShader(pr,compile(gl.FRAGMENT_SHADER,src)); gl.linkProgram(pr);
+    if(!gl.getProgramParameter(pr,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+    const u={}; for(const n of ['uRes','uPhase','uLevel','uBass','uMid','uHigh','uPulse','uReduced','uBeatAges','uBase','uPalette','uDitherSeed']) u[n]=gl.getUniformLocation(pr,n);
+    programs[name]={pr,u};
+  }catch(e){ console.error(name,e); hint.textContent='Shader '+name+' failed: '+e.message; }
+}
+gl.bindVertexArray(gl.createVertexArray());
+let look='glow';
+function pick(el,name){ if(window.toggleSelect) toggleSelect(el); else { document.querySelectorAll('.option').forEach(o=>o.classList.remove('selected')); el.classList.add('selected'); } look=name; }
+
+const hex=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16)/255);
+const sq=c=>c.map(v=>v*v);
+const BASE=sq(hex('#101B21'));
+const PALETTE=new Float32Array([...sq(hex('#A2E3D0')),...sq(hex('#EFD29A')),...sq(hex('#1F6F78')),...sq(hex('#F2F5F4'))]);
+
+// ---- Audio + analysis ------------------------------------------------------
+let ctx=null, analyser=null, audioEl=null, demo=null, freq=null, time=null;
+function ensureCtx(){ if(ctx) return; ctx=new AudioContext(); analyser=ctx.createAnalyser(); analyser.fftSize=1024; analyser.smoothingTimeConstant=0;
+  analyser.connect(ctx.destination); freq=new Float32Array(analyser.frequencyBinCount); time=new Float32Array(analyser.fftSize); }
+document.getElementById('file').onchange=e=>{ const f=e.target.files[0]; if(!f) return; ensureCtx(); stopDemo();
+  if(!audioEl){ audioEl=new Audio(); audioEl.loop=true; ctx.createMediaElementSource(audioEl).connect(analyser); }
+  audioEl.src=URL.createObjectURL(f); audioEl.play(); ctx.resume(); hint.style.display='none'; };
+function stopDemo(){ if(demo){ clearInterval(demo.timer); demo.gain.disconnect(); demo=null; } }
+document.getElementById('demo').onclick=()=>{ ensureCtx(); ctx.resume(); if(audioEl) audioEl.pause(); if(demo) return;
+  const g=ctx.createGain(); g.gain.value=0.6; g.connect(analyser);
+  const pad=ctx.createOscillator(); pad.type='sawtooth'; pad.frequency.value=110; const lp=ctx.createBiquadFilter(); lp.frequency.value=700;
+  const pg=ctx.createGain(); pg.gain.value=0.05; pad.connect(lp).connect(pg).connect(g); pad.start();
+  const beat=60/118; let next=ctx.currentTime+0.1, n=0;
+  const timer=setInterval(()=>{ while(next<ctx.currentTime+0.3){ const o=ctx.createOscillator(), k=ctx.createGain();
+      o.frequency.setValueAtTime(140,next); o.frequency.exponentialRampToValueAtTime(45,next+0.12);
+      k.gain.setValueAtTime(0.9,next); k.gain.exponentialRampToValueAtTime(0.001,next+0.35); o.connect(k).connect(g); o.start(next); o.stop(next+0.4);
+      if(n%2===1){ const b=ctx.createBufferSource(), buf=ctx.createBuffer(1,ctx.sampleRate*0.05,ctx.sampleRate), d=buf.getChannelData(0);
+        for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length); b.buffer=buf; const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=6000;
+        const hg=ctx.createGain(); hg.gain.value=0.25; b.connect(hp).connect(hg).connect(g); b.start(next+beat/2); }
+      next+=beat; n++; } },50);
+  demo={timer,gain:g}; hint.style.display='none'; };
+document.getElementById('pause').onclick=()=>{ if(!ctx) return; if(ctx.state==='running') ctx.suspend(); else ctx.resume(); };
+
+// One-pole smoothing with separate attack/release, time-aware.
+function follow(cur,target,dt,att,rel){ const tau=target>cur?att:rel; return cur+(target-cur)*(1-Math.exp(-dt/tau)); }
+const S={level:0,bass:0,mid:0,high:0,pulse:0};
+const phase=[0,0,0,0], RATES=[0.11,0.083,0.047,0.031];
+let beats=[], fluxHist=[], prevLow=0, lastBeat=-1, lastRecent=-10;
+function bandsFrom(){
+  analyser.getFloatFrequencyData(freq); analyser.getFloatTimeDomainData(time);
+  let s=0; for(const v of time) s+=v*v; const rms=Math.sqrt(s/time.length);
+  const ny=ctx.sampleRate/2, bins=freq.length, out=new Array(16);
+  for(let b=0;b<16;b++){ const f0=40*Math.pow(16000/40,b/16), f1=40*Math.pow(16000/40,(b+1)/16);
+    let i0=Math.max(1,Math.floor(f0/ny*bins)), i1=Math.max(i0+1,Math.ceil(f1/ny*bins)); let m=0;
+    for(let i=i0;i<i1&&i<bins;i++) m+=Math.pow(10,freq[i]/20); m/=(i1-i0);
+    const db=20*Math.log10(m+1e-9); out[b]=Math.min(1,Math.max(0,(db+80)/55)); }
+  return {rms,bands:out};
+}
+const mean=(a,i,j)=>{ let s=0; for(let k=i;k<=j;k++) s+=a[k]; return s/(j-i+1); };
+
+let last=performance.now(), frameToggle=false;
+const marker=document.getElementById('marker'), reduced=document.getElementById('reduced'), dot=document.getElementById('beatdot'), meters=document.getElementById('meters');
+function tick(now){
+  requestAnimationFrame(tick);
+  const dt=Math.min(0.1,(now-last)/1000); last=now; const t=now/1000;
+  let level=0,bass=0,mid=0,high=0;
+  if(analyser && ctx.state==='running'){
+    const {rms,bands}=bandsFrom();
+    level=Math.min(1,rms*3.2); bass=mean(bands,0,3); mid=mean(bands,4,9); high=mean(bands,10,15);
+    // Onset: low-band flux over an adaptive threshold, 280 ms refractory.
+    const low=bass, flux=Math.max(0,low-prevLow); prevLow=low;
+    fluxHist.push(flux); if(fluxHist.length>60) fluxHist.shift();
+    const thr=fluxHist.reduce((a,b)=>a+b,0)/fluxHist.length*1.6+0.02;
+    if(flux>thr && t-lastBeat>0.28 && low>0.25){ lastBeat=t; beats.unshift(t); beats=beats.slice(0,4); }
+    if(rms>0.003) lastRecent=t;
+  }
+  const recent = t-lastRecent < 0.4;
+  const idle=!recent;
+  S.level=follow(S.level, idle?0:level, dt, idle?1.5:0.15, idle?1.5:0.8);
+  S.bass =follow(S.bass,  idle?0:bass,  dt, 0.06, idle?1.5:0.35);
+  S.mid  =follow(S.mid,   idle?0.5:mid, dt, 0.4, 0.4);
+  S.high =follow(S.high,  idle?0:high,  dt, 0.08, idle?1.5:0.5);
+  const age=lastBeat<0?99:t-lastBeat;
+  const env= age<0.04? age/0.04 : Math.exp(-(age-0.04)/0.3);
+  S.pulse=follow(S.pulse, idle?0:Math.max(env,0.6*S.bass), dt, 0.04, 0.45);
+  const red=reduced.checked?1:0;
+  const speed=(idle?0.5:(0.6+0.7*S.level))*(red?0.25:1);
+  for(let i=0;i<4;i++){ phase[i]=(phase[i]+dt*RATES[i]*speed*6.0)%(Math.PI*2); }   // 6x: preview runs faster than TV so drift is visible
+  dot.style.opacity = marker.checked && age<0.12 ? 1 : 0;
+  meters.textContent = analyser ? `level ${S.level.toFixed(2)}  bass ${S.bass.toFixed(2)}  high ${S.high.toFixed(2)}  beats ${beats.length?'●':'–'}` : '';
+  frameToggle=!frameToggle; if(!frameToggle) return;   // ~30 fps like the TV
+  const P=programs[look]; if(!P) return;
+  gl.viewport(0,0,canvas.width,canvas.height); gl.useProgram(P.pr); const u=P.u;
+  gl.uniform2f(u.uRes,canvas.width,canvas.height); gl.uniform4f(u.uPhase,...phase);
+  gl.uniform1f(u.uLevel,S.level); gl.uniform1f(u.uBass,S.bass); gl.uniform1f(u.uMid,S.mid); gl.uniform1f(u.uHigh,S.high);
+  gl.uniform1f(u.uPulse,red?0:S.pulse); gl.uniform1f(u.uReduced,red);
+  const ages=[0,1,2,3].map(i=>beats[i]!==undefined? t-beats[i] : 99); gl.uniform4f(u.uBeatAges,...ages);
+  gl.uniform3f(u.uBase,...BASE); gl.uniform3fv(u.uPalette,PALETTE); gl.uniform1f(u.uDitherSeed, red?0:(t*61.0)%97.0);
+  gl.drawArrays(gl.TRIANGLES,0,3);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

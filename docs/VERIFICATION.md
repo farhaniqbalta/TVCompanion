@@ -141,3 +141,40 @@ On 2026-11-04, the iPhone/iPad remote gained an explicit text entry field and TV
 The Phase 3 iOS remote redesign merged through PR #7. The user reports that **all requested closeout checks passed** on the home setup: iPhone/iPad pairing and alternating use, reconnect after background/relaunch/Wi-Fi return/TV reboot, remote keys and focused keyboard input; normal `alert` and urgent `alert2` delivery with separate PIN and TV presentation/dismissal/expiry/ordering/privacy; notification and AirPlay opt-in reboot startup plus lamp/notification/AirPlay regressions; and voice command with microphone cleanup after Stop, backgrounding and interruption. This supersedes earlier pending-device notes for those tested flows.
 
 Phase 3 is accepted for the tested setup by user report. Device OS, TV firmware and Remote Service versions, logs and screenshots were not supplied, and the development agent did not install or run UI/device tests. Older-receiver rejection, TV wake behavior, unusual TLS/certificate failures, wider device compatibility and store-release readiness remain outside this acceptance. Phase 2 reverse-sender takeover and iPad YouTube compatibility retain their separate scope.
+
+## AirPlay Ambient mode — 2026-11-17
+
+Branch `docs/airplay-visualizer-assessment`, code through `5953481`. Design: [Ambient spec](superpowers/specs/2026-11-17-airplay-ambient-design.md); see [Ambient mode](ARCHITECTURE.md#ambient-mode).
+
+Run locally for this entry with JDK 17 (compileSdk 34). The native host check ran fresh; the Gradle build/test run completed with most tasks up to date, their inputs unchanged since their last passing run in this session:
+
+```sh
+python3 scripts/check-airplay-native.py && cd android && ./gradlew :app:assembleDebug :app:testDebugUnitTest :integrations:airplay-runtime:testDebugUnitTest :integrations:uxplay-native:testDebugUnitTest
+```
+
+- Native checks passed, including the ambient host check, which measured when the feature landed 16 kick onsets on an 8 s 118 BPM synthetic track, 1 onset on a sustained tone and 4 end-to-end beats.
+- `BUILD SUCCESSFUL` (221 tasks, 15 executed, the rest up to date). The test result files contain 116 results with zero failures/errors. The only warning is the known armeabi-v7a-only native library notice.
+
+Device checks on the project's MT5867 / Mali-G31 Android 14 TV (1280x720), run over adb with the user driving the sender:
+
+- **CP1, PASS:** Ambient button hidden with no sender and shown with one; aurora renders with `GL_RED_BITS=8` and no fallback to the built-in look; frame interval mean 33.2-33.3 ms (max 38.7-41.6 ms), draw mean 1.1-1.9 ms, so **720p is kept and no 540p fallback is needed**; 20 open/close cycles with music playing left audio and the `:airplay` process unchanged; 5 open/close cycles with "Keep session connected" off kept the session; Screen Mirroring while Ambient was open closed Ambient and showed the mirrored video (user-confirmed).
+- **CP3, partial:** aurora on live music held 30 fps (33.3 ms mean, draw about 1.2 ms) with no crash or audio failure logged over 50 s. The user said the visual is "a bit off on upbeat songs, okay for now", so beat sync on fast tempos is not tuned and **`AMBIENT_SYNC_OFFSET_MS` stays 0**.
+  - Since the final fix wave the code default sync offset is −25 ms (AmbientMotion.SYNC_OFFSET_MS); not yet checked on device.
+- **Look picker, NOT TESTED:** D-pad LEFT/RIGHT look switching (added 2026-11-17 by user request) is covered by JVM and glslc checks only; on-device switching, the label and the remembered choice have not been run on the TV.
+- **CP3, NOT TESTED:** pause, low volume, stop/restart and sender takeover with Ambient open.
+- **Kept looks:** `ripples`, `dusk` and `strings` were later loaded and measured on the TV; see [Ambient automatic 540p fallback](#ambient-automatic-540p-fallback--2026-11-17). The default remains `aurora`.
+- **No-Ambient regression, NOT TESTED (deferred by user):** Screen Mirroring video, background listening, sender takeover and HLS app video with Ambient never opened.
+
+## Ambient automatic 540p fallback — 2026-11-17
+
+Debug builds now log GPU time per look (`gpu mean/max` in the 10 s `TVCAmbient` stats line, via `GL_EXT_disjoint_timer_query`). On the MT5867 / Mali-G31 TV, SurfaceFlinger composites the Ambient and video layers on the same GPU as the look's draw, so a look's own GPU time must stay at about 14 ms or less to hold 30 fps. Measured:
+
+| Look | Size | GPU draw | Result |
+|---|---|---|---|
+| strings | 1280x720 | 20.7 ms | ~22 fps (miss) |
+| dusk | 1280x720 | 15.7 ms | 34 ms interval (just misses) |
+| strings | 960x540 | 13.3 ms | 30 fps |
+| dusk | 960x540 | 10.1 ms | 30 fps |
+| aurora, ripples | 1280x720 | ~1 ms | 30 fps |
+
+The user approved how `strings` looks at 540p ("looks fine"). Ambient now opens every look at full size and falls back automatically: if two consecutive 3 s windows each have a mean frame interval over 33.9 ms (first 1 s after a look loads or the surface is created ignored; healthy looks measured 33.33-33.39 ms over 10 s, `dusk` 34.05 ms, so a single stall cannot trigger it), the surface is set to 960x540 and the look is remembered for the process lifetime, so switching back to it goes straight to 540p. Detection is generic, never keyed to look names. Debug builds log `look=<name> fallback=960x540 interval=<mean>us`. Covered by `AmbientDownscaleTest` (JVM); **the automatic fallback itself has not yet been run on the TV**.
