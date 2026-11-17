@@ -8,11 +8,19 @@ class AmbientShadersTest {
     private val read: (String) -> String? = { java.io.File(dir, it).takeIf { f -> f.exists() }?.readText() }
     @Test fun shippedLooksCarryContractHeader() {
         val files = dir.listFiles()!!.map { it.name }.toSet()
-        assertEquals(setOf("aurora.vert", "aurora.frag", "ripples.frag", "dusk.frag", "strings.frag"), files)
+        assertEquals(setOf("aurora.vert", "aurora.frag", "ripples.frag", "dusk.frag", "strings.vert", "strings.frag"), files)
         dir.listFiles()!!.forEach { assertTrue(it.name, it.readText().startsWith(AmbientShaders.CONTRACT)) }
     }
-    @Test fun stringsKeepsBeatMathHighp() {
-        read("strings.frag")!!.let { assertTrue(it.contains("highp float n")); assertTrue(it.contains("highp float age")) }
+    @Test fun stringsKeepsBeatMathPerVertexAndHighp() {
+        read("strings.vert")!!.let { assertTrue(it.contains("highp float")); assertTrue(it.contains("hash12(vec2(")) }
+        read("strings.frag")!!.let {
+            // Regression guard: per-pixel beat hashing halved fps on Mali-G31.
+            assertFalse(it.contains("hash12(vec2(n")); assertFalse(it.contains("uBeatCount"))
+            assertTrue(it.contains("highp float age"))
+        }
+    }
+    @Test fun stringsUsesItsOwnVertexStage() {
+        assertTrue(AmbientShaders.assemble("strings", read).vertex.contains("flat out highp vec4 vPid"))
     }
     @Test fun auroraUsesItsOwnVertexStage() {
         val s = AmbientShaders.assemble("aurora", read)
