@@ -105,6 +105,6 @@ Thread ownership:
 - **GL thread:** one JNI read per drawn frame into a reused array, then smoothing, uniform upload and a draw. Every renderer callback is wrapped; any failure releases GL resources and closes Ambient.
 - **Main thread:** receives open results and owns the view.
 
-Beat times are playout times, corrected by one constant `AMBIENT_SYNC_OFFSET_MS` (currently 0). Audio is never delayed to match visuals.
+Beat times are playout times, corrected by one constant, `AmbientMotion.SYNC_OFFSET_MS` (code default −25 ms, not yet checked on device). Audio is never delayed to match visuals.
 
 Look contract v1: looks are assets in `airplay-runtime/src/main/assets/ambient/` (`<name>.frag`, optional `<name>.vert`), starting with `// ambient-contract: 1`. The host prepends the prelude, fixed uniforms and `finish(col, p)`; files with another contract number are rejected, and a compile/link failure falls back to the built-in look. The shipped looks are `aurora`, `strings`, `dusk` and `ripples` (`AmbientShaders.LOOKS`). While Ambient is open, D-pad RIGHT/LEFT cycles them (first press only, key repeats ignored), a label names the new look for 2 s, and the renderer relinks on the GL thread. The choice is saved in the `:airplay` process's `ambient` SharedPreferences (key `look`) and used on the next open; missing or unknown values fall back to `aurora` (`AmbientShaders.DEFAULT_LOOK`).

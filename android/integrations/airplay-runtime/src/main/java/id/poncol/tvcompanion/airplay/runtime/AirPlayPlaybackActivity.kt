@@ -169,7 +169,7 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
             setText(R.string.airplay_runtime_ambient_hint)
             animate().alpha(0f).setStartDelay(4000).setDuration(600)
         }
-        lookLabel = ambientText(Gravity.START).apply { alpha = 0f }
+        lookLabel = ambientText(Gravity.START).apply { alpha = 0f; accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE }
         main.removeCallbacks(hideControls)
         waiting.visibility = View.GONE; controls.visibility = View.GONE
         view.requestFocus()
@@ -191,7 +191,7 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         getSharedPreferences("ambient", MODE_PRIVATE).edit().putString("look", look).apply()
         view.setLook(look)
         lookLabel?.run {
-            setText(LOOK_NAMES[AmbientShaders.LOOKS.indexOf(look)])
+            LOOK_NAMES.getOrNull(AmbientShaders.LOOKS.indexOf(look))?.let { setText(it) } ?: setText(look)
             animate().cancel(); alpha = 1f
             animate().alpha(0f).setStartDelay(2000).setDuration(600)
         }
