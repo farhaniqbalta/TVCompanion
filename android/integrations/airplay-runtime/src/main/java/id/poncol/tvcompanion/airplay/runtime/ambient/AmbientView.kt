@@ -9,6 +9,7 @@ import android.view.Choreographer
 class AmbientView(
     context: Context,
     subscription: () -> AmbientSubscription?,
+    onStatus: (AmbientStatus) -> Unit,
     onFailure: (Throwable) -> Unit,
 ) : GLSurfaceView(context) {
     private var vsync = 0
@@ -24,7 +25,7 @@ class AmbientView(
         setEGLConfigChooser(8, 8, 8, 0, 0, 0)
         holder.setFormat(PixelFormat.RGBX_8888)
         setZOrderMediaOverlay(true)
-        setRenderer(AmbientRenderer(context, subscription, onFailure))
+        setRenderer(AmbientRenderer(context, subscription, onStatus, onFailure))
         renderMode = RENDERMODE_WHEN_DIRTY
         isFocusable = true
         isFocusableInTouchMode = true

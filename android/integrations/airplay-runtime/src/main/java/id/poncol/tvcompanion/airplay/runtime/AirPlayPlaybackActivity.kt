@@ -33,6 +33,7 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     @Volatile private var ambientSub: AmbientSubscription? = null   // read on the GL thread
     private var ambientHint: TextView? = null
     private val epoch = AmbientEpoch()
+    private val reopen = AmbientReopen()
     private val main = Handler(Looper.getMainLooper())
     private val hideControls = Runnable { if (snapshot.videoActive) { controls.clearFocus(); controls.visibility = View.GONE } }
     private var consumedKey: Int? = null
@@ -154,12 +155,12 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     }
     private fun openAmbient() {
         if (ambient != null) return
-        val token = epoch.next()
-        ambientSub = SyntheticAmbientSubscription()   // Task 6: real source
-        val view = AmbientView(this, { ambientSub }) { e ->
-            if (epoch.isCurrent(token)) { Log.w("TVCAmbient", "closing ambient", e); closeAmbient() }
+        lateinit var view: AmbientView
+        view = AmbientView(this, { ambientSub }, { status -> if (ambient === view) onAmbientStatus(status) }) { e ->
+            if (ambient === view) { Log.w("TVCAmbient", "closing ambient", e); closeAmbient() }
         }
         ambient = view
+        requestAmbient()
         frame.addView(view, FrameLayout.LayoutParams(-1, -1))
         val dm = resources.displayMetrics
         ambientHint = TextView(this).apply {
@@ -173,6 +174,17 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         waiting.visibility = View.GONE; controls.visibility = View.GONE
         view.requestFocus()
         view.begin()
+    }
+    /** Until the result arrives the renderer sees no subscription and shows idle. */
+    private fun requestAmbient() {
+        val e = epoch.next()
+        reopen.opened()
+        host?.openAmbient { sub -> if (!epoch.isCurrent(e) || ambient == null) sub?.close() else ambientSub = sub }
+    }
+    private fun onAmbientStatus(status: AmbientStatus) {
+        if (!reopen.shouldReopen(status, SystemClock.uptimeMillis())) return
+        val old = ambientSub; ambientSub = null; old?.close()   // close is safe while the GL thread reads
+        requestAmbient()
     }
     private fun closeAmbient() {
         val view = ambient ?: return

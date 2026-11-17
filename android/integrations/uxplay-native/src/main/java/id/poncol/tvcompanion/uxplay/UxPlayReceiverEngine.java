@@ -1,5 +1,7 @@
 package id.poncol.tvcompanion.uxplay;
 import id.poncol.tvcompanion.airplay.runtime.ReceiverEngine;
+import id.poncol.tvcompanion.airplay.runtime.ambient.AmbientCallback;
+import id.poncol.tvcompanion.airplay.runtime.ambient.AmbientSource;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
@@ -10,9 +12,10 @@ import java.io.File;
 import java.security.SecureRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 /** UxPlay-specific adapter. Native loading and all engine work stay in the receiver process. */
-public final class UxPlayReceiverEngine implements ReceiverEngine {
+public final class UxPlayReceiverEngine implements ReceiverEngine, AmbientSource {
     public static id.poncol.tvcompanion.domain.airplay.AirPlayCapabilities capabilities() {
         return new id.poncol.tvcompanion.domain.airplay.AirPlayCapabilities(true, true, 1280, 720, 30, true);
     }
@@ -171,6 +174,16 @@ public final class UxPlayReceiverEngine implements ReceiverEngine {
             default: text = State.FAILED;
         }
         deliver(text);
+    }
+    @Override public void openAmbient(AmbientCallback callback) {
+        if (!closed) try {
+            worker.execute(() -> {
+                long sub = (!closed && handle != 0) ? UxPlayAmbientSubscription.nativeOpen(handle) : 0;
+                main.post(() -> callback.onOpened(sub == 0 ? null : new UxPlayAmbientSubscription(sub)));
+            });
+            return;
+        } catch (RejectedExecutionException ignored) { }
+        main.post(() -> callback.onOpened(null));
     }
     private void deliver(State state) {
         main.post(() -> { if (!closed && observer != null) observer.onState(state); });

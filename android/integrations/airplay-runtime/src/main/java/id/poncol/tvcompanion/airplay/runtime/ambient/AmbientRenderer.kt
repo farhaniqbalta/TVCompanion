@@ -17,6 +17,7 @@ import javax.microedition.khronos.opengles.GL10
 internal class AmbientRenderer(
     private val context: Context,
     private val subscription: () -> AmbientSubscription?,
+    private val onStatus: (AmbientStatus) -> Unit,   // main thread, at most once per second
     private val onFailure: (Throwable) -> Unit,
 ) : GLSurfaceView.Renderer {
     private val main = Handler(Looper.getMainLooper())
@@ -32,6 +33,7 @@ internal class AmbientRenderer(
     @Volatile private var failed = false
     private var startNs = 0L
     private var lastNs = 0L
+    private var statusNs = 0L
     private var loggedInfo = false
     private var statStartNs = 0L
     private var statFrames = 0
@@ -66,7 +68,7 @@ internal class AmbientRenderer(
         glUniform3fv(loc[U_BASE], 1, BASE, 0)
         glUniform3fv(loc[U_PALETTE], 4, PALETTE, 0)
         glUniform1f(loc[U_REDUCED], if (reduced) 1f else 0f)
-        startNs = System.nanoTime(); lastNs = startNs; statStartNs = startNs
+        startNs = System.nanoTime(); lastNs = startNs; statStartNs = startNs; statusNs = startNs
         if (debug && !loggedInfo) { loggedInfo = true; Log.d(TAG, "GL_RED_BITS=$bits look=${look.look}") }
     }
 
@@ -82,6 +84,7 @@ internal class AmbientRenderer(
         val dt = ((now - lastNs) / 1e9f).coerceIn(0f, 0.1f)
         val status = subscription()?.read(frame) ?: AmbientStatus.CLOSED
         motion.update(frame, status, dt, (now - startNs) / 1e9f)
+        if (now - statusNs >= 1_000_000_000L) { statusNs = now; main.post { onStatus(status) } }
         glUniform4fv(loc[U_PHASE], 1, motion.phase, 0)
         glUniform1f(loc[U_LEVEL], motion.level)
         glUniform1f(loc[U_BASS], motion.bass)
