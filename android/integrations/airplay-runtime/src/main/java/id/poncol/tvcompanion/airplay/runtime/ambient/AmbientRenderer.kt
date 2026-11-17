@@ -20,8 +20,10 @@ internal class AmbientRenderer(
     private var lookName: String,
     private val subscription: () -> AmbientSubscription?,
     private val onStatus: (AmbientStatus) -> Unit,   // main thread, at most once per second
+    private val onSlow: (String) -> Unit,            // main thread, look name, at most once per look load
     private val onFailure: (Throwable) -> Unit,
 ) : GLSurfaceView.Renderer {
+    private val downscale = AmbientDownscale()
     private val main = Handler(Looper.getMainLooper())
     private val debug = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
     private val reduced = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
@@ -66,6 +68,7 @@ internal class AmbientRenderer(
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(0, 2, GL_FLOAT, false, 0, 0)
         startNs = System.nanoTime(); lastNs = startNs; statStartNs = startNs; statusNs = startNs
+        downscale.reset(startNs)
         if (debug) {
             val ext = glGetString(GL_EXTENSIONS) ?: ""
             gpuQueries = null; gpuFrame = 0   // ids from a lost context are not ours to delete
@@ -86,6 +89,7 @@ internal class AmbientRenderer(
         val linked = loadLook()
         glUniform2f(loc[U_RES], width, height)
         glUniform1f(loc[U_ASPECT], width / height)
+        downscale.reset(System.nanoTime())
         if (debug) Log.d(TAG, "look=$linked")
     }
 
@@ -141,6 +145,11 @@ internal class AmbientRenderer(
         glDrawArrays(GL_TRIANGLE_STRIP, 0, VERTEX_COUNT)
         if (q != null) { glEndQuery(GL_TIME_ELAPSED_EXT); gpuFrame++ }
         if (debug) stats(now, System.nanoTime() - now)
+        if (downscale.onFrame(now)) {
+            val name = lookName
+            if (debug) Log.d(TAG, "look=$name fallback=960x540 interval=${downscale.meanNs / 1000}us")
+            main.post { onSlow(name) }
+        }
         lastNs = now
     }
 

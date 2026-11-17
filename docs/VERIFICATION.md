@@ -164,3 +164,17 @@ Device checks on the project's MT5867 / Mali-G31 Android 14 TV (1280x720), run o
 - **CP3, NOT TESTED:** pause, low volume, stop/restart and sender takeover with Ambient open.
 - **Kept looks, NOT TESTED (deferred by user):** loading `ripples`, `dusk` and `strings` on the TV, including `strings` on-device. A look could fail on Mali undetected until it is switched to (it would then fall back to the built-in look); the default remains `aurora`.
 - **No-Ambient regression, NOT TESTED (deferred by user):** Screen Mirroring video, background listening, sender takeover and HLS app video with Ambient never opened.
+
+## Ambient automatic 540p fallback — 2026-11-17
+
+Debug builds now log GPU time per look (`gpu mean/max` in the 10 s `TVCAmbient` stats line, via `GL_EXT_disjoint_timer_query`). On the MT5867 / Mali-G31 TV, SurfaceFlinger composites the Ambient and video layers on the same GPU as the look's draw, so a look's own GPU time must stay at about 14 ms or less to hold 30 fps. Measured:
+
+| Look | Size | GPU draw | Result |
+|---|---|---|---|
+| strings | 1280x720 | 20.7 ms | ~22 fps (miss) |
+| dusk | 1280x720 | 15.7 ms | 34 ms interval (just misses) |
+| strings | 960x540 | 13.3 ms | 30 fps |
+| dusk | 960x540 | 10.1 ms | 30 fps |
+| aurora, ripples | 1280x720 | ~1 ms | 30 fps |
+
+The user approved how `strings` looks at 540p ("looks fine"). Ambient now opens every look at full size and falls back automatically: if the mean frame interval over a 3 s window exceeds 36 ms (first 1 s after a look loads or the surface is created ignored), the surface is set to 960x540 and the look is remembered for the process lifetime, so switching back to it goes straight to 540p. Detection is generic, never keyed to look names. Debug builds log `look=<name> fallback=960x540 interval=<mean>us`. Covered by `AmbientDownscaleTest` (JVM); **the automatic fallback itself has not yet been run on the TV**.

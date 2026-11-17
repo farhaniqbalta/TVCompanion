@@ -235,6 +235,7 @@ It must be a strictly optional extra. **Current AirPlay behaviour stays exactly 
 
 - **Resolution.** Start at full 1280×720, with no FBO.
 - **Fallback.** If the debug frame-time log on the TV shows sustained misses, call `holder.setFixedSize(960, 540)`; the compositor upscales for free. Re-check after that change only.
+  - *Amended 2026-11-17:* the fallback is now automatic per look: a sustained mean interval >36 ms over 3 s switches that look to 960×540 for the process lifetime.
 - **Debug-only diagnostics.** Logged once every 10 s:
   - frame interval and draw time;
   - tap drop count;

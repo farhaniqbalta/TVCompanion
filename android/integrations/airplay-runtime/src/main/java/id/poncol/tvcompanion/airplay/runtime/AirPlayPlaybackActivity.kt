@@ -159,10 +159,12 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         if (ambient != null) return
         look = AmbientShaders.resolve(getSharedPreferences("ambient", MODE_PRIVATE).getString("look", null))
         lateinit var view: AmbientView
-        view = AmbientView(this, look, { ambientSub }, { status -> if (ambient === view) onAmbientStatus(status) }) { e ->
+        view = AmbientView(this, look, { ambientSub }, { status -> if (ambient === view) onAmbientStatus(status) },
+            { name -> if (ambient === view && name == look && slowLooks.add(name)) applySize(view) }) { e ->
             if (ambient === view) { Log.w("TVCAmbient", "closing ambient", e); closeAmbient() }
         }
         ambient = view
+        applySize(view)
         requestAmbient()
         frame.addView(view, FrameLayout.LayoutParams(-1, -1))
         ambientHint = ambientText(Gravity.END).apply {
@@ -190,12 +192,16 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         look = AmbientShaders.cycle(look, step)
         getSharedPreferences("ambient", MODE_PRIVATE).edit().putString("look", look).apply()
         view.setLook(look)
+        applySize(view)
         lookLabel?.run {
             LOOK_NAMES.getOrNull(AmbientShaders.LOOKS.indexOf(look))?.let { setText(it) } ?: setText(look)
             animate().cancel(); alpha = 1f
             animate().alpha(0f).setStartDelay(2000).setDuration(600)
         }
     }
+    /** Looks that missed frames at full size render at 960x540; SurfaceFlinger scales them up. */
+    private fun applySize(view: AmbientView) =
+        if (look in slowLooks) view.holder.setFixedSize(960, 540) else view.holder.setSizeFromLayout()
     /** Until the result arrives the renderer sees no subscription and shows idle. */
     private fun requestAmbient() {
         val e = epoch.next()
@@ -277,6 +283,8 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         super.onStop(); finish()
     }
     private companion object {
+        /** Process lifetime, main thread only: looks that fell back to 960x540. */
+        val slowLooks = mutableSetOf<String>()
         /** Display names, in AmbientShaders.LOOKS order. */
         val LOOK_NAMES = intArrayOf(R.string.airplay_runtime_ambient_look_aurora, R.string.airplay_runtime_ambient_look_strings,
             R.string.airplay_runtime_ambient_look_dusk, R.string.airplay_runtime_ambient_look_ripples)

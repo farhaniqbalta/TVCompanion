@@ -11,6 +11,7 @@ class AmbientView(
     look: String,
     subscription: () -> AmbientSubscription?,
     onStatus: (AmbientStatus) -> Unit,
+    onSlow: (String) -> Unit,
     onFailure: (Throwable) -> Unit,
 ) : GLSurfaceView(context) {
     private var vsync = 0
@@ -21,7 +22,7 @@ class AmbientView(
         }
     }
 
-    private val renderer = AmbientRenderer(context, look, subscription, onStatus, onFailure)
+    private val renderer = AmbientRenderer(context, look, subscription, onStatus, onSlow, onFailure)
 
     init {
         setEGLContextClientVersion(3)
