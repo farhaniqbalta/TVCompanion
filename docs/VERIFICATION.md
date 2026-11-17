@@ -146,14 +146,14 @@ Phase 3 is accepted for the tested setup by user report. Device OS, TV firmware 
 
 Branch `docs/airplay-visualizer-assessment`, code through `5953481`. Design: [Ambient spec](superpowers/specs/2026-11-17-airplay-ambient-design.md); see [Ambient mode](ARCHITECTURE.md#ambient-mode).
 
-Executed locally for this entry (JDK 17, Android SDK 34):
+Run locally for this entry with JDK 17 (compileSdk 34). The native host check ran fresh; the Gradle build/test run completed with most tasks up to date, their inputs unchanged since their last passing run in this session:
 
 ```sh
 python3 scripts/check-airplay-native.py && cd android && ./gradlew :app:assembleDebug :app:testDebugUnitTest :integrations:airplay-runtime:testDebugUnitTest :integrations:uxplay-native:testDebugUnitTest
 ```
 
-- Native checks passed, including the ambient host checks (16 kick onsets, 1 onset on a sustained tone, 4 end-to-end beats).
-- `BUILD SUCCESSFUL` (221 tasks, 15 executed, the rest up to date from earlier runs in this session). The test result files contain 116 cases with zero failures/errors. The only warning is the known armeabi-v7a-only native library notice.
+- Native checks passed, including the ambient host check, which measured when the feature landed 16 kick onsets on an 8 s 118 BPM synthetic track, 1 onset on a sustained tone and 4 end-to-end beats.
+- `BUILD SUCCESSFUL` (221 tasks, 15 executed, the rest up to date). The test result files contain 116 results with zero failures/errors. The only warning is the known armeabi-v7a-only native library notice.
 
 Device checks on the project's MT5867 / Mali-G31 Android 14 TV (1280x720), run over adb with the user driving the sender:
 
@@ -163,4 +163,7 @@ Device checks on the project's MT5867 / Mali-G31 Android 14 TV (1280x720), run o
 - **Kept looks, NOT TESTED (deferred by user):** loading `ripples`, `dusk` and `strings` on the TV, including `strings` on-device. A kept look could fail on Mali undetected until it is switched to; `ACTIVE_LOOK` remains `aurora`.
 - **No-Ambient regression, NOT TESTED (deferred by user):** Screen Mirroring video, background listening, sender takeover and HLS app video with Ambient never opened.
 
-Known gap: the debug log lacks native analyzer statistics (tap dropped count, analyses per second) called for by the spec; it is recorded for the final fix wave.
+Known gaps:
+
+- The debug log lacks native analyzer statistics (tap dropped count, analyses per second) called for by the spec; it is recorded for the final fix wave.
+- A rare reset race in the native analyzer can stall bands/beats until the new stream passes the old sample count (one-line guard pending in the branch's final review fix wave).
