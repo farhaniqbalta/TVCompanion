@@ -1,18 +1,13 @@
 // ambient-contract: 1
 const float N = 22.0;
-flat in highp vec4 vPid; flat in highp vec4 vAge; flat in vec4 vE1; flat in vec4 vE2;  // from strings.vert
-void hit(highp float pid, highp float age, float e1, float e2, highp float s, highp float om, inout float d, inout float warm){
-  float w = max(0.0, 1.0-abs(s-pid)*0.65);        // plucked string + its two neighbours
-  if(w>0.0){ d += w*e1*cos(om*age); warm += w*e2; } // coherent: most pixels skip the cos
-}
+flat in highp vec4 vPid; flat in vec4 vE1; flat in vec4 vE2;   // from strings.vert
+flat in vec4 vCm; flat in vec4 vC0; flat in vec4 vCp;          // wobble of plucked string -1 / 0 / +1
 vec3 stringGlow(highp float xs, float v, highp float s, highp float cell, float lvl){
-  float hs = hash12(vec2(s, 11.0));
-  highp float om = 6.2831853*(2.0+2.5*hs);        // each string has its own visible wobble rate
-  float d = 0.0, warm = 0.0;
-  hit(vPid.x, vAge.x, vE1.x, vE2.x, s, om, d, warm);
-  hit(vPid.y, vAge.y, vE1.y, vE2.y, s, om, d, warm);
-  hit(vPid.z, vAge.z, vE1.z, vE2.z, s, om, d, warm);
-  hit(vPid.w, vAge.w, vE1.w, vE2.w, s, om, d, warm);
+  // All four beats at once, branch- and trig-free (keeps Mali-G31 within its register budget).
+  highp vec4 k = vec4(s) - vPid;                                  // this string's offset from each plucked one
+  vec4 bw = max(vec4(0.0), 1.0-abs(k)*0.65);                      // plucked string + its two neighbours
+  vec4 c = mix(mix(vCm, vC0, step(-0.5, k)), vCp, step(0.5, k));  // this string's wobble for each beat
+  float d = dot(bw*vE1, c), warm = dot(bw, vE2);
   float shape = sin(3.14159*v);                    // fixed at top and bottom, like a real string
   highp float disp = cell*shape*((1.0-uReduced)*0.30*(0.6+0.6*uBass)*d
              + 0.05*(1.0+2.0*uBass)*(1.0-0.5*uReduced)*sin(3.0*uPhase.x+s*1.7));

@@ -12,11 +12,14 @@ class AmbientShadersTest {
         dir.listFiles()!!.forEach { assertTrue(it.name, it.readText().startsWith(AmbientShaders.CONTRACT)) }
     }
     @Test fun stringsKeepsBeatMathPerVertexAndHighp() {
-        read("strings.vert")!!.let { assertTrue(it.contains("highp float")); assertTrue(it.contains("hash12(vec2(")) }
+        read("strings.vert")!!.let {
+            assertTrue(it.contains("highp float age")); assertTrue(it.contains("hash12(vec2(")); assertTrue(it.contains("cos("))
+        }
         read("strings.frag")!!.let {
-            // Regression guard: per-pixel beat hashing halved fps on Mali-G31.
-            assertFalse(it.contains("hash12(vec2(n")); assertFalse(it.contains("uBeatCount"))
-            assertTrue(it.contains("highp float age"))
+            // Regression guard (measured on Mali-G31): beat code evaluated per string per pixel exhausted
+            // registers (2 strings x 4 branched beats = 15 fps). The pixel stage must stay hash-, trig- and branch-free for beats.
+            assertFalse(it.contains("hash12(")); assertFalse(it.contains("cos(")); assertFalse(it.contains("if("))
+            assertFalse(it.contains("uBeatCount"))
         }
     }
     @Test fun stringsUsesItsOwnVertexStage() {
