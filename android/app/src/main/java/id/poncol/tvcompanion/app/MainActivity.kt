@@ -21,6 +21,7 @@ class MainActivity : Activity() {
     private var homeFocus = 0
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        BootReceiver.startDefaults(this, foregroundStart = false)
         if (savedInstanceState?.getBoolean("light") == true ||
             (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0 && intent.getBooleanExtra("open_light", false))) showLight() else showHome()
     }

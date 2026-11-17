@@ -1,6 +1,7 @@
 package id.poncol.tvcompanion.notifications.infrastructure
 
 import android.app.*
+import android.content.Context
 import android.content.Intent
 import android.os.*
 import android.provider.Settings
@@ -59,5 +60,13 @@ class ReceiverService : Service() {
         stopForeground(STOP_FOREGROUND_REMOVE)
         main.removeCallbacksAndMessages(null)
         super.onDestroy()
+    }
+    companion object {
+        /** Gate for unattended starts: notifications and the receiver channel enabled, overlays granted. */
+        fun canStart(context: Context): Boolean {
+            val manager = context.getSystemService(NotificationManager::class.java)
+            return manager.areNotificationsEnabled() && manager.getNotificationChannel("receiver")?.importance != NotificationManager.IMPORTANCE_NONE &&
+                Settings.canDrawOverlays(context)
+        }
     }
 }

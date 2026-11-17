@@ -1,6 +1,7 @@
 package id.poncol.tvcompanion.airplay.runtime
 
 import android.app.*
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.*
@@ -78,7 +79,7 @@ class AirPlayService : Service() {
         if (enabled) {
             if (session.snapshot.phase == AirPlayPhase.STOPPING) return AirPlayResult(false, AirPlayIssue.BUSY)
             // Notification permission/channel availability is a product requirement. TV firmware may hide the notification; app controls remain available.
-            if (!getSystemService(NotificationManager::class.java).areNotificationsEnabled() || getSystemService(NotificationManager::class.java).getNotificationChannel(CHANNEL)?.importance == NotificationManager.IMPORTANCE_NONE) return AirPlayResult(false, AirPlayIssue.UNAVAILABLE)
+            if (!canHoldInBackground(this)) return AirPlayResult(false, AirPlayIssue.UNAVAILABLE)
             try {
                 if (!foreground) {
                     if (!fromBoot) startForegroundService(Intent(this, AirPlayService::class.java).setAction(ACTION_HOLD))
@@ -89,6 +90,13 @@ class AirPlayService : Service() {
             return start(getString(R.string.airplay_runtime_receiver_name))
         }
         return session.setKeepAvailable(false)
+    }
+    /** A startForegroundService caller must see startForeground even when the service then declines to hold. */
+    private fun settleForegroundStart(foregroundStart: Boolean) {
+        if (foregroundStart && !foreground) try { updateForeground(session.snapshot); stopForeground(STOP_FOREGROUND_REMOVE) } catch (_: RuntimeException) { }
+    }
+    private fun stopIfIdle() {
+        if (surface == null && !session.heldInBackground && session.snapshot.phase in listOf(AirPlayPhase.STOPPED, AirPlayPhase.FAILED)) stopSelf()
     }
     private fun presentIncomingVideo() {
         // A foreground service alone is not a background Activity-launch exemption.
@@ -173,16 +181,18 @@ class AirPlayService : Service() {
         else if (intent?.action == ACTION_BOOT_START) {
             if ((application as AutoStartSettings).airplayOnBoot) {
                 val started = setKeepAvailable(true, fromBoot = true)
-                if (started.accepted) session.setBackgroundOptions(true, true, true) else stopSelf()
-            } else stopSelf()
+                if (started.accepted) session.setBackgroundOptions(true, true, true) else { settleForegroundStart(true); stopSelf() }
+            } else { settleForegroundStart(true); stopSelf() }
+        }
+        // Background listening default; the main process sends this once per process so a user Off is kept.
+        // Failure (e.g. notifications blocked) leaves listening Off silently; the settings screen shows the hint.
+        else if (intent?.action == ACTION_APP_START) {
+            if (!setKeepAvailable(true, fromBoot = true).accepted) { settleForegroundStart(intent.getBooleanExtra(EXTRA_FOREGROUND_START, false)); stopIfIdle() }
         }
         else if (intent?.action == ACTION_HOLD && session.heldInBackground) updateForeground(session.snapshot)
         return START_NOT_STICKY
     }
-    override fun onUnbind(intent: Intent?): Boolean {
-        if (surface == null && !session.heldInBackground && session.snapshot.phase in listOf(AirPlayPhase.STOPPED, AirPlayPhase.FAILED)) stopSelf()
-        return false
-    }
+    override fun onUnbind(intent: Intent?): Boolean { stopIfIdle(); return false }
     override fun onBind(intent: Intent?) = binder
     override fun onDestroy() {
         destroyed = true; surface = null; displayObserver = null
@@ -192,6 +202,18 @@ class AirPlayService : Service() {
     }
     companion object {
         const val ACTION_BOOT_START = "id.poncol.tvcompanion.airplay.BOOT_START"
+        /** Started by the app (launcher open or package update): applies the Background listening default. */
+        const val ACTION_APP_START = "id.poncol.tvcompanion.airplay.APP_START"
+        /** Set by callers that used startForegroundService, so a declined start still satisfies startForeground. */
+        const val EXTRA_FOREGROUND_START = "id.poncol.tvcompanion.airplay.FOREGROUND_START"
+        /** The gate Background listening applies; check it before startForegroundService so the service can always hold. */
+        fun canHoldInBackground(context: Context): Boolean {
+            val manager = context.getSystemService(NotificationManager::class.java)
+            return foregroundAllowed(manager.areNotificationsEnabled(), manager.getNotificationChannel(CHANNEL)?.importance)
+        }
+        /** A missing channel is fine: the service creates it before posting. */
+        internal fun foregroundAllowed(notificationsEnabled: Boolean, channelImportance: Int?) =
+            notificationsEnabled && channelImportance != NotificationManager.IMPORTANCE_NONE
         private const val CHANNEL = "airplay_receiver"
         private const val NOTIFICATION = 200
         private const val ACTION_STOP = "id.poncol.tvcompanion.airplay.STOP"
