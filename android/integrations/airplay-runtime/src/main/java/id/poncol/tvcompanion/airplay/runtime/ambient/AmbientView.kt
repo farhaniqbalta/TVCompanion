@@ -11,7 +11,7 @@ class AmbientView(
     look: String,
     subscription: () -> AmbientSubscription?,
     onStatus: (AmbientStatus) -> Unit,
-    onSlow: (String) -> Unit,
+    onSlow: (String, Long) -> Unit,
     onFailure: (Throwable) -> Unit,
 ) : GLSurfaceView(context) {
     private var vsync = 0

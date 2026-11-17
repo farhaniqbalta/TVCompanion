@@ -162,7 +162,7 @@ Device checks on the project's MT5867 / Mali-G31 Android 14 TV (1280x720), run o
   - Since the final fix wave the code default sync offset is −25 ms (AmbientMotion.SYNC_OFFSET_MS); not yet checked on device.
 - **Look picker, NOT TESTED:** D-pad LEFT/RIGHT look switching (added 2026-11-17 by user request) is covered by JVM and glslc checks only; on-device switching, the label and the remembered choice have not been run on the TV.
 - **CP3, NOT TESTED:** pause, low volume, stop/restart and sender takeover with Ambient open.
-- **Kept looks, NOT TESTED (deferred by user):** loading `ripples`, `dusk` and `strings` on the TV, including `strings` on-device. A look could fail on Mali undetected until it is switched to (it would then fall back to the built-in look); the default remains `aurora`.
+- **Kept looks:** `ripples`, `dusk` and `strings` were later loaded and measured on the TV; see [Ambient automatic 540p fallback](#ambient-automatic-540p-fallback--2026-11-17). The default remains `aurora`.
 - **No-Ambient regression, NOT TESTED (deferred by user):** Screen Mirroring video, background listening, sender takeover and HLS app video with Ambient never opened.
 
 ## Ambient automatic 540p fallback — 2026-11-17
@@ -177,4 +177,4 @@ Debug builds now log GPU time per look (`gpu mean/max` in the 10 s `TVCAmbient` 
 | dusk | 960x540 | 10.1 ms | 30 fps |
 | aurora, ripples | 1280x720 | ~1 ms | 30 fps |
 
-The user approved how `strings` looks at 540p ("looks fine"). Ambient now opens every look at full size and falls back automatically: if the mean frame interval over a 3 s window exceeds 36 ms (first 1 s after a look loads or the surface is created ignored), the surface is set to 960x540 and the look is remembered for the process lifetime, so switching back to it goes straight to 540p. Detection is generic, never keyed to look names. Debug builds log `look=<name> fallback=960x540 interval=<mean>us`. Covered by `AmbientDownscaleTest` (JVM); **the automatic fallback itself has not yet been run on the TV**.
+The user approved how `strings` looks at 540p ("looks fine"). Ambient now opens every look at full size and falls back automatically: if two consecutive 3 s windows each have a mean frame interval over 33.9 ms (first 1 s after a look loads or the surface is created ignored; healthy looks measured 33.33-33.39 ms over 10 s, `dusk` 34.05 ms, so a single stall cannot trigger it), the surface is set to 960x540 and the look is remembered for the process lifetime, so switching back to it goes straight to 540p. Detection is generic, never keyed to look names. Debug builds log `look=<name> fallback=960x540 interval=<mean>us`. Covered by `AmbientDownscaleTest` (JVM); **the automatic fallback itself has not yet been run on the TV**.

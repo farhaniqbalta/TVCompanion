@@ -20,7 +20,7 @@ internal class AmbientRenderer(
     private var lookName: String,
     private val subscription: () -> AmbientSubscription?,
     private val onStatus: (AmbientStatus) -> Unit,   // main thread, at most once per second
-    private val onSlow: (String) -> Unit,            // main thread, look name, at most once per look load
+    private val onSlow: (String, Long) -> Unit,      // main thread, (look name, mean interval ns), at most once per look load
     private val onFailure: (Throwable) -> Unit,
 ) : GLSurfaceView.Renderer {
     private val downscale = AmbientDownscale()
@@ -146,9 +146,8 @@ internal class AmbientRenderer(
         if (q != null) { glEndQuery(GL_TIME_ELAPSED_EXT); gpuFrame++ }
         if (debug) stats(now, System.nanoTime() - now)
         if (downscale.onFrame(now)) {
-            val name = lookName
-            if (debug) Log.d(TAG, "look=$name fallback=960x540 interval=${downscale.meanNs / 1000}us")
-            main.post { onSlow(name) }
+            val name = lookName; val meanNs = downscale.meanNs
+            main.post { onSlow(name, meanNs) }
         }
         lastNs = now
     }

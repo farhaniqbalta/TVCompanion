@@ -160,7 +160,11 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         look = AmbientShaders.resolve(getSharedPreferences("ambient", MODE_PRIVATE).getString("look", null))
         lateinit var view: AmbientView
         view = AmbientView(this, look, { ambientSub }, { status -> if (ambient === view) onAmbientStatus(status) },
-            { name -> if (ambient === view && name == look && slowLooks.add(name)) applySize(view) }) { e ->
+            { name, meanNs -> if (ambient === view && name == look && slowLooks.add(name)) {
+                if (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0)
+                    Log.d("TVCAmbient", "look=$name fallback=960x540 interval=${meanNs / 1000}us")
+                applySize(view)
+            } }) { e ->
             if (ambient === view) { Log.w("TVCAmbient", "closing ambient", e); closeAmbient() }
         }
         ambient = view
