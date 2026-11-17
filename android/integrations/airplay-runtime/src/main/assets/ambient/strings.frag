@@ -1,11 +1,10 @@
 // ambient-contract: 1
 const float N = 22.0;
-void hit(float age, highp float n, float s, highp float om, inout float d, inout float warm){
+void hit(highp float age, highp float n, highp float s, highp float om, inout float d, inout float warm){
   if(age>6.0) return;
   float pid = floor(hash12(vec2(n, 3.0))*N);
   float w = max(0.0, 1.0-abs(s-pid)*0.65);        // plucked string + its two neighbours
-  highp float ha = age;                            // cos(om*age) reaches ~170 rad: needs fp32
-  d += w*exp(-age*1.3)*cos(om*ha);
+  d += w*exp(-age*1.3)*cos(om*age);
   warm += w*exp(-age*1.0);
 }
 vec3 stringGlow(highp float xs, float v, highp float s, highp float cell, float lvl){

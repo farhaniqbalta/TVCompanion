@@ -12,7 +12,7 @@ class AmbientShadersTest {
         dir.listFiles()!!.forEach { assertTrue(it.name, it.readText().startsWith(AmbientShaders.CONTRACT)) }
     }
     @Test fun stringsKeepsBeatMathHighp() {
-        assertTrue(read("strings.frag")!!.contains("highp float n"))
+        read("strings.frag")!!.let { assertTrue(it.contains("highp float n")); assertTrue(it.contains("highp float age")) }
     }
     @Test fun auroraUsesItsOwnVertexStage() {
         val s = AmbientShaders.assemble("aurora", read)
