@@ -262,7 +262,7 @@ class AmbientShadersTest {
     private val read: (String) -> String? = { java.io.File(dir, it).takeIf { f -> f.exists() }?.readText() }
     @Test fun shippedLooksCarryContractHeader() {
         val files = dir.listFiles()!!.map { it.name }.toSet()
-        assertEquals(setOf("aurora.vert", "aurora.frag", "ripples.frag", "dusk.frag"), files)
+        assertEquals(setOf("aurora.vert", "aurora.frag", "ripples.frag", "dusk.frag", "strings.frag"), files)
         dir.listFiles()!!.forEach { assertTrue(it.name, it.readText().startsWith(AmbientShaders.CONTRACT)) }
     }
     @Test fun auroraUsesItsOwnVertexStage() {
@@ -693,7 +693,7 @@ git commit -m "Ambient: connect native audio features to the TV view (CP2-CP3)"
 
 - [ ] **Step 1: Verify the kept looks load, temporarily, without committing**
 
-Set `AmbientShaders.ACTIVE_LOOK = "ripples"`, build, check on the TV, then do the same for `"dusk"`. Revert to `"aurora"`.
+Set `AmbientShaders.ACTIVE_LOOK = "ripples"`, build, check on the TV, then do the same for `"dusk"` and `"strings"`. Revert to `"aurora"`.
 
 Expected: both render, and logcat shows no fallback to `builtin`.
 

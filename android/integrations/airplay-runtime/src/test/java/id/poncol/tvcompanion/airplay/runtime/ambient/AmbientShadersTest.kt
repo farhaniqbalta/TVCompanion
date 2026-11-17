@@ -8,8 +8,11 @@ class AmbientShadersTest {
     private val read: (String) -> String? = { java.io.File(dir, it).takeIf { f -> f.exists() }?.readText() }
     @Test fun shippedLooksCarryContractHeader() {
         val files = dir.listFiles()!!.map { it.name }.toSet()
-        assertEquals(setOf("aurora.vert", "aurora.frag", "ripples.frag", "dusk.frag"), files)
+        assertEquals(setOf("aurora.vert", "aurora.frag", "ripples.frag", "dusk.frag", "strings.frag"), files)
         dir.listFiles()!!.forEach { assertTrue(it.name, it.readText().startsWith(AmbientShaders.CONTRACT)) }
+    }
+    @Test fun stringsKeepsBeatMathHighp() {
+        assertTrue(read("strings.frag")!!.contains("highp float n"))
     }
     @Test fun auroraUsesItsOwnVertexStage() {
         val s = AmbientShaders.assemble("aurora", read)
@@ -28,7 +31,7 @@ class AmbientShadersTest {
         val bad = Regex("""uPhase\.[xyzw]\s*\*\s*\d*\.\d*[1-9]""")
         dir.listFiles()!!.forEach { assertNull(it.name, bad.find(it.readText())) }
     }
-    private fun allSources() = listOf("aurora", "ripples", "dusk", "missing").map { AmbientShaders.assemble(it, read) }
+    private fun allSources() = listOf("aurora", "ripples", "dusk", "strings", "missing").map { AmbientShaders.assemble(it, read) }
         .flatMap { listOf(it.look to ("vert" to it.vertex), it.look to ("frag" to it.fragment)) }
 
     @Test fun precisionPrecedesFirstFloatDeclaration() {

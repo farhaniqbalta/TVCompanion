@@ -185,7 +185,7 @@ It must be a strictly optional extra. **Current AirPlay behaviour stays exactly 
 ### 5.7 Swappable look contract (v1)
 
 - **Files.** Looks are assets in `airplay-runtime/src/main/assets/ambient/`: `<name>.frag`, plus an optional `<name>.vert`.
-  - v1 ships `aurora.frag` and `aurora.vert`, plus two kept looks the user also liked: `ripples.frag` and `dusk.frag` (+ optional `dusk.vert`). Ripples and Dusk are not selectable in v1. Their reference is the `ripples` and `dusk` entries in the all-looks preview (`2026-11-17-airplay-ambient-preview-all.html`).
+  - v1 ships `aurora.frag` and `aurora.vert`, plus three kept looks the user also liked: `ripples.frag`, `dusk.frag` (+ optional `dusk.vert`) and `strings.frag`. Ripples, Dusk and Strings are not selectable in v1. Their reference is the `ripples` and `dusk` entries in the all-looks preview (`2026-11-17-airplay-ambient-preview-all.html`) and, for Strings, the `strings` entry in `2026-11-17-airplay-ambient-preview-strings.html`.
   - The active look is a constant (`aurora`).
 - **Header.** The first line of each file is `// ambient-contract: 1`. Mismatched files are rejected.
 - **Host prelude.** The host prepends the same prelude to both stages:
