@@ -21,6 +21,8 @@ public final class UxPlayReceiverEngine implements ReceiverEngine, AmbientSource
     }
     private final Context context;
     private final Handler main = new Handler(Looper.getMainLooper());
+    // Not cleared by stop(): a dropped delivery would leak the native subscription.
+    private final Handler ambientMain = new Handler(Looper.getMainLooper());
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private volatile boolean closed;
     private Observer observer;
@@ -179,11 +181,11 @@ public final class UxPlayReceiverEngine implements ReceiverEngine, AmbientSource
         if (!closed) try {
             worker.execute(() -> {
                 long sub = (!closed && handle != 0) ? UxPlayAmbientSubscription.nativeOpen(handle) : 0;
-                main.post(() -> callback.onOpened(sub == 0 ? null : new UxPlayAmbientSubscription(sub)));
+                ambientMain.post(() -> callback.onOpened(sub == 0 ? null : new UxPlayAmbientSubscription(sub)));
             });
             return;
         } catch (RejectedExecutionException ignored) { }
-        main.post(() -> callback.onOpened(null));
+        ambientMain.post(() -> callback.onOpened(null));
     }
     private void deliver(State state) {
         main.post(() -> { if (!closed && observer != null) observer.onState(state); });
