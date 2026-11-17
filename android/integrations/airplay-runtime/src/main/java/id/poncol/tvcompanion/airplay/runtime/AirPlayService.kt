@@ -89,14 +89,9 @@ class AirPlayService : Service() {
         }
         return session.setKeepAvailable(false)
     }
-    /** Background listening defaults on once per :airplay process; a later user Off is not overridden in that process. */
-    private fun applyListeningDefault(startedForeground: Boolean): Boolean {
-        if (!listeningDefault.claim()) return false
-        return setKeepAvailable(true, fromBoot = startedForeground).accepted
-    }
     /** A startForegroundService caller must see startForeground even when the service then declines to hold. */
-    private fun settleForegroundStart() {
-        if (!foreground) try { updateForeground(session.snapshot); stopForeground(STOP_FOREGROUND_REMOVE) } catch (_: RuntimeException) { }
+    private fun settleForegroundStart(foregroundStart: Boolean) {
+        if (foregroundStart && !foreground) try { updateForeground(session.snapshot); stopForeground(STOP_FOREGROUND_REMOVE) } catch (_: RuntimeException) { }
     }
     private fun stopIfIdle() {
         if (surface == null && !session.heldInBackground && session.snapshot.phase in listOf(AirPlayPhase.STOPPED, AirPlayPhase.FAILED)) stopSelf()
@@ -179,21 +174,20 @@ class AirPlayService : Service() {
         if (intent?.action == ACTION_STOP) session.stop()
         else if (intent?.action == ACTION_BOOT_START) {
             if ((application as AutoStartSettings).airplayOnBoot) {
-                listeningDefault.claim()
                 val started = setKeepAvailable(true, fromBoot = true)
-                if (started.accepted) session.setBackgroundOptions(true, true, true) else { settleForegroundStart(); stopSelf() }
-            } else { settleForegroundStart(); stopSelf() }
+                if (started.accepted) session.setBackgroundOptions(true, true, true) else { settleForegroundStart(true); stopSelf() }
+            } else { settleForegroundStart(true); stopSelf() }
         }
+        // Background listening default; the main process sends this once per process so a user Off is kept.
         // Failure (e.g. notifications blocked) leaves listening Off silently; the settings screen shows the hint.
-        else if (intent?.action == ACTION_APP_START) { if (!applyListeningDefault(startedForeground = true)) { settleForegroundStart(); stopIfIdle() } }
+        else if (intent?.action == ACTION_APP_START) {
+            if (!setKeepAvailable(true, fromBoot = true).accepted) { settleForegroundStart(intent.getBooleanExtra(EXTRA_FOREGROUND_START, false)); stopIfIdle() }
+        }
         else if (intent?.action == ACTION_HOLD && session.heldInBackground) updateForeground(session.snapshot)
         return START_NOT_STICKY
     }
     override fun onUnbind(intent: Intent?): Boolean { stopIfIdle(); return false }
-    override fun onBind(intent: Intent?): IBinder {
-        main.post { if (!destroyed) applyListeningDefault(startedForeground = false) }
-        return binder
-    }
+    override fun onBind(intent: Intent?) = binder
     override fun onDestroy() {
         destroyed = true; surface = null; displayObserver = null
         session.close(); clients.kill(); main.removeCallbacksAndMessages(null)
@@ -204,7 +198,8 @@ class AirPlayService : Service() {
         const val ACTION_BOOT_START = "id.poncol.tvcompanion.airplay.BOOT_START"
         /** Started by the app (launcher open or package update): applies the Background listening default. */
         const val ACTION_APP_START = "id.poncol.tvcompanion.airplay.APP_START"
-        private val listeningDefault = OnceGate()
+        /** Set by callers that used startForegroundService, so a declined start still satisfies startForeground. */
+        const val EXTRA_FOREGROUND_START = "id.poncol.tvcompanion.airplay.FOREGROUND_START"
         /** The gate Background listening applies; check it before startForegroundService so the service can always hold. */
         fun canHoldInBackground(context: Context): Boolean {
             val manager = context.getSystemService(NotificationManager::class.java)

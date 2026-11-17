@@ -21,7 +21,7 @@ The service owns networking and the engine. `ReceiverEngine.start(name, observer
 
 **Default:** Keep available is off. Opening playback starts the receiver; leaving playback shuts it down with the existing asynchronous cleanup rules.
 
-**Update (decision 17):** Background listening and Background audio now default on; the app applies listening once per `:airplay` process and after app updates. The rest of this section describes the original opt-in candidate.
+**Update (decision 17):** Background listening and Background audio now default on; the main app process applies listening once per process (app open or update), so a user Off holds until that process restarts. The rest of this section describes the original opt-in candidate.
 
 **Opt-in:** the AirPlay settings screen offers Keep available after leaving. Enabling it starts the receiver without a playback Activity and promotes the service with an ongoing notification. The option applies to the current service lifetime; it resets after process/app restart or reboot. No boot receiver, sticky restart, alarm, scheduled polling or automatic opt-in is added. Stop in settings or the notification turns the option off and releases the engine. Disabling it while playback is visible lets foreground playback continue until that screen leaves.
 

@@ -12,36 +12,37 @@ import id.poncol.tvcompanion.notifications.infrastructure.ReceiverService
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
-            startDefaults(context) { context.startForegroundService(it) }
+            startDefaults(context, foregroundStart = true)
             return
         }
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
         val choices = context.applicationContext as AutoStartSettings
-        if (choices.notificationsOnBoot && ReceiverService.canStart(context)) {
+        if (choices.notificationsOnBoot && notificationsDefault.claimIf(ReceiverService.canStart(context))) {
             try { context.startForegroundService(Intent(context, ReceiverService::class.java)) }
             catch (_: RuntimeException) { /* The user can start it from settings after boot. */ }
         }
-        if (choices.airplayOnBoot && AirPlayService.canHoldInBackground(context)) {
+        if (choices.airplayOnBoot && airplayDefault.claimIf(AirPlayService.canHoldInBackground(context))) {
             try { context.startForegroundService(Intent(context, AirPlayService::class.java).setAction(AirPlayService.ACTION_BOOT_START)) }
             catch (_: RuntimeException) { /* Keep boot work bounded; foreground controls remain available. */ }
         }
     }
 
     companion object {
-        private val defaults = OnceGate()
-        /** Starts the notification receiver and AirPlay Background listening defaults once per process, with the boot path's
-         *  permission gates, so a receiver the user stops stays stopped until the app process restarts. */
-        fun startDefaults(context: Context, startAirPlay: (Intent) -> Unit) {
-            // Only start what can go foreground: a declined startForegroundService start would crash the app.
-            val notifications = ReceiverService.canStart(context)
-            val airplay = AirPlayService.canHoldInBackground(context)
-            if (!(notifications || airplay) || !defaults.claim()) return
-            if (notifications) {
+        // Main-process gates, also claimed by boot: a receiver the user stops stays stopped until the app process restarts.
+        private val notificationsDefault = OnceGate()
+        private val airplayDefault = OnceGate()
+        /** Starts each receiver default once per process, claiming its gate only when it passes its permission check
+         *  (only start what can go foreground: a declined startForegroundService start would crash the app). */
+        fun startDefaults(context: Context, foregroundStart: Boolean) {
+            if (notificationsDefault.claimIf(ReceiverService.canStart(context))) {
                 try { context.startForegroundService(Intent(context, ReceiverService::class.java)) }
                 catch (_: RuntimeException) { /* The settings Start button remains available. */ }
             }
-            if (airplay) try { startAirPlay(Intent(context, AirPlayService::class.java).setAction(AirPlayService.ACTION_APP_START)) }
-            catch (_: RuntimeException) { /* The AirPlay screen remains available. */ }
+            if (airplayDefault.claimIf(AirPlayService.canHoldInBackground(context))) try {
+                val intent = Intent(context, AirPlayService::class.java).setAction(AirPlayService.ACTION_APP_START)
+                if (foregroundStart) context.startForegroundService(intent.putExtra(AirPlayService.EXTRA_FOREGROUND_START, true))
+                else context.startService(intent)
+            } catch (_: RuntimeException) { /* The AirPlay screen remains available. */ }
         }
     }
 }

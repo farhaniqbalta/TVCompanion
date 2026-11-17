@@ -7,4 +7,8 @@ class OnceGateTest {
         val gate = OnceGate()
         assertTrue(gate.claim()); assertFalse(gate.claim()); assertFalse(gate.claim())
     }
+    @Test fun refusedCheckDoesNotUseUpTheDefault() {
+        val gate = OnceGate()
+        assertFalse(gate.claimIf(false)); assertTrue(gate.claimIf(true)); assertFalse(gate.claimIf(true))
+    }
 }
