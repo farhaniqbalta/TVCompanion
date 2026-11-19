@@ -39,7 +39,7 @@ class MainActivity : Activity() {
         ui.spacer(root, 12)
         ui.text(root, getString(R.string.home_title), 36f, true)
         ui.text(root, getString(R.string.home_subtitle), 18f)
-        ui.spacer(root, 22)
+        ui.spacer(root, 10)
         val cards = ui.row().apply { gravity = android.view.Gravity.TOP; clipChildren = false }
         root.addView(cards)
         val lights = ui.featureCard(cards, id.poncol.tvcompanion.designsystem.R.drawable.ic_bulb, ui.warm,
@@ -54,7 +54,7 @@ class MainActivity : Activity() {
         }
         lights.setOnFocusChangeListener { _, focused -> if (focused) homeFocus = 0 }
         notifications.setOnFocusChangeListener { _, focused -> if (focused) homeFocus = 1 }
-        ui.spacer(root, 20)
+        ui.spacer(root, 12)
         val media = ui.row().apply { gravity = android.view.Gravity.TOP; clipChildren = false }
         root.addView(media)
         val airplay = ui.featureCard(media, R.drawable.ic_airplay, ui.accent,
@@ -68,19 +68,22 @@ class MainActivity : Activity() {
         val description = getString(AmbilightR.string.ambilight_card_description)
         val title = getString(AmbilightR.string.ambilight_title)
         val ambilight = ui.featureCard(media, id.poncol.tvcompanion.designsystem.R.drawable.ic_bulb, ui.warm,
-            getString(AmbilightR.string.ambilight_card_category), title, description,
-            getString(AmbilightR.string.ambilight_card_action)) {
+            getString(AmbilightR.string.ambilight_card_category), title, description, action = null) {
             homeFocus = 3
             startActivity(Intent(this, AmbilightSettingsActivity::class.java))
         }
         ambilight.setOnFocusChangeListener { _, focused -> if (focused) homeFocus = 3 }
-        val status = ui.text(ambilight, "", 15f).apply { importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO }
+        val status = ui.text(ambilight, "", 16f, true).apply {
+            setTextColor(ui.warm)
+            importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
         ambilightStatus?.close()
         ambilightStatus = AmbilightSettingsActivity.observeStatus(this) { copy ->
-            status.text = copy
-            ambilight.contentDescription = "$title. $description. $copy"
+            val action = getString(AmbilightR.string.ambilight_card_action)
+            status.text = getString(AmbilightR.string.ambilight_card_status, copy, action)
+            ambilight.contentDescription = "$title. $description $copy. $action"
         }
-        ui.spacer(root, 20)
+        ui.spacer(root, 12)
         ui.text(root, getString(R.string.home_hint), 13f)
         val initialFocus = homeFocus
         setContentView(scroll)

@@ -8,8 +8,10 @@ import android.media.projection.MediaProjectionConfig
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
+import android.text.Editable
 import android.text.InputFilter
 import android.text.InputType
+import android.text.TextWatcher
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -30,8 +32,7 @@ class AmbilightSettingsActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var details: TextView
     private lateinit var feedback: TextView
-    private lateinit var start: Button
-    private lateinit var stop: Button
+    private lateinit var sessionAction: Button
     private lateinit var address: EditText
     private lateinit var edges: List<EditText>
     private lateinit var first: EditText
@@ -41,6 +42,7 @@ class AmbilightSettingsActivity : Activity() {
     private lateinit var direction: Choice
     private lateinit var profile: Choice
     private lateinit var stopMode: Choice
+    private val fieldErrors = mutableMapOf<EditText, TextView>()
     private val settingsControls = mutableListOf<View>()
     private var pendingConsent = 0L
     private val observer: (AmbilightState) -> Unit = ::render
@@ -59,48 +61,82 @@ class AmbilightSettingsActivity : Activity() {
         }
         ui.brandHeader(root, getString(R.string.ambilight_card_category))
         ui.text(root, getString(R.string.ambilight_title), 34f, true)
-        status = ui.text(root, "", 21f, true).apply { accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE }
-        details = ui.text(root, "").apply { visibility = View.GONE }
-        feedback = ui.text(root, "").apply {
-            visibility = View.GONE
+        val wide = resources.configuration.screenWidthDp >= 820 && resources.configuration.fontScale <= 1.2f
+        val left: LinearLayout
+        val right: LinearLayout
+        if (wide) {
+            val columns = ui.row().apply { gravity = android.view.Gravity.TOP }
+            root.addView(columns)
+            left = ui.column()
+            right = ui.column()
+            columns.addView(left, LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = ui.dp(16) })
+            columns.addView(right, LinearLayout.LayoutParams(0, -2, 1f))
+        } else {
+            left = root
+            right = root
+        }
+
+        val session = ui.panel(left, getString(R.string.ambilight_screen_sync))
+        status = ui.text(session, "", 21f, true).apply {
             accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
         }
-        val actions = ui.row()
-        root.addView(actions)
-        start = ui.button(actions, getString(R.string.ambilight_start), ::requestConsent)
-        stop = ui.button(actions, getString(R.string.ambilight_stop)) { ambilightSession.stop() }
-        val test = ui.button(actions, getString(R.string.ambilight_test), ::test)
-        for (button in listOf(start, stop, test)) {
-            button.layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = ui.dp(10) }
+        details = ui.text(session, "").apply { visibility = View.GONE }
+        sessionAction = ui.button(session, getString(R.string.ambilight_start)) {
+            when (ambilightSession.state.phase) {
+                Phase.STARTING, Phase.ACTIVE -> ambilightSession.stop()
+                Phase.OFF, Phase.ERROR -> requestConsent()
+                Phase.STOPPING -> Unit
+            }
         }
-        settingsControls += test
-        ui.spacer(root, 12)
-        ui.text(root, getString(R.string.ambilight_permission_help))
-        ui.text(root, getString(R.string.ambilight_compatibility_help))
-        val setup = ui.panel(root, getString(R.string.ambilight_settings))
+        ui.spacer(session, 8)
+        ui.text(session, getString(R.string.ambilight_permission_help), 16f)
+        ui.button(session, getString(R.string.ambilight_help)) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.ambilight_help)
+                .setMessage(R.string.ambilight_compatibility_help)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+        }
+
+        val setup = ui.panel(right, getString(R.string.ambilight_settings))
         address = field(setup, getString(R.string.ambilight_address), config.address, address = true)
-        val layout = ui.panel(root, getString(R.string.ambilight_layout))
-        ui.text(layout, getString(R.string.ambilight_layout_help))
-        val grid = ui.row()
-        layout.addView(grid)
-        edges = resources.getStringArray(R.array.ambilight_edges).mapIndexed { index, label ->
-            val cell = ui.column()
-            grid.addView(cell, LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = ui.dp(10) })
-            field(cell, label, config.layout.counts[index].toString())
+        ui.text(setup, getString(R.string.ambilight_address_help), 16f)
+        settingsControls += ui.button(setup, getString(R.string.ambilight_test), ::test)
+
+        val layout = ui.panel(right, getString(R.string.ambilight_layout))
+        ui.text(layout, getString(R.string.ambilight_layout_help), 16f)
+        val edgeLabels = resources.getStringArray(R.array.ambilight_edges)
+        edges = edgeLabels.indices.chunked(2).flatMap { pair ->
+            val row = ui.row()
+            layout.addView(row)
+            pair.map { index ->
+                val cell = ui.column()
+                row.addView(cell, LinearLayout.LayoutParams(0, -2, 1f).apply {
+                    if (index == pair.first()) marginEnd = ui.dp(12)
+                })
+                field(cell, edgeLabels[index], config.layout.counts[index].toString())
+            }
         }
         total = ui.text(layout, getString(R.string.ambilight_total, config.layout.total))
         corner = Choice(layout, R.string.ambilight_corner, R.array.ambilight_corners, config.layout.startCorner)
         direction = Choice(layout, R.string.ambilight_direction, R.array.ambilight_directions, if (config.layout.clockwise) 0 else 1)
         first = field(layout, getString(R.string.ambilight_offset), config.layout.firstLed.toString())
-        val behavior = ui.panel(root, getString(R.string.ambilight_profile))
+        ui.text(layout, getString(R.string.ambilight_offset_help), 16f)
+
+        val behavior = ui.panel(left, getString(R.string.ambilight_behavior))
         profile = Choice(behavior, R.string.ambilight_profile, R.array.ambilight_profiles, config.profile.ordinal)
         brightness = field(behavior, getString(R.string.ambilight_brightness), config.brightness.toString())
         stopMode = Choice(behavior, R.string.ambilight_stop_mode, R.array.ambilight_stop_modes, if (config.turnOff) 1 else 0)
-        ui.text(behavior, getString(R.string.ambilight_resume_help))
+        ui.text(behavior, getString(R.string.ambilight_resume_help), 16f)
+        ui.spacer(behavior, 6)
         settingsControls += ui.button(behavior, getString(R.string.ambilight_save)) { save(showConfirmation = true) }
+        feedback = ui.text(behavior, "").apply {
+            visibility = View.GONE
+            accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+        }
         setContentView(scroll)
         render(ambilightSession.state)
-        (if (start.isEnabled) start else stop).requestFocus()
+        if (sessionAction.isEnabled) sessionAction.requestFocus()
     }
 
     override fun onStart() {
@@ -134,13 +170,15 @@ class AmbilightSettingsActivity : Activity() {
         )
         details.text = messages.joinToString("\n")
         details.visibility = if (messages.isEmpty()) View.GONE else View.VISIBLE
-        val moveToStop = start.hasFocus() && busy
-        val moveToStart = stop.hasFocus() && !busy
-        start.isEnabled = !busy && pendingConsent == 0L
-        stop.isEnabled = state.phase == Phase.STARTING || state.phase == Phase.ACTIVE
+        sessionAction.setText(when {
+            state.testing && busy -> R.string.ambilight_cancel_test
+            busy -> R.string.ambilight_stop
+            else -> R.string.ambilight_start
+        })
+        sessionAction.isEnabled = state.phase != Phase.STOPPING && (busy || pendingConsent == 0L)
+        val moveFocus = settingsControls.any { it.hasFocus() } && busy
         settingsControls.forEach { it.isEnabled = !busy }
-        if (moveToStop && stop.isEnabled) stop.requestFocus()
-        if (moveToStart) start.requestFocus()
+        if (moveFocus && sessionAction.isEnabled) sessionAction.requestFocus()
     }
 
     private fun field(parent: LinearLayout, label: String, value: String, address: Boolean = false): EditText {
@@ -149,6 +187,10 @@ class AmbilightSettingsActivity : Activity() {
             setText(value)
             textSize = 19f
             setTextColor(ui.ink)
+            if (address) {
+                setHint(R.string.ambilight_address_example)
+                setHintTextColor(ui.muted)
+            }
             inputType = if (address) InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI else InputType.TYPE_CLASS_NUMBER
             setSingleLine()
             filters = arrayOf(InputFilter.LengthFilter(if (address) 15 else 4))
@@ -157,6 +199,17 @@ class AmbilightSettingsActivity : Activity() {
         }
         ui.text(parent, label).labelFor = input.id
         parent.addView(input, LinearLayout.LayoutParams(-1, -2))
+        val error = ui.text(parent, "", 16f).apply {
+            setTextColor(ui.warm)
+            visibility = View.GONE
+            accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+        }
+        fieldErrors[input] = error
+        input.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: Editable?) { error.visibility = View.GONE }
+        })
         settingsControls += input
         return input
     }
@@ -186,23 +239,39 @@ class AmbilightSettingsActivity : Activity() {
         feedback.visibility = View.VISIBLE
     }
 
+    private fun reject(field: EditText, message: String): Boolean {
+        fieldErrors.getValue(field).apply {
+            text = message
+            visibility = View.VISIBLE
+        }
+        field.requestFocus()
+        return false
+    }
+
     private fun save(showConfirmation: Boolean = false): Boolean {
+        feedback.visibility = View.GONE
         val ip = address.text.toString().trim()
         val canonical = ipv4Bytes(ip)?.joinToString(".") { (it.toInt() and 255).toString() }
         if (canonical == null) {
-            showFeedback(R.string.ambilight_invalid_address)
-            address.requestFocus()
-            return false
+            return reject(address, getString(R.string.ambilight_invalid_address))
         }
-        val layout = runCatching {
-            LedLayout(edges.map { it.text.toString().toInt() }, corner.selected, direction.selected == 0, first.text.toString().toInt())
-        }.getOrNull()
+        val counts = edges.map { it.text.toString().toIntOrNull() }
+        val invalidEdge = counts.indexOfFirst { it == null || it !in 0..LedLayout.MAX_LEDS }
+        val ledCount = counts.sumOf { it ?: 0 }
+        if (invalidEdge >= 0 || ledCount !in 1..LedLayout.MAX_LEDS) {
+            val field = edges[invalidEdge.coerceAtLeast(0)]
+            return reject(field, getString(R.string.ambilight_invalid_layout))
+        }
+        val offset = first.text.toString().toIntOrNull()
+        if (offset == null || offset !in 0 until ledCount) {
+            return reject(first, getString(R.string.ambilight_invalid_offset, ledCount - 1))
+        }
         val cap = brightness.text.toString().toIntOrNull()
-        if (layout == null || cap == null || cap !in 1..100) {
-            showFeedback(R.string.ambilight_invalid_layout)
-            edges.first().requestFocus()
-            return false
+        if (cap == null || cap !in 1..100) {
+            return reject(brightness, getString(R.string.ambilight_invalid_brightness))
         }
+        val layout = LedLayout(counts.filterNotNull(), corner.selected, direction.selected == 0, offset)
+        fieldErrors.values.forEach { it.visibility = View.GONE }
         prefs.save(AmbilightConfig(canonical, layout, LightingProfile.entries[profile.selected], cap, stopMode.selected == 1))
         total.text = getString(R.string.ambilight_total, layout.total)
         if (showConfirmation) {

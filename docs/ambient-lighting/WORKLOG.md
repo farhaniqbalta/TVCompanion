@@ -13,3 +13,11 @@
 - Final local verification passed. Debug and unsigned release APKs built. App lint reported zero errors and three existing warnings. Packaged manifest lists the private media-projection service and permissions.
 - All 159 JVM tests passed, including 12 Ambilight tests. The initial run skipped one AirPlay shader test. Reran AirPlay unit tests with the NDK's `glslc` and confirmed zero skips. The native host regression script also passed.
 - C0 and C1 passed. C2, C3 and C5 are partial pending TV checks. C4 remains not tested pending physical ESP32/WLED hardware. The second ADB check still found no connected device. See [checkpoint evidence and exact commands](IMPLEMENTATION_CHECKPOINTS.md).
+
+## Device checkpoint follow-up
+
+- Owner approved proceeding with TV validation. Rechecked `adb devices -l` and `adb mdns services`. Both returned empty lists. The debug APK is available. Installation and TV checks are pending a reachable ADB endpoint.
+
+- Skyworth reappeared in ADB. Installed the debug APK in place with `adb install -r`. Verified native D-pad entry into Ambilight, Off state, and Back restoring dashboard focus. Owner confirmed stock WLED is not available yet.
+- Reviewed the actual 1280×720 UI. The original second dashboard row was clipped on first load and the settings screen put long help text before the controller field. Compacted the dashboard cards, aligned the Ambilight status with its action, put screen sync and WLED setup side by side, moved compatibility into a dialog, and added inline validation and field focus. Narrow or large-text screens use one column.
+- Rebuilt debug and unsigned release APKs and reran Ambilight JVM tests and app lint. Installed the revised debug APK on the Skyworth. WLED output and active capture remain open.
