@@ -11,6 +11,7 @@ dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_P
 rootProject.name = 'TVCompanion'
 include ':features:airplay', ':ipc:airplay-contract', ':integrations:airplay-runtime', ':integrations:uxplay-native'
 include ':app', ':core:domain', ':core:designsystem', ':integrations:tuya-lan', ':features:smart-home', ':features:notifications'
+include ':core:ambilight-engine', ':features:ambilight'
 
 // Explicit opt-in only: never part of the production app or default CI build.
 if (providers.gradleProperty('airplayLab').orNull == 'true') {
