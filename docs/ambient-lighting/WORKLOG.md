@@ -29,4 +29,5 @@
 - Installed the debug APK and reproduced the explicit 60-versus-30 message. Applied a provisional 10/5/10/5 top/right/bottom/left layout. WLED reported idle → DDP realtime from the TV → idle, and the TV displayed “Test sent.” Owner confirmation of visible colors and mounting order remains open.
 - Ambilight engine and feature JVM tests, app lint and debug APK build passed.
 
-- The owner confirmed live screen sync works on the current 30-LED setup. The owner plans to add LEDs later. Larger-strip mapping, screen-sync stop modes and performance remain open.
+- The owner confirmed live screen sync works on the current 30-LED setup. Screen-sync stop modes and performance remain open.
+- The owner recounted the physical strip and confirmed 60 LEDs. Earlier sync evidence still covers the 30-LED software configuration. Full-strip mapping and operation remain open.
