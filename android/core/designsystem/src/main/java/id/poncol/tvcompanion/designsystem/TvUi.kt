@@ -71,28 +71,26 @@ class TvUi(private val context: Context) {
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         parent.addView(this, LinearLayout.LayoutParams(dp(size), dp(size)))
     }
-    fun featureCard(parent: LinearLayout, iconRes: Int, tint: Int, category: String, title: String, description: String, action: String, onClick: () -> Unit): LinearLayout {
+    fun featureCard(parent: LinearLayout, iconRes: Int, tint: Int, category: String, title: String, description: String, action: String?, onClick: () -> Unit): LinearLayout {
         val card = column().apply {
             id = View.generateViewId(); isFocusable = true; isClickable = true
-            setPadding(dp(26), dp(24), dp(26), dp(22))
+            setPadding(dp(22), dp(14), dp(22), dp(12))
             background = StateListDrawable().apply {
                 addState(intArrayOf(android.R.attr.state_pressed), surface(0xff30484b.toInt(), tint, 24, 2))
                 addState(intArrayOf(android.R.attr.state_focused), surface(0xff253c40.toInt(), tint, 24, 2))
                 addState(intArrayOf(), surface(0xff192a31.toInt(), 0xff34474c.toInt(), 24))
             }
-            contentDescription = "$title. $description. $action"
+            contentDescription = listOfNotNull(title, description.trimEnd('.'), action).joinToString(". ")
             setOnClickListener { onClick() }
         }
         parent.addView(card, LinearLayout.LayoutParams(0, -2, 1f))
         val symbol = row()
         card.addView(symbol)
-        icon(symbol, iconRes, tint, 42)
+        icon(symbol, iconRes, tint, 28)
         text(symbol, category, 12f, true).apply { setTextColor(tint); setPadding(dp(16), 0, 0, 0); letterSpacing = .10f }
-        spacer(card, 20)
-        text(card, title, 28f, true)
-        text(card, description, 17f).apply { minLines = 2 }
-        spacer(card, 14)
-        text(card, action, 16f, true).setTextColor(tint)
+        text(card, title, 24f, true)
+        text(card, description, 16f).apply { minLines = 2 }
+        if (action != null) text(card, action, 16f, true).setTextColor(tint)
         // The whole card is one navigation target; decorative text must not duplicate TalkBack.
         for (index in 0 until card.childCount) card.getChildAt(index).importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         return card

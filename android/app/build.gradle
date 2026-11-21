@@ -10,6 +10,7 @@ android {
 }
 dependencies {
 implementation project(':features:airplay')
+implementation project(':features:ambilight')
 implementation project(':integrations:airplay-runtime')
 implementation project(':integrations:uxplay-native')
 implementation project(':features:smart-home')

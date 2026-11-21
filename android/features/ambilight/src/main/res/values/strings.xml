@@ -1,0 +1,70 @@
+<resources>
+    <string name="ambilight_screen_sync">Screen sync</string>
+    <string name="ambilight_behavior">Lighting behavior</string>
+    <string name="ambilight_help">Playback compatibility</string>
+    <string name="ambilight_address_example">e.g. 192.168.1.50</string>
+    <string name="ambilight_address_help">Find this address in the WLED app or on your router.</string>
+    <string name="ambilight_cancel_test">Cancel LED test</string>
+    <string name="ambilight_invalid_offset">Enter an LED offset from 0 to %1$d.</string>
+    <string name="ambilight_invalid_brightness">Enter a brightness from 1 to 100.</string>
+    <string name="ambilight_offset_help">Count from 0 at the first physical LED on the strip.</string>
+    <string name="ambilight_title">Ambilight</string>
+    <string name="ambilight_notification">Screen-sync lighting is on</string>
+    <string name="ambilight_start">Start screen sync</string>
+    <string name="ambilight_stop">Stop screen sync</string>
+    <string name="ambilight_test">Test LEDs</string>
+    <string name="ambilight_save">Save settings</string>
+    <string name="ambilight_saved">Settings saved</string>
+    <string name="ambilight_off">Off</string>
+    <string name="ambilight_ready">Ready</string>
+    <string name="ambilight_starting">Starting</string>
+    <string name="ambilight_active">Synchronizing</string>
+    <string name="ambilight_stopping">Stopping</string>
+    <string name="ambilight_testing">Testing LEDs</string>
+    <string name="ambilight_test_done">Test sent. Check the strip for red, green, blue and yellow.</string>
+    <string name="ambilight_capture_failed">Capture stopped. Start again to grant fresh permission.</string>
+    <string name="ambilight_revoked">Android stopped screen capture.</string>
+    <string name="ambilight_consent_failed">Screen capture permission was declined or unavailable.</string>
+    <string name="ambilight_controller_failed">WLED controller could not be reached or identified.</string>
+    <string name="ambilight_led_count_mismatch">This layout uses %1$d LEDs. WLED reports %2$d. Update the edge counts or the LED count in WLED.</string>
+    <string name="ambilight_led_count_status">Check LED count</string>
+    <string name="ambilight_send_failed">Some lighting updates could not be sent.</string>
+    <string name="ambilight_exit_failed">Lighting updates stopped. WLED did not confirm realtime exit.</string>
+    <string name="ambilight_blank">Screen content may be protected or unsupported.</string>
+    <string name="ambilight_permission_help">Android asks each time you start. Choose the entire display to follow app switching.</string>
+    <string name="ambilight_compatibility_help">Unprotected Chromecast video and AirPlay mirroring worked in diagnostic tests. The tested native YouTube, Netflix and Crunchyroll cast sessions returned black pixels.</string>
+    <string name="ambilight_settings">WLED setup</string>
+    <string name="ambilight_address">Controller IPv4 address</string>
+    <string name="ambilight_invalid_address">Enter a private or link-local IPv4 address for WLED.</string>
+    <string name="ambilight_layout">Strip layout</string>
+    <string name="ambilight_layout_help">Enter the LED count for each edge. Use 0 to skip an edge.</string>
+    <string-array name="ambilight_edges">
+        <item>Top LEDs</item><item>Right LEDs</item><item>Bottom LEDs</item><item>Left LEDs</item>
+    </string-array>
+    <string-array name="ambilight_corners">
+        <item>Top left</item><item>Top right</item><item>Bottom right</item><item>Bottom left</item>
+    </string-array>
+    <string-array name="ambilight_directions">
+        <item>Clockwise</item><item>Counterclockwise</item>
+    </string-array>
+    <string-array name="ambilight_profiles">
+        <item>Cinema · up to 55%</item><item>Responsive · up to 75%</item><item>Soft Ambient · up to 35%</item>
+    </string-array>
+    <string-array name="ambilight_stop_modes">
+        <item>Resume WLED</item><item>Turn LEDs off</item>
+    </string-array>
+    <string name="ambilight_corner">Starting corner</string>
+    <string name="ambilight_direction">Strip direction</string>
+    <string name="ambilight_offset">First LED offset</string>
+    <string name="ambilight_total">Total LEDs %1$d</string>
+    <string name="ambilight_profile">Lighting profile</string>
+    <string name="ambilight_brightness">Maximum brightness (%)</string>
+    <string name="ambilight_stop_mode">Stop behavior</string>
+    <string name="ambilight_resume_help">Resume WLED returns control to WLED after screen sync stops.</string>
+    <string name="ambilight_invalid_layout">Edge counts must total 1–4096 LEDs.</string>
+    <string name="ambilight_wled_name">WLED · %1$s</string>
+    <string name="ambilight_card_description">Sync an addressable light strip with supported content on your TV.</string>
+    <string name="ambilight_card_action">Open screen sync</string>
+    <string name="ambilight_card_status">%1$s · %2$s →</string>
+    <string name="ambilight_card_category">SCREEN-SYNC LIGHTING</string>
+</resources>

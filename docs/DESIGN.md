@@ -4,7 +4,7 @@ The UI refresh is grounded in [Android TV UI/UX research](UI_UX_RESEARCH.md). Us
 
 ## Screen structure
 
-Home contains three large whole-card targets: Your light, Quiet updates and AirPlay. Each has one action and concise supporting copy. Returning from notification settings restores that home card's focus. No placeholder remote-control tile is shown on Android TV.
+Home uses a two-by-two grid of whole-card targets for Your light, Quiet updates, AirPlay and Ambilight. Each has one action and concise supporting copy. Ambilight displays its session status in the action row. Returning from a feature restores that card's focus. No placeholder remote-control tile is shown on Android TV.
 
 The light page keeps device status beside its primary power action and white-brightness step controls. Status, pending work, unsupported modes and unconfirmed errors are explicit. A displayed value only changes after the controller receives confirmed device state. There is no automatic command on entry and no lamp polling.
 
@@ -37,3 +37,8 @@ Playback has a waiting/recovery screen with connection instructions, Retry, Leav
 Actual TV focus paths, text scale/overscan, waiting layouts and on-video controls still need device review; local compilation and status-mapping tests do not establish visual acceptance.
 
 The Bardi color preview adds a separate color section with six named presets and hue/saturation/color-brightness steps. Selected presets, bulb tint and HSV text follow confirmed state; a minimum decorative tint keeps the glyph visible even when the device color value is zero. White mode labels HSV as stored values. Choosing a color explicitly switches mode while preserving brightness approximately; returning to white preserves the stored white level. Off/unsupported controls remain unavailable, and no slider streams device writes.
+
+
+## Ambilight
+
+The settings screen places screen-sync status and its primary action beside WLED setup on TV-width displays. The same action starts or stops sync based on session state. The screen stacks into one column at narrow widths or larger text scales. Playback compatibility opens on demand. Address, edge counts, offset and brightness validation place a message next to the relevant input and focus it. The LED test remains beside the controller address.
