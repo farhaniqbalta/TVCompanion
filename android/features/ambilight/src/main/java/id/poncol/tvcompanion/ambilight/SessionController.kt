@@ -5,6 +5,8 @@ import java.security.SecureRandom
 internal enum class Phase { OFF, STARTING, ACTIVE, STOPPING, ERROR }
 internal enum class Issue { CONSENT, CAPTURE, REVOKED, CONTROLLER, STOP_OUTPUT, TEST_COMPLETE }
 
+internal data class LedCountMismatch(val configured: Int, val available: Int)
+
 internal data class AmbilightState(
     val epoch: Long = 0,
     val phase: Phase = Phase.OFF,
@@ -14,6 +16,7 @@ internal data class AmbilightState(
     val blank: Boolean = false,
     val sendError: Boolean = false,
     val controllerUnreachable: Boolean = false,
+    val ledCountMismatch: LedCountMismatch? = null,
 )
 
 /** Main-loop state writer. The capture thread only enters the nonblocking send gate. */
@@ -80,11 +83,11 @@ internal class SessionController {
         ))
     }
 
-    fun finish(epoch: Long, issue: Issue?) {
+    fun finish(epoch: Long, issue: Issue?, ledCountMismatch: LedCountMismatch? = null) {
         if (state.epoch != epoch || state.phase !in livePhases) return
         stopResources = null
         val phase = if (issue == null || issue == Issue.TEST_COMPLETE) Phase.OFF else Phase.ERROR
-        publish(AmbilightState(epoch, phase, issue, controllerName = state.controllerName))
+        publish(AmbilightState(epoch, phase, issue, controllerName = state.controllerName, ledCountMismatch = ledCountMismatch))
     }
 
     inline fun send(epoch: Long, action: () -> Unit) {

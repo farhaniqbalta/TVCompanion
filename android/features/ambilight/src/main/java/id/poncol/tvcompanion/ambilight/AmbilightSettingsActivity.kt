@@ -161,7 +161,9 @@ class AmbilightSettingsActivity : Activity() {
 
     private fun render(state: AmbilightState) {
         val busy = state.phase in setOf(Phase.STARTING, Phase.ACTIVE, Phase.STOPPING)
-        status.text = getString(state.label(prefs.load().address.isNotEmpty()))
+        status.text = state.ledCountMismatch?.let {
+            getString(R.string.ambilight_led_count_mismatch, it.configured, it.available)
+        } ?: getString(state.label(prefs.load().address.isNotEmpty()))
         val messages = listOfNotNull(
             state.controllerName?.let { getString(R.string.ambilight_wled_name, it) },
             getString(R.string.ambilight_blank).takeIf { state.blank },
@@ -341,6 +343,7 @@ class AmbilightSettingsActivity : Activity() {
             val configured = AmbilightPreferences(context).load().address.isNotEmpty()
             val observer: (AmbilightState) -> Unit = { state ->
                 val label = when {
+                    state.ledCountMismatch != null -> R.string.ambilight_led_count_status
                     state.controllerUnreachable -> R.string.ambilight_controller_failed
                     state.sendError -> R.string.ambilight_send_failed
                     state.issue == Issue.TEST_COMPLETE -> R.string.ambilight_ready

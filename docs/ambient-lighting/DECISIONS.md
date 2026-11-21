@@ -8,6 +8,6 @@ Use 160×90 RGBA latest-image capture with an up-to-30 FPS deadline and a reusab
 
 The diagnostic supports this design conditionally. The installed product must still demonstrate moving color output and measure overhead on the target TV.
 
-Settings changes require Stop so the session can use one validated layout and address snapshot. Profile caps limit the user-set maximum. Private/link-local IPv4 is supported for direct WLED control. Android's HTTP cleartext opt-in is required for runtime-configured stock WLED, and control requests avoid redirects and proxies.
+Settings changes require Stop so the session can use one validated layout and address snapshot. Profile caps limit the user-set maximum. Private/link-local IPv4 is supported for direct WLED control. The merged app network policy permits framework cleartext HTTP only to localhost. WLED uses a dedicated direct HTTP socket restricted to its private or link-local address and avoids redirects and proxies.
 
 On resize, the capture surface stays 160×90 and the sampler follows the centered content region. Non-16:9 and OEM behavior require device verification.

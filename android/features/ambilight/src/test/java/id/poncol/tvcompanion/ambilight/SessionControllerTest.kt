@@ -5,6 +5,18 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SessionControllerTest {
+    @Test fun ledCountMismatchIsScopedToTheFailedSession() {
+        val controller = SessionController()
+        val first = controller.begin()!!
+        val mismatch = LedCountMismatch(configured = 60, available = 30)
+        controller.finish(first, Issue.CONTROLLER, mismatch)
+        assertEquals(mismatch, controller.state.ledCountMismatch)
+        val next = controller.begin()!!
+        controller.finish(first, Issue.CONTROLLER, mismatch)
+        assertEquals(next, controller.state.epoch)
+        assertNull(controller.state.ledCountMismatch)
+    }
+
     @Test fun pendingConsentIsInvalidatedByStop() {
         val controller = SessionController()
         val canceled = controller.begin()!!

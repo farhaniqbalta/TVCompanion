@@ -22,6 +22,7 @@ class AmbilightCaptureService : Service() {
     private val main = Handler(Looper.getMainLooper())
     private var epoch = 0L
     private var issue: Issue? = null
+    private var ledCountMismatch: LedCountMismatch? = null
     private var config = AmbilightConfig()
     private var control: ScheduledExecutorService? = null
     private var probe: ScheduledFuture<*>? = null
@@ -81,11 +82,17 @@ class AmbilightCaptureService : Service() {
             val executor = Executors.newSingleThreadScheduledExecutor { job -> Thread(job, "ambilight-control") }
             control = executor
             executor.execute {
-                val name = wled.probe(config.layout.total)
+                val info = wled.probe()
                 main.post {
                     if (!starting()) return@post
-                    if (name == null) end(Issue.CONTROLLER)
-                    else openCapture(consent, address, name)
+                    when {
+                        info == null -> end(Issue.CONTROLLER)
+                        info.ledCount < config.layout.total -> {
+                            ledCountMismatch = LedCountMismatch(config.layout.total, info.ledCount)
+                            end(Issue.CONTROLLER)
+                        }
+                        else -> openCapture(consent, address, info.name)
+                    }
                 }
             }
         } catch (_: RuntimeException) {
@@ -135,7 +142,7 @@ class AmbilightCaptureService : Service() {
                         if (starting()) {
                             ambilightSession.activate(epoch, name)
                             probe = control?.scheduleWithFixedDelay({
-                                val unreachable = client?.probe(config.layout.total) == null
+                                val unreachable = client?.probe() == null
                                 main.post { ambilightSession.health(epoch, unreachable = unreachable) }
                             }, 30, 30, TimeUnit.SECONDS)
                         }
@@ -201,7 +208,7 @@ class AmbilightCaptureService : Service() {
     private fun complete(reason: Issue?) {
         if (!testing) stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
-        ambilightSession.finish(epoch, reason)
+        ambilightSession.finish(epoch, reason, ledCountMismatch)
     }
 
     override fun onDestroy() {

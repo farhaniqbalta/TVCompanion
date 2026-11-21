@@ -25,7 +25,9 @@
     <string name="ambilight_capture_failed">Capture stopped. Start again to grant fresh permission.</string>
     <string name="ambilight_revoked">Android stopped screen capture.</string>
     <string name="ambilight_consent_failed">Screen capture permission was declined or unavailable.</string>
-    <string name="ambilight_controller_failed">Controller not reachable or configured for fewer LEDs.</string>
+    <string name="ambilight_controller_failed">WLED controller could not be reached or identified.</string>
+    <string name="ambilight_led_count_mismatch">This layout uses %1$d LEDs. WLED reports %2$d. Update the edge counts or the LED count in WLED.</string>
+    <string name="ambilight_led_count_status">Check LED count</string>
     <string name="ambilight_send_failed">Some lighting updates could not be sent.</string>
     <string name="ambilight_exit_failed">Lighting updates stopped. WLED did not confirm realtime exit.</string>
     <string name="ambilight_blank">Screen content may be protected or unsupported.</string>

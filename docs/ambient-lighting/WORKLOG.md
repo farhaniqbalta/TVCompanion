@@ -21,3 +21,10 @@
 - Skyworth reappeared in ADB. Installed the debug APK in place with `adb install -r`. Verified native D-pad entry into Ambilight, Off state, and Back restoring dashboard focus. Owner confirmed stock WLED is not available yet.
 - Reviewed the actual 1280×720 UI. The original second dashboard row was clipped on first load and the settings screen put long help text before the controller field. Compacted the dashboard cards, aligned the Ambilight status with its action, put screen sync and WLED setup side by side, moved compatibility into a dialog, and added inline validation and field focus. Narrow or large-text screens use one column.
 - Rebuilt debug and unsigned release APKs and reran Ambilight JVM tests and app lint. Installed the revised debug APK on the Skyworth. WLED output and active capture remain open.
+
+## 2026-11-21 — WLED hardware follow-up
+
+- WLED's browser UI worked. The TV reached WLED over TCP, but the Android app's merged localhost-only cleartext policy blocked its framework HTTP client. WLED 16.0.1 also reported 30 LEDs, below the app's initial 60-LED layout.
+- Switched WLED control to a bounded direct HTTP connection for the validated private/link-local address. Kept the app's existing network security policy and removed the ineffective manifest cleartext opt-in. The TV now reports the two counts when layout exceeds the controller count.
+- Installed the debug APK and reproduced the explicit 60-versus-30 message. Applied a provisional 10/5/10/5 top/right/bottom/left layout. WLED reported idle → DDP realtime from the TV → idle, and the TV displayed “Test sent.” Owner confirmation of visible colors and mounting order remains open.
+- Ambilight engine and feature JVM tests, app lint and debug APK build passed.

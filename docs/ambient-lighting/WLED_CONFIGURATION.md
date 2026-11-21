@@ -8,8 +8,8 @@ Ambilight checks `GET /json/info` for a WLED device and sufficient LEDs. It stre
 
 | Owner-approved hardware trial | Status |
 | --- | --- |
-| Stock WLED firmware version, strip/GPIO/order, segment and timeout configuration | NOT TESTED |
-| Physical color test, orientation, short/long strips, brightness and 30 FPS | NOT TESTED |
+| Stock WLED version and configured LED count | PASS for WLED 16.0.1, 30 LEDs. GPIO, order and timeout were not checked. |
+| Test LEDs on the Skyworth | PARTIAL. WLED reported DDP from the TV and returned to non-realtime mode. Visible colors, orientation and brightness await owner confirmation. |
 | Start while WLED is off, and start while WLED shows an effect or preset | NOT TESTED |
 | Stop → Resume WLED with `{"live":false}` | NOT TESTED |
 | Stop → Turn LEDs off with `{"live":false,"on":false}` | NOT TESTED |
