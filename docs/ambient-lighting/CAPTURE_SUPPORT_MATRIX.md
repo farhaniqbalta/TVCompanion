@@ -15,4 +15,4 @@ Owner-supplied evidence from `AMBIENT_CAPTURE_COMPATIBILITY_REPORT.md`, 19 Novem
 | Switching apps | PARTIAL | Projection survived transitions, some sources yielded black |
 | AirPlay moving movie | NOT TESTED | Desktop and game results do not establish movie coverage |
 
-The report's hardware table predates the recorded consent/capture sessions. Those sessions establish that consent and capture were exercised. Black samples do not identify the underlying protection or composition mechanism. Integrated Ambilight compatibility remains NOT TESTED.
+The report's hardware table predates the recorded consent/capture sessions. Those sessions establish that consent and capture were exercised. Black samples do not identify the underlying protection or composition mechanism. The owner confirmed integrated screen sync on the 30-LED setup. The playback source was unspecified, so the app-by-app results above still come from the diagnostic.

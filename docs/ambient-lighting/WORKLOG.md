@@ -28,3 +28,5 @@
 - Switched WLED control to a bounded direct HTTP connection for the validated private/link-local address. Kept the app's existing network security policy and removed the ineffective manifest cleartext opt-in. The TV now reports the two counts when layout exceeds the controller count.
 - Installed the debug APK and reproduced the explicit 60-versus-30 message. Applied a provisional 10/5/10/5 top/right/bottom/left layout. WLED reported idle → DDP realtime from the TV → idle, and the TV displayed “Test sent.” Owner confirmation of visible colors and mounting order remains open.
 - Ambilight engine and feature JVM tests, app lint and debug APK build passed.
+
+- The owner confirmed live screen sync works on the current 30-LED setup. The owner plans to add LEDs later. Larger-strip mapping, screen-sync stop modes and performance remain open.
