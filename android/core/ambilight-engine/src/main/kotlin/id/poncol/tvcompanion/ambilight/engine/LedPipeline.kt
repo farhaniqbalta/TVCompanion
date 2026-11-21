@@ -3,8 +3,9 @@ package id.poncol.tvcompanion.ambilight.engine
 import kotlin.math.exp
 import kotlin.math.roundToInt
 
-enum class LightingProfile(internal val tauMs: Double, val brightness: Int) {
-    CINEMA(95.0, 55), RESPONSIVE(45.0, 75), SOFT(190.0, 35)
+/** Styles set only how quickly colours follow the picture; brightness is a separate user setting. */
+enum class LightingProfile(internal val tauMs: Double) {
+    CINEMA(95.0), RESPONSIVE(45.0), SOFT(190.0)
 }
 
 class LedPipeline(
@@ -47,7 +48,7 @@ class LedPipeline(
     }
     private val samples = sides.sumOf { if (it.output.isEmpty()) 0 else it.length * it.depth }
     private val smoothed = DoubleArray(layout.total * 3)
-    private val scale = minOf(brightness, profile.brightness) / 100.0
+    private val scale = brightness / 100.0
     private var previous = Long.MIN_VALUE
 
     init {

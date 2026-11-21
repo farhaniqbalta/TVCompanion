@@ -66,6 +66,68 @@ class TvUi(private val context: Context) {
         parent.addView(this, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         setOnClickListener { action() }
     }
+    class ValueRow(val view: LinearLayout, val value: TextView)
+
+    /** A focusable label/value row; children follow its enabled state so a locked row dims. */
+    fun valueRow(parent: LinearLayout, label: String, onClick: (() -> Unit)? = null): ValueRow {
+        val colors = ColorStateList(arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf()), intArrayOf(0xff6f818a.toInt(), ink))
+        val row = row().apply {
+            id = View.generateViewId(); isFocusable = true; isClickable = onClick != null
+            minimumHeight = dp(52); setPadding(dp(18), dp(10), dp(18), dp(10))
+            background = focusSurface()
+            onClick?.let { action -> setOnClickListener { action() } }
+        }
+        parent.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        TextView(context).apply {
+            text = label; textSize = 17f; setTextColor(colors); isDuplicateParentStateEnabled = true
+            row.addView(this, LinearLayout.LayoutParams(0, -2, 1f))
+        }
+        val value = TextView(context).apply {
+            textSize = 17f; setTextColor(colors); isDuplicateParentStateEnabled = true
+            if (onClick == null) typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            row.addView(this)
+        }
+        return ValueRow(row, value)
+    }
+
+    /** Left/right change the value (held keys repeat); onChange returns false to reject a value. */
+    fun stepper(parent: LinearLayout, label: String, read: () -> Int, range: () -> IntRange, step: Int = 1,
+                format: (Int) -> String = Int::toString, onChange: (Int) -> Boolean): ValueRow {
+        val row = valueRow(parent, label)
+        fun show() {
+            row.value.text = "‹  ${format(read())}  ›"
+            row.view.contentDescription = "$label ${format(read())}"
+        }
+        fun move(direction: Int): Boolean {
+            val current = read()
+            val next = (current + direction * step).coerceIn(range())
+            if (next != current && onChange(next)) show()
+            return true
+        }
+        row.view.setOnKeyListener { _, keyCode, event ->
+            if (event.action != android.view.KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+            when (keyCode) {
+                android.view.KeyEvent.KEYCODE_DPAD_LEFT -> move(-1)
+                android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> move(1)
+                else -> false
+            }
+        }
+        row.view.accessibilityDelegate = object : View.AccessibilityDelegate() {
+            override fun onInitializeAccessibilityNodeInfo(host: View, info: android.view.accessibility.AccessibilityNodeInfo) {
+                super.onInitializeAccessibilityNodeInfo(host, info)
+                info.addAction(android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_FORWARD)
+                info.addAction(android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_BACKWARD)
+            }
+            override fun performAccessibilityAction(host: View, action: Int, args: android.os.Bundle?) = when (action) {
+                android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD -> move(1)
+                android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD -> move(-1)
+                else -> super.performAccessibilityAction(host, action, args)
+            }
+        }
+        show()
+        return row
+    }
+
     fun icon(parent: LinearLayout, drawable: Int, tint: Int = accent, size: Int = 36) = ImageView(context).apply {
         setImageResource(drawable); imageTintList = ColorStateList.valueOf(tint)
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO

@@ -3,6 +3,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <application>
         <activity android:name=".AmbilightSettingsActivity" android:exported="false" />
+        <activity android:name=".StripSetupActivity" android:exported="false" />
         <service android:name=".AmbilightCaptureService" android:exported="false"
             android:foregroundServiceType="mediaProjection" />
     </application>

@@ -6,6 +6,8 @@ On the TV, open Ambilight. Enter the controller's private or link-local IPv4 add
 
 The owner counted **60 physical LEDs**. WLED 16.0.1 reported **30 configured LEDs** during the successful sync test. The provisional Ambilight layout was 10 top, 5 right, 10 bottom and 5 left. To use the full strip, check that the supply and WLED current limit suit 60 LEDs, set the output count to 60 in WLED, then enter the actual per-edge counts in Ambilight and run **Test LEDs** at low brightness.
 
+Full perimeter coverage needs about 140 LEDs at the current strip density. The owner plans a 44 top / 26 right / 44 bottom / 26 left layout, which is 140 LEDs and requires 80 more than the installed 60. At full white, 140 LEDs can draw about 8.4 A at 5 V, so the supply, power injection and WLED current limit must be sized before the extension.
+
 Ambilight checks `GET /json/info` for a WLED device and sufficient LEDs. It streams RGB24 using unicast DDP on UDP 4048. The app does not change Wi-Fi, GPIO, segments or current settings. A successful probe confirms HTTP reachability, and UDP sends do not acknowledge visible output.
 
 | Owner-approved hardware trial | Status |

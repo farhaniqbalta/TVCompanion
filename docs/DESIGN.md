@@ -41,4 +41,6 @@ The Bardi color preview adds a separate color section with six named presets and
 
 ## Ambilight
 
-The settings screen places screen-sync status and its primary action beside WLED setup on TV-width displays. The same action starts or stops sync based on session state. The screen stacks into one column at narrow widths or larger text scales. Playback compatibility opens on demand. Address, edge counts, offset and brightness validation place a message next to the relevant input and focus it. The LED test remains beside the controller address.
+The everyday screen holds what changes day to day: a short status headline with its explanation underneath, the start/stop action, three named styles with a one-line effect each, brightness, and what happens when sync stops. Strip setup and Playback compatibility open on demand. The dashboard card and both screens use the Ambilight TV-glow icon.
+
+Strip setup holds rarely changed wiring: a static diagram of the layout (edge LEDs in their test colours, a ring on LED 0, an arrow toward LED 1), the WLED address beside Test LEDs, and the edge counts. Numbers change with left/right steppers (held keys repeat) instead of the on-screen keyboard; only the address is typed. Settings save as they change; there is no Save button. While a session runs, controls dim, directional navigation skips them, and one line says to stop screen sync first. Both screens stack into one column at narrow widths or larger text scales.

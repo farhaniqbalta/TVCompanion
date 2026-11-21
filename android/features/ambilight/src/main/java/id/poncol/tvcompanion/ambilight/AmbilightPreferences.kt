@@ -68,7 +68,7 @@ internal class AmbilightPreferences(context: Context) {
 }
 
 internal fun testColors(config: AmbilightConfig): ByteArray {
-    val peak = (255 * minOf(config.brightness, config.profile.brightness, 25) / 100).toByte()
+    val peak = (255 * minOf(config.brightness, 25) / 100).toByte()
     val output = ByteArray(config.layout.total * 3)
     var clockwise = 0
     config.layout.counts.forEachIndexed { side, count ->

@@ -48,7 +48,7 @@ class EngineTest {
         val counts = listOf(20, 3, 2, 4)
         fun run(layout: LedLayout): List<List<Byte>> {
             val out = ByteArray(layout.total * 3)
-            LedPipeline(w, h, layout, LightingProfile.RESPONSIVE, 100).process(pixels, 1, out)
+            LedPipeline(w, h, layout, LightingProfile.RESPONSIVE, 75).process(pixels, 1, out)
             return out.toList().chunked(3)
         }
         val baseline = run(LedLayout(counts))

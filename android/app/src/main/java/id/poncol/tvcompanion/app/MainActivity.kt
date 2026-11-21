@@ -67,7 +67,7 @@ class MainActivity : Activity() {
         media.addView(android.view.View(this), android.widget.LinearLayout.LayoutParams(ui.dp(20), 1))
         val description = getString(AmbilightR.string.ambilight_card_description)
         val title = getString(AmbilightR.string.ambilight_title)
-        val ambilight = ui.featureCard(media, id.poncol.tvcompanion.designsystem.R.drawable.ic_bulb, ui.warm,
+        val ambilight = ui.featureCard(media, AmbilightR.drawable.ic_ambilight, ui.warm,
             getString(AmbilightR.string.ambilight_card_category), title, description, action = null) {
             homeFocus = 3
             startActivity(Intent(this, AmbilightSettingsActivity::class.java))
