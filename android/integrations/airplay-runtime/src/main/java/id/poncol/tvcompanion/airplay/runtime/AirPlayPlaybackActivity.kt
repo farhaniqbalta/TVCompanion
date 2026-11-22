@@ -291,6 +291,7 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         val slowLooks = mutableSetOf<String>()
         /** Display names, in AmbientShaders.LOOKS order. */
         val LOOK_NAMES = intArrayOf(R.string.airplay_runtime_ambient_look_aurora, R.string.airplay_runtime_ambient_look_strings,
-            R.string.airplay_runtime_ambient_look_dusk, R.string.airplay_runtime_ambient_look_ripples)
+            R.string.airplay_runtime_ambient_look_dusk, R.string.airplay_runtime_ambient_look_ripples,
+            R.string.airplay_runtime_ambient_look_chromatic_flow, R.string.airplay_runtime_ambient_look_edge_orbit)
     }
 }

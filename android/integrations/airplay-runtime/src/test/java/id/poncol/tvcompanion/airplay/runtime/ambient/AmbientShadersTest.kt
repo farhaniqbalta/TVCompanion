@@ -8,8 +8,9 @@ class AmbientShadersTest {
     private val read: (String) -> String? = { java.io.File(dir, it).takeIf { f -> f.exists() }?.readText() }
     @Test fun shippedLooksCarryContractHeader() {
         val files = dir.listFiles()!!.map { it.name }.toSet()
-        assertEquals(setOf("aurora.vert", "aurora.frag", "ripples.frag", "dusk.frag", "strings.vert", "strings.frag"), files)
-        dir.listFiles()!!.forEach { assertTrue(it.name, it.readText().startsWith(AmbientShaders.CONTRACT)) }
+        assertEquals(setOf("aurora.vert", "aurora.frag", "ripples.frag", "dusk.frag", "strings.vert", "strings.frag",
+            "chromatic_flow.frag", "edge_orbit.frag"), files)
+        dir.listFiles()!!.forEach { assertEquals(it.name, AmbientShaders.CONTRACT, it.readLines().first()) }
     }
     @Test fun stringsKeepsBeatMathPerVertexAndHighp() {
         read("strings.vert")!!.let {
@@ -32,7 +33,14 @@ class AmbientShadersTest {
         AmbientShaders.UNIFORMS.forEach { assertTrue(it, s.vertex.contains(it) && s.fragment.contains(it)) }
     }
     @Test fun fragmentOnlyLookGetsDefaultVertex() {
-        assertTrue(AmbientShaders.assemble("dusk", read).vertex.contains("vP = vec2(aPos.x"))
+        listOf("dusk", "chromatic_flow", "edge_orbit").forEach { look ->
+            val sources = AmbientShaders.assemble(look, read)
+            assertEquals(look, sources.look)
+            assertTrue(sources.vertex.contains("vP = vec2(aPos.x"))
+            listOf(sources.vertex, sources.fragment).forEach { source ->
+                assertEquals(listOf("#version 300 es"), source.lines().filter { it.startsWith("#version") })
+            }
+        }
     }
     @Test fun brokenLookFallsBack() {
         assertEquals("builtin", AmbientShaders.assemble("missing", read).look)
@@ -43,9 +51,13 @@ class AmbientShadersTest {
         dir.listFiles()!!.forEach { assertNull(it.name, bad.find(it.readText())) }
     }
     @Test fun cycleWrapsBothWays() {
-        assertEquals("aurora", AmbientShaders.cycle("ripples", 1))
-        assertEquals("ripples", AmbientShaders.cycle("aurora", -1))
-        assertEquals("strings", AmbientShaders.cycle("aurora", 1))
+        val order = listOf("aurora", "strings", "dusk", "ripples", "chromatic_flow", "edge_orbit")
+        assertEquals(order, AmbientShaders.LOOKS)
+        order.zipWithNext().plus("edge_orbit" to "aurora").forEach { (from, to) ->
+            assertEquals(to, AmbientShaders.cycle(from, 1))
+            assertEquals(from, AmbientShaders.cycle(to, -1))
+        }
+        order.forEach { assertEquals(it, AmbientShaders.resolve(it)) }
     }
     @Test fun unknownLookFallsBackToDefault() {
         assertEquals("aurora", AmbientShaders.resolve(null))
