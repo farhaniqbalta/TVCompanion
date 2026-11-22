@@ -1,6 +1,6 @@
 # Quick Controls — design
 
-Date: 2026-11-22 · Branch: `feature/quick-controls` (from `origin/main` b8982f3) · Status: awaiting owner approval
+Date: 2026-11-22 · Branch: `feature/quick-controls` (from `origin/main` b8982f3) · Status: approved and implemented (Phases 1–3 device-checked 2026-11-22)
 
 ## Intent
 

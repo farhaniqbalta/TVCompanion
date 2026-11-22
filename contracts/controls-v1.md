@@ -1,6 +1,6 @@
 # Quick Controls v1 — iPhone ↔ TV control contract
 
-Status: v1, shared by the iOS Controls tab (implemented) and the Android `ControlService` (Phase 2, not yet implemented). Replaces the design-only `client-commands-draft.md`. Design: `docs/superpowers/specs/2026-11-22-quick-controls-design.md`.
+Status: v1, implemented by the iOS Controls tab and the Android `ControlService`; device-checked 2026-11-22. Replaces the design-only `client-commands-draft.md`. Design: `docs/superpowers/specs/2026-11-22-quick-controls-design.md`.
 
 ## Transport
 

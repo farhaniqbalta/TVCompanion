@@ -33,12 +33,12 @@ Start with these few real boundaries. Split further only when dependencies, owne
 
 - No lamp polling, wake locks, automatic reconnect loop, or startup service.
 - Device access and encryption run on a single background worker while the light screen is active. Close connections after operations. Do not retry writes automatically.
-- Backgrounding the dashboard closes its controller and removes its view tree. Backgrounding settings releases its binding and pending UI callbacks too.
+- Backgrounding the dashboard removes its view tree; the app-wide light controller stays (it holds no socket between operations) so remote and TV commands share one serialized owner. Backgrounding settings releases its binding and pending UI callbacks too.
 - Only the explicitly started notification receiver stays active. One blocking listener thread sleeps awaiting a connection; one bounded input is processed at a time. Pause closes both listener and current connection.
 - Headers are capped at 8 KiB, bodies at 4 KiB, waiting notifications at ten, visible overlays at one, and remembered IDs at 256. Event acceptance is limited to twelve per eight seconds. Parsing uses one fixed header buffer.
 - Overlay timers exist only while showing an event; reduced motion is supported. No infinite animation or periodic status timer.
 - Drop network response failures without logging bodies or secrets. Surface command uncertainty and stale state explicitly.
-- Do not add a separate Android service for Apple remote commands unless a verified protocol requires one. Investigate the TV's existing paired remote service first.
+- The Quick Controls listener (`ControlService`) is the one Apple-command service. It runs only while a client is paired or a pairing window is open, serves one request per connection with a 10 s deadline and at most two connections, and never polls.
 
 These are implementation rules, not measured CPU/RAM claims. No performance benchmark is required for this foundation.
 
@@ -52,7 +52,7 @@ Original apps remain independent. Reuse source and tests, never private credenti
 
 ## Future integration contracts
 
-The [client-command draft](../contracts/client-commands-draft.md) is distinct from notification v1 and requires secure, scoped authorization before exposing physical commands. The [external receiver control draft](../contracts/external-receiver-control-draft.md) keeps future Binder/AIDL types outside the pure domain and all media processing in the same APK's dedicated receiver process. The client command endpoint remains design-only; the private AirPlay control port is implemented in the Phase 2 video preview. See the [Phase 1 implementation record](phase-1/IMPLEMENTATION_CHANGELOG.md).
+The client-command draft is superseded by [Quick Controls v1](../contracts/controls-v1.md), now implemented (see *Quick Controls gateway* below). The [external receiver control draft](../contracts/external-receiver-control-draft.md) keeps future Binder/AIDL types outside the pure domain and all media processing in the same APK's dedicated receiver process. The private AirPlay control port is implemented in the Phase 2 video preview. See the [Phase 1 implementation record](phase-1/IMPLEMENTATION_CHANGELOG.md).
 
 ## AirPlay video preview process boundary
 
@@ -108,3 +108,22 @@ Thread ownership:
 Beat times are playout times, corrected by one constant, `AmbientMotion.SYNC_OFFSET_MS` (code default −25 ms, not yet checked on device). Audio is never delayed to match visuals.
 
 Look contract v1: looks are assets in `airplay-runtime/src/main/assets/ambient/` (`<name>.frag`, optional `<name>.vert`), starting with `// ambient-contract: 1`. The host prepends the prelude, fixed uniforms and `finish(col, p)`; files with another contract number are rejected, and a compile/link failure falls back to the built-in look. The shipped looks are `aurora`, `strings`, `dusk` and `ripples` (`AmbientShaders.LOOKS`). While Ambient is open, D-pad RIGHT/LEFT cycles them (first press only, key repeats ignored), a label names the new look for 2 s, and the renderer relinks on the GL thread. The choice is saved in the `:airplay` process's `ambient` SharedPreferences (key `look`) and used on the next open; missing or unknown values fall back to `aurora` (`AmbientShaders.DEFAULT_LOOK`). A look whose mean frame interval exceeds 33.9 ms in two consecutive 3 s windows is switched automatically to a 960x540 surface (upscaled by the compositor) and stays there for the process lifetime (`AmbientDownscale`).
+
+## Quick Controls gateway
+
+The iPhone/iPad Controls tab talks to `:app`'s `app.control` package; no new modules or processes.
+
+```text
+iOS ControlClient ──mutual TLS :7380──▶ ControlServer ─▶ ControlDispatcher ─▶ ControlFeatures (AndroidControlFeatures)
+                                                                              ├─ LightController (app-wide, serialized)
+                                                                              ├─ Ambilight facade (+ ConsentActivity)
+                                                                              ├─ AmbientShortcut → AirPlayPlaybackActivity (:airplay)
+                                                                              ├─ AndroidAirPlayControl (passive binding, re-armed on binding death)
+                                                                              └─ AndroidNotificationRuntime
+```
+
+- **Pure, JVM-tested:** `ControlWire` (frames, parsing, PKCS#1 keys, pairing proof), `PairingWindow`, `ControlDispatcher` (validation, AirPlay confirm rule, per-feature failure isolation), `ControlServer` (TLS loop, limits) and `ClientRegistry`.
+- **Android glue:** `ControlKeys` (AndroidKeyStore RSA-2048; needs `PURPOSE_DECRYPT` + no-padding for Conscrypt's TLS signing), `AndroidControlFeatures` (main-thread hops with timeouts; timed-out writes report `unconfirmed`), `ControlService`, `ControlPairingActivity`.
+- **Headless entry points (Phase 1):** each feature can be driven without its screen, and the screens use the same paths. Status reads never start `:airplay`.
+- **iOS:** `TVCompanionKit` holds the wire types and the tile-state mapping (`ControlTile`); `ControlClient` reuses the remote's TLS channel and client identity.
+
