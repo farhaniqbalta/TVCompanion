@@ -2,13 +2,14 @@
 const highp float PI = 3.14159265359;
 const highp float TWO_PI = 6.28318530718;
 const float RADIUS = 0.30;      // corner radius of the orbit path; removes the mitred "box" seams
+const float REACH = 0.32;       // light ends here; covers Ambilight's sampled bands (~0.21 deep at the sides)
 
 // Hand-picked colour path: cyan → violet → magenta → amber, looping.
 vec3 palette(highp float t) {
   highp float t4 = fract(t) * 4.0;
   int i = int(floor(t4));
   float f = smoothstep(0.0, 1.0, fract(t4));
-  vec3 k0 = vec3(0.10, 0.82, 1.00), k1 = vec3(0.48, 0.32, 1.00), k2 = vec3(1.00, 0.26, 0.74), k3 = vec3(1.00, 0.60, 0.14);
+  vec3 k0 = vec3(0.00, 0.80, 1.00), k1 = vec3(0.42, 0.08, 1.00), k2 = vec3(1.00, 0.02, 0.62), k3 = vec3(1.00, 0.48, 0.00);   // bold, near-pure hues
   vec3 a = i == 0 ? k0 : i == 1 ? k1 : i == 2 ? k2 : k3;
   vec3 b = i == 0 ? k1 : i == 1 ? k2 : i == 2 ? k3 : k0;
   return mix(a, b, f);
@@ -59,9 +60,9 @@ void main() {
   highp float hb = uPhase.w / TWO_PI;              // one smooth palette loop per slow clock cycle (~3 min)
   vec3 colA = palette(hb);
   vec3 colB = palette(hb + 0.5);
-  vec3 bg = uBase * 0.30 + mix(colA, colB, 0.5) * 0.03;
+  vec3 bg = uBase * 0.15 + mix(colA, colB, 0.5) * 0.025;
   // The dark centre (most of the screen) needs none of the orbit work.
-  if (d > 0.42) {
+  if (d > REACH) {
     fragColor = vec4(finish(bg * (0.92 + 0.12 * uLevel), vP), 1.0);
     return;
   }
@@ -85,7 +86,10 @@ void main() {
   float profile = core + 0.55 * glow;
   vec3 rim = mix(colA, colB, 0.5 + 0.5 * cos(TWO_PI * orbit));   // faint colour all round, so the LEDs never go dark
 
-  vec3 light = profile * (colA * sA * 1.55 + colB * sB * 1.25) + rim * glow * 0.24;
+  vec3 light = profile * (colA * sA * 1.25 + colB * sB * 1.05) + rim * glow * 0.24;
+  light *= smoothstep(REACH, REACH - 0.12, d);          // soft fade to zero at the boundary: no visible line
+  float lum = dot(light, vec3(0.299, 0.587, 0.114));
+  light = max(mix(vec3(lum), light, 1.4), 0.0);        // saturation boost before the shared tone curve lifts it
   light /= max(1.0 - 0.35 * dot(vP, vP), 0.45);         // undo the shared vignette at the edges Ambilight samples
   vec3 col = (bg + light) * (0.92 + 0.12 * uLevel);
   fragColor = vec4(finish(col, vP), 1.0);
