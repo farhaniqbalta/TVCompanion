@@ -109,7 +109,7 @@ For contrast:
 
 ### 6.1 IMtkVssService probe (Experiment G, 2026-11-22)
 
-A throwaway probe APK (`research/vss-probe/`, built without Gradle) calls the service through reflection on the hidden `android.os.HwBinder` / `HwParcel` classes. It was built twice, once targeting SDK 27 and once SDK 34.
+A throwaway probe APK (built without Gradle; removed from the tree after the research, last version in commit `2fc80ec`) calls the service through reflection on the hidden `android.os.HwBinder` / `HwParcel` classes. It was built twice, once targeting SDK 27 and once SDK 34.
 
 | Step | targetSdk 27 (`untrusted_app_27`) | targetSdk 34 (`untrusted_app`) | Label |
 |---|---|---|---|

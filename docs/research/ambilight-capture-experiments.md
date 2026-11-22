@@ -197,6 +197,8 @@ AV1/SurfaceView delivered 1 frame: buffer 1920x1080, 3037.50 KiB, format 0x15 (n
 
 ## Experiment G: IMtkVssService probe
 
+The probe source (`research/vss-probe/`: `Main.java`, `build.sh`, `run.sh`) was deleted after the research. Recover it with `git checkout 2fc80ec -- research/vss-probe` to rerun the commands below.
+
 ```sh
 research/vss-probe/build.sh                 # builds out/vssprobe27.apk and out/vssprobe34.apk
 TARGETS=27 research/vss-probe/build.sh      # SDK 27 only
