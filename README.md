@@ -8,9 +8,9 @@ A local-first Google TV hub with Apple-device clients. Control your room, receiv
 
 | Directory | Target | Status |
 | --- | --- | --- |
-| [`android/`](android/) | **Android TV / Google TV**, with TV screens and D-pad input; not an Android phone app | Bardi light controls, notifications and an integrated AirPlay video preview |
-| [`ios/`](ios/) | **iPhone and iPad** companion, with **Mac support planned for evaluation** | Remote v2 controls, voice and `alert`/`alert2` sender; Phase 3 accepted on the tested setup |
-| [`contracts/`](contracts/) | Integration documentation and synthetic examples | Notification HTTP v1 contract |
+| [`android/`](android/) | **Android TV / Google TV**, with TV screens and D-pad input; not an Android phone app | Bardi light controls, notifications, Ambilight, an integrated AirPlay preview, and the paired-iPhone Quick Controls listener |
+| [`ios/`](ios/) | **iPhone and iPad** companion, with **Mac support planned for evaluation** | Remote v2 controls, voice, `alert`/`alert2` sender and the Controls tab; Phase 3 accepted on the tested setup |
+| [`contracts/`](contracts/) | Integration documentation and synthetic examples | Notification HTTP v1 and Quick Controls v1 contracts |
 | [`docs/`](docs/) | Architecture, design, development and decisions | Foundation documentation |
 
 Google TV is the primary orchestration host; iPhone, iPad and future Mac software are clients, not peer hubs. The planned AirPlay receiver will be bundled in the single TVCompanion APK and run in a dedicated `:airplay` process, owning discovery, decoding and rendering. Mac media will go directly to that receiver; Binder/AIDL carries control, status and lifecycle events only. AirPlay video is integrated in the same APK as a foreground-only preview. The initial [TV experiment](docs/phase-2/TV_RECEIVER_EXPERIMENT.md) proved Mac extended desktop; the [integrated preview](docs/phase-2/SINGLE_APK_INTEGRATION.md) is now installed and user-confirmed. The newer audio/background candidate is implemented but awaits device review.
@@ -39,6 +39,17 @@ The [iPhone/iPad app](ios/README.md) pairs with Google TV Remote v2 for D-pad, m
 Phase 3 is merged into `main` and accepted for the tested home setup by user report. It includes the native iPhone/iPad remote, notification sender, TV-side urgent `alert2` overlay, and the subsequent iOS remote redesign. See the [Phase 3 acceptance record](docs/phase-3/README.md). The combined Android preview uses versionCode 21. On the TV, **Notifications → Start after TV reboot** restores the notification listener; **AirPlay → Start after TV reboot** restores Background listening, Keep session connected, and Background audio. Both choices default off and require notification permission; the notification listener also requires overlay permission. Boot starts the AirPlay receiver, not a past sender session.
 
 **Receiver defaults.** Opening TVCompanion starts the notification listener (when notifications and overlay permission are granted) and AirPlay Background listening (when notifications are granted), once per app process; Background audio is on by default. Nothing is saved: a receiver or option the user turns off stays off until the main app process restarts (a boot start counts as that process's start). After an app update or reinstall (`MY_PACKAGE_REPLACED`) both receivers restart with the same permission checks. Android does not let a freshly installed app start itself, so a first install starts its receivers on the first launch after notification (and, for notifications, overlay) permission is granted; on Android 13+ that permission is not granted at install. Boot behaviour is unchanged and still follows the two *Start after TV reboot* choices.
+
+## Quick Controls — iPhone and iPad
+
+The iOS **Controls** tab switches TV features without opening their TV screens: Ambient (visualizer and look, while AirPlay music plays), Ambilight start/stop, the Bardi light (power and colour presets), the notification receiver and AirPlay background listening. Tiles show only the state the TV confirms; there is no background polling.
+
+- **Pairing:** on the TV choose **Pair iPhone for Controls** on Home and enter the 6-digit code on the iPhone. Up to four iPhones or iPads can be paired; the same screen forgets them.
+- **Transport:** mutual TLS on port 7380 with an AndroidKeyStore server key and pinned keys on both sides ([contract](contracts/controls-v1.md)). The notification PIN is never used for controls.
+- **TV side:** a main-process foreground service that runs only while a device is paired or a code is showing. Each command goes through the feature's own headless entry point, so a failed or disabled feature never blocks the others.
+- **Ambilight without the TV prompt:** optional, see [Android setup](docs/ANDROID_SETUP.md#iphone-quick-controls).
+
+Design: [Quick Controls design](docs/superpowers/specs/2026-11-22-quick-controls-design.md). Device results: [verification](docs/VERIFICATION.md).
 
 ## Phase 1 refactor
 

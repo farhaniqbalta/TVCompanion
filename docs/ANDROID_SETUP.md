@@ -34,6 +34,18 @@ The screen shows local addresses, default port 8766, and the per-install PIN. Co
 
 HTTP currently has no transport encryption and the six-digit PIN is prototype-level pairing. Use trusted LAN and non-sensitive demo content; do not expose the receiver to the internet. TLS/secure pairing and source feasibility are release work, not completed features.
 
+## iPhone Quick Controls
+
+On Home choose **Pair iPhone for Controls**. Enter the 6-digit code in the iPhone app's **Controls** tab within 2 minutes; the TV shows a tick when paired. Repeat for each device (up to four). **Forget paired iPhones** on the same screen removes them all. The listener (port 7380) runs only while a device is paired and restarts after reboot or an app update when one is.
+
+Optional, to start Ambilight from the iPhone without the TV's screen-capture prompt:
+
+```sh
+adb shell appops set id.poncol.tvcompanion PROJECT_MEDIA allow    # undo: … PROJECT_MEDIA ignore
+```
+
+This lets TVCompanion capture the screen without asking, for TV-side starts too.
+
 ## Status and limits
 
 The app is installed and the user has confirmed basic functionality. The 0.2.0 UI preview has been visually reviewed on the TV; physical remote behavior, offline operation and overlays across players still need broader validation. Build/test success does not establish these behaviors. No CPU/RAM benchmarking is requested.

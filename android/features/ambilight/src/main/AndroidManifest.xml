@@ -4,6 +4,8 @@
     <application>
         <activity android:name=".AmbilightSettingsActivity" android:exported="false" />
         <activity android:name=".StripSetupActivity" android:exported="false" />
+        <activity android:name=".ConsentActivity" android:exported="false" android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <service android:name=".AmbilightCaptureService" android:exported="false"
             android:foregroundServiceType="mediaProjection" />
     </application>

@@ -34,6 +34,8 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     private var ambientHint: TextView? = null
     private var lookLabel: TextView? = null
     private var look = AmbientShaders.DEFAULT_LOOK
+    // A remote shortcut request, applied once on the first state after launch or a new intent.
+    private var pendingAmbient: AmbientRequest? = null
     private val epoch = AmbientEpoch()
     private val reopen = AmbientReopen()
     private val main = Handler(Looper.getMainLooper())
@@ -50,6 +52,7 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
     }
     override fun onCreate(saved: Bundle?) {
         super.onCreate(saved)
+        if (saved == null) pendingAmbient = shortcut(intent)
         val ui = TvUi(this)
         frame = FrameLayout(this)
         val video = SurfaceView(this).also { it.holder.addCallback(this) }
@@ -85,6 +88,27 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         setContentView(frame)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingAmbient = shortcut(intent)
+        if (host != null) applyShortcut(snapshot)
+    }
+    private fun shortcut(intent: Intent?) =
+        AmbientShortcut.parse(intent?.getStringExtra(AmbientShortcut.EXTRA_AMBIENT), intent?.getStringExtra(AmbientShortcut.EXTRA_LOOK))
+    /** Never queues: a request the current state can't serve is dropped, so music starting later doesn't open Ambient. */
+    private fun applyShortcut(state: AirPlaySnapshot) {
+        val request = pendingAmbient ?: return
+        pendingAmbient = null
+        when (request) {
+            is AmbientRequest.Open -> if (AmbientShortcut.canOpen(state, request.look)) {
+                getSharedPreferences("ambient", MODE_PRIVATE).edit().putString("look", request.look).apply()
+                val view = ambient
+                if (view == null) openAmbient() else if (look != request.look) { look = request.look; view.setLook(look); applySize(view) }
+            }
+            AmbientRequest.Close -> closeAmbient()
+        }
+    }
     override fun onStart() {
         super.onStart(); active = true
         startService(Intent(this, AirPlayService::class.java))
@@ -114,6 +138,7 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         snapshot = state
         if (AmbientPolicy.mustClose(state)) closeAmbient()
         ambientButton.visibility = if (AmbientPolicy.canOpen(state)) View.VISIBLE else View.GONE
+        applyShortcut(state)
         title.setText(when {
             state.issue == AirPlayIssue.PROTECTED_CONTENT -> R.string.airplay_runtime_protected_video
             state.issue == AirPlayIssue.MEDIA_UNSUPPORTED -> R.string.airplay_runtime_unsupported_video
@@ -168,6 +193,7 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
             if (ambient === view) { Log.w("TVCAmbient", "closing ambient", e); closeAmbient() }
         }
         ambient = view
+        host?.setAmbientShowing(true)
         applySize(view)
         requestAmbient()
         frame.addView(view, FrameLayout.LayoutParams(-1, -1))
@@ -226,6 +252,7 @@ class AirPlayPlaybackActivity : Activity(), SurfaceHolder.Callback {
         listOfNotNull(ambientHint, lookLabel).forEach { it.animate().cancel(); frame.removeView(it) }
         ambientHint = null; lookLabel = null
         ambientSub?.close(); ambientSub = null
+        host?.setAmbientShowing(false)
         render(snapshot)
         ambientButton.requestFocus()
     }

@@ -16,8 +16,8 @@ object AirPlayWire {
         val p = phases.getOrNull(phase) ?: return null
         val c = connections.getOrNull(connection) ?: return null
         if (issue !in 0..issues.size) return null
-        if (flags !in 0..127 || capabilities !in 0..7 || width !in 0..8192 || height !in 0..8192 || maxFps !in 0..240) return null
+        if (flags !in 0..255 || capabilities !in 0..7 || width !in 0..8192 || height !in 0..8192 || maxFps !in 0..240) return null
         val modes = AirPlayCapabilities(capabilities and 1 != 0, capabilities and 2 != 0, width.takeIf { it > 0 }, height.takeIf { it > 0 }, maxFps.takeIf { it > 0 }, capabilities and 4 != 0)
-        return AirPlaySnapshot(AirPlayAvailability.AVAILABLE, p, c, issue(issue), modes, flags and 1 != 0, flags and 2 != 0, flags and 4 != 0, flags and 8 != 0, flags and 16 != 0, flags and 32 != 0, flags and 64 != 0)
+        return AirPlaySnapshot(AirPlayAvailability.AVAILABLE, p, c, issue(issue), modes, flags and 1 != 0, flags and 2 != 0, flags and 4 != 0, flags and 8 != 0, flags and 16 != 0, flags and 32 != 0, flags and 64 != 0, flags and 128 != 0)
     }
 }
