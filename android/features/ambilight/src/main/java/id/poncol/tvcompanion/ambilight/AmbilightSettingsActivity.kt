@@ -173,8 +173,7 @@ class AmbilightSettingsActivity : Activity() {
             busy -> R.string.ambilight_stop
             else -> R.string.ambilight_start
         })
-        // Disabled while the approval prompt is pending, as before.
-        sessionAction.isEnabled = state.phase != Phase.STOPPING && !(state.phase == Phase.STARTING && !ambilightSession.attached)
+        sessionAction.isEnabled = Ambilight.actionEnabled(state)
     }
 
     private fun requestConsent() {

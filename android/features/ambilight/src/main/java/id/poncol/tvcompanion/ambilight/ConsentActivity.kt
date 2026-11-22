@@ -22,6 +22,7 @@ class ConsentActivity : Activity() {
         epoch = intent.getLongExtra(EXTRA_EPOCH, 0L)
         val state = ambilightSession.state
         if (epoch == 0L || state.epoch != epoch || state.phase != Phase.STARTING) { settled = true; finish(); return }
+        Ambilight.shownEpoch = epoch
         try {
             val projection = getSystemService(MediaProjectionManager::class.java)
             val request = if (Build.VERSION.SDK_INT >= 34) {

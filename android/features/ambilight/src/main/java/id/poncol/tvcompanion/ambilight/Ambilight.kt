@@ -2,6 +2,8 @@ package id.poncol.tvcompanion.ambilight
 
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import id.poncol.tvcompanion.ambilight.AmbilightCaptureService.Companion.EXTRA_EPOCH
 
 enum class AmbilightStatus { OFF, NEEDS_APPROVAL, STARTING, RUNNING, STOPPING, NOT_SET_UP, ERROR }
@@ -9,6 +11,9 @@ enum class AmbilightStart { REQUESTED, BUSY, NOT_SET_UP, FAILED }
 
 /** Headless entry point for Ambilight. Main thread only, like the session it drives. */
 object Ambilight {
+    private const val CONSENT_LAUNCH_TIMEOUT_MS = 5_000L
+    /** Epoch whose ConsentActivity actually started; written by ConsentActivity on the main thread. */
+    internal var shownEpoch = 0L
     fun status(context: Context): AmbilightStatus =
         status(ambilightSession.state, configured(context), ambilightSession.attached)
 
@@ -26,6 +31,9 @@ object Ambilight {
         return try {
             context.startActivity(Intent(context, ConsentActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).putExtra(EXTRA_EPOCH, epoch))
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (consentExpired(ambilightSession.state, epoch, ambilightSession.attached, shownEpoch)) ambilightSession.cancel(epoch, Issue.CONSENT)
+            }, CONSENT_LAUNCH_TIMEOUT_MS)
             AmbilightStart.REQUESTED
         } catch (_: RuntimeException) {
             ambilightSession.cancel(epoch, Issue.CONSENT)
@@ -50,6 +58,13 @@ object Ambilight {
         state.phase != Phase.OFF && state.phase != Phase.ERROR -> AmbilightStart.BUSY
         else -> null
     }
+
+    /** Stop/Cancel stays usable through STARTING (attached or awaiting approval); only STOPPING disables it. */
+    internal fun actionEnabled(state: AmbilightState) = state.phase != Phase.STOPPING
+
+    /** A launch Android silently blocked never shows ConsentActivity; release that session instead of staying BUSY. */
+    internal fun consentExpired(state: AmbilightState, epoch: Long, attached: Boolean, shownEpoch: Long) =
+        state.epoch == epoch && state.phase == Phase.STARTING && !attached && shownEpoch != epoch
 
     private fun configured(context: Context) = AmbilightPreferences(context).load().address.isNotEmpty()
 }
