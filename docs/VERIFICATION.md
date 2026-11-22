@@ -265,5 +265,23 @@ Measured on the Skyworth Android 14 TV (4 cores, 1.4 GB RAM) under the heaviest 
   - The analysis takes a 1024-sample window every 512 new samples (about 51/s), keeping beat latency near 12 ms. Its "tap dropped" count is cumulative, analysis-only and about 1–2% of blocks; no change.
   - Ambilight capture 19%.
 - **Memory:** PSS about 26 MB (main) and 51 MB (`:airplay`). The TV itself had 27 MB free and 395 MB in swap (system-wide).
-- **Not measured yet:** the same sweep with Ambilight off, the idle footprint without music, and a 20–30 minute soak.
+- **Ambilight off** (same session; Slow Dusk and Edge Orbit already at 540p because the fallback lasts for the process lifetime):
+
+  | Look | GPU, Ambilight on | GPU, Ambilight off |
+  |---|---|---|
+  | Bounce | 10.8 ms | 10.7 ms |
+  | Aurora | 9.3 ms | 9.0 ms |
+  | Strings | 13.5 ms | 13.3 ms |
+  | Slow Dusk | 10.3 ms | 10.1 ms |
+  | Chromatic Flow | 12.1 ms | 11.8 ms |
+  | Edge Orbit | 10.2 ms | 10.0 ms |
+
+  Capture costs the looks only 0.1–0.4 ms of GPU but about 19% CPU in the main process. With capture off, the occasional 80–125 ms frames disappear (longest about 37 ms outside look switches). So the hitches, and likely the Slow Dusk and Edge Orbit fallbacks, come from capture competing with the display.
+- **Short soak** (stopped at the owner's request after 2 minutes, Edge Orbit, Ambilight off): steady 33.3 ms frames, longest 39 ms, GPU about 10 ms. PSS 25.5→26.9 MB (main) and 51.2→54.0 MB (`:airplay`); too short to call growth.
+- **Idle in the background** (no music, Ambient closed, TV on the launcher):
+  - CPU about 1.1% (main) and 0.2% (`:airplay`) over 10 s.
+  - No wake locks or alarms held by TVCompanion. While the AirPlay playback screen stays open it keeps the screen on, as intended.
+  - PSS 26.8 MB (main) and 51.6 MB (`:airplay`).
+  - Three foreground services stay up (Quick Controls listener, AirPlay background listening, notification receiver). `:airplay` stays resident because background listening is on.
+- **Not done:** a 20–30 minute soak (skipped by the owner).
 
