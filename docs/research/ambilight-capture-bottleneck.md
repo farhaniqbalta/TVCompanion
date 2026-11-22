@@ -102,6 +102,7 @@ For contrast:
 | NDK (AHardwareBuffer, AImageReader) | Same SurfaceFlinger path as the SDK; does not change composition | INFERRED |
 | Privileged / system APIs (e.g. `SurfaceControl` screenshot, `captureDisplay`) | Not in the public SDK; system-only | INFERRED (absent from public `android.jar`), not attempted |
 | Vendor HALs: `mstar.hardware.mmdisp@1.0::IMmDisp`, `vendor.mediatek.graphics.externalbuffer@1.0`, `vendor.mediatek.api.mtktvapi@1.0::*` | Exist (`lshal`); `lshal debug` fails; untrusted apps cannot reach vendor HIDL services under SELinux | MEASURED (exist / debug fails); access restriction INFERRED (standard Treble policy), not attempted |
+| Vendor driver library `/vendor/lib/libmtal.so` (MTAL) | Loadable by apps (listed in `/vendor/etc/public.libraries.txt`; 32-bit only). It is a thin ioctl wrapper over `/dev/mtal` (NEEDED: libc, liblog, libutils, libc++, libm, libdl). It exports pixel-readback functions (`MTVDO_DI_GetDramPixels`, `MTVDO_EnableDIDramDump`, `MTOSD_PLA_Capture`). `/dev/mtal` is `crw-rw---- root root`, SELinux type `mtal_device`; policy grants it only to vendor/system domains (`mt_dtv-svc`, `hal_tv_ashidlservice_default`, `surfaceflinger`, `system_server`, `system_app`, `mediaserver`, ...), never to app domains. Opening it as the app UID (u0_a135, via `run-as`) fails: `Permission denied`. Bundling a copy of the library changes nothing, because the block is on the device node | MEASURED (symbols, deps, permissions, policy, open test); function behaviour UNKNOWN (not called) |
 | Vendor colour-statistics / TV "ambient light" feature | None found in service lists | MEASURED (absence in `service list`/`lshal` grep) |
 | Root / firmware changes | Out of scope (constraint §6 of the brief) | — |
 
@@ -198,6 +199,8 @@ This investigation was initiated and steered by the project owner. AI assistance
   - **native-format capture**: letting the capture consume YouTube's native buffer format directly to avoid the conversion;
   - **investigating alternative capture APIs/mechanisms** rather than only tuning MediaProjection.
 
+- **Rootless vendor capture feasibility:** proposed `/vendor/lib/libmtal.so` as a capture route that bypasses MediaProjection. The owner reports this came from their separate investigation of the MStar VSS capture backend. They then asked whether a user copy of the library could be used. Those two questions led to the feasibility checks in §6. The results ruled out direct unprivileged access to `/dev/mtal`, and the owner decided not to pursue repackaging the vendor library as a production workaround.
+
   The owner also provided the research brief that defined Experiments A–F and the evidence standards used here.
 
 **Agent (AI-assisted) work:**
@@ -208,6 +211,7 @@ This investigation was initiated and steered by the project owner. AI assistance
 - Found the 1.83 KiB descriptor buffers and the YV12 `externalbuffer-allocator` buffers in the gralloc dump.
 - Implemented the experiment build (config switcher, harness), ran Experiments A, B, C and F, and attempted E.
 - Analysed the Perfetto traces that identified `IMmDisp::mmDetileFromHtoGB`.
+- At the owner's request, ran the `libmtal.so` checks in §6. Pulled the library and listed its exports and dynamic dependencies, found its device-node references, read the `/dev/mtal` permissions and SELinux policy, and ran the app-UID open test.
 - Researched AOSP sources and documentation.
 
 **Status of the owner's hypotheses:**
@@ -215,6 +219,7 @@ This investigation was initiated and steered by the project owner. AI assistance
 - *Pixel-format translation is the bottleneck:* **validated.** The trace shows a synchronous detile/conversion of YouTube's vendor-format frame (`mmDetileFromHtoGB`, ~75 ms at 1080p) whenever the capture display is GPU-composited. In the CLI session the agent first proposed a per-frame conversion by mmdisp, and the owner adopted it and framed it as format translation. The owner also reached this hypothesis independently in their separate study. The measured operation is specifically a detile from the decoder's tiled layout into a YV12 GraphicBuffer.
 - *Native-format capture:* the reasoning is confirmed, since avoiding the conversion is exactly what would fix it. It is **not achievable from a normal app on this device**: no HWC virtual-display composition, and no app-accessible vendor capture path (§6). It remains the right direction for a vendor-level fix.
 - *Alternative capture APIs:* surveyed in §6. Public SDK and NDK paths all go through the same SurfaceFlinger GPU composition. Privileged and vendor paths are out of scope or inaccessible.
+- *Direct vendor capture through `libmtal.so`:* **ruled out for an unprivileged app.** The library loads, but `/dev/mtal` is closed to app UIDs by both file permissions and SELinux. A repackaged copy hits the same wall. Access would need root, a policy change, or platform signing, all outside the constraints.
 - *Rendering-path difference (Chromecast vs YouTube):* consistent with the evidence (Chromecast's layer is an ordinary RGBA buffer), but the decisive harness experiment (E) is blocked.
 
 ## 12. References (accessed 2026-11-22)
