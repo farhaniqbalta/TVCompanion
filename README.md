@@ -32,6 +32,10 @@ TVCompanion is an Android TV app and an iPhone/iPad companion. The TV drives the
 
 *Bounce, bottom right, is built for Ambilight: each time the ball hits an edge, that part of the LED strip lights up in the room.*
 
+<p align="center"><img src="docs/images/ios-controls.png" width="300" alt="iPhone Controls tab: TV connected; tiles for Light (on, blue), Ambilight, Ambient, AirPlay (playing) and Notifications (listening); light colour swatches" /></p>
+
+*The iPhone Controls tab: each tile shows only the state the TV confirmed, and the light tile takes on the lamp's colour.*
+
 ## Engineering highlights
 
 - **Local-first by design.** Devices are controlled directly over the LAN (Tuya 3.5, WLED/DDP, AirPlay, Google TV Remote v2). There is no polling loop, cloud bridge, notification history or telemetry.
@@ -117,7 +121,7 @@ xcodebuild -project ios/TVCompanion.xcodeproj -scheme TVCompanion -destination '
 
 Then follow [Android setup](docs/ANDROID_SETUP.md) to install the app, provision the light, set up notifications and pair the iPhone. The [iOS guide](ios/README.md) covers pairing the remote.
 
-> **Status:** a personal project, tested on one home setup (a Skyworth Google TV on Android 14, an iPhone 12 Pro Max, a Bardi RGBWW bulb and a WLED strip). The native receiver targets that TV's 32-bit ARM ABI. It is not a store release.
+> **Status:** a personal project, tested on one home setup (a Skyworth Google TV on Android 14, an iPhone 12 Pro Max, an iPad Pro 11-inch, a Bardi RGBWW bulb and a WLED strip). The native receiver targets that TV's 32-bit ARM ABI. It is not a store release.
 
 ## How it was built
 
