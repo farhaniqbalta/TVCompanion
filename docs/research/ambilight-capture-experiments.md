@@ -229,6 +229,7 @@ research/vss-probe/run.sh "connect:0,info"          # 0, words 47187200 0 65536 
 research/vss-probe/run.sh "start,info,himem"        # start -2 (unsupported MTVENC ioctl), himem size 0
 research/vss-probe/run.sh "next420,himem"           # -2 (unsupported MTVENC ioctl), himem size 0
 research/vss-probe/run.sh "trigger,fb:0/0/1280/720/0,himem"   # 0, -1, size 0
+research/vss-probe/run.sh "mtalinit,init,connect:0,info,fb420:1382400,disconnect:0"   # fb420: FAILED_TRANSACTION, avc denied fd use
 research/vss-probe/run.sh "disconnect:0,info"       # cleanup: 0
 adb logcat -d | grep ' MTAL'                        # service-side log lines
 ```

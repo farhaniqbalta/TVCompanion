@@ -80,6 +80,7 @@ public class Main extends BroadcastReceiver {
                 case "config": out = scanStruct(6); break;
                 case "fb": out = frameBuffer(args); break;
                 case "himem": out = himem(); break;
+                case "fb420": out = frameBuffer420(i(args[0])); break;
                 default: out = "unknown command";
             }
             Log.i(TAG, cmd + " -> " + out + " (" + (System.nanoTime() - t0) / 1000 + " us)");
@@ -149,6 +150,41 @@ public class Main extends BroadcastReceiver {
         } catch (InvocationTargetException e) {
             return "void";
         }
+    }
+
+    /** MTVSS_GetframeBuffer420(hidl_memory): passes our own ashmem buffer, then summarizes it. */
+    private String frameBuffer420(int size) throws Exception {
+        android.os.SharedMemory shm = android.os.SharedMemory.create("vssprobe", size);
+        java.nio.ByteBuffer view = shm.mapReadOnly();
+        FileDescriptor fd = (FileDescriptor) shm.getClass().getMethod("getFileDescriptor").invoke(shm);
+        Class<?> nativeHandle = Class.forName("android.os.NativeHandle");
+        Object handle = nativeHandle.getConstructor(FileDescriptor[].class, int[].class, boolean.class)
+                .newInstance(new FileDescriptor[] {fd}, new int[0], false);
+        Object mem = Class.forName("android.os.HidlMemory")
+                .getConstructor(String.class, long.class, nativeHandle)
+                .newInstance("ashmem", (long) size, handle);
+        Object req = parcelClass.newInstance();
+        Object rep = parcelClass.newInstance();
+        p(req, "writeInterfaceToken", FQ);
+        parcelClass.getMethod("writeHidlMemory", mem.getClass()).invoke(req, mem);
+        transact.invoke(binder, 10, req, rep, 0);
+        p(rep, "verifySuccess");
+        String out;
+        try {
+            out = "ret=" + p(rep, "readInt32");
+        } catch (InvocationTargetException e) {
+            out = "void";
+        }
+        long sum = 0;
+        int nonZero = 0;
+        for (int k = 0; k < size; k++) {
+            int b = view.get(k) & 0xff;
+            sum += b;
+            if (b != 0) nonZero++;
+        }
+        android.os.SharedMemory.unmap(view);
+        shm.close();
+        return out + " buffer avg=" + (sum / size) + " nonzero=" + nonZero;
     }
 
     /** MTVSS_GetHimemeorybuffer() -> (int32 ret, hidl_memory). Maps it read-only and summarizes. */
