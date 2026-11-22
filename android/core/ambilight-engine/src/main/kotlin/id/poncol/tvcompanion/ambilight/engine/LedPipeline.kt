@@ -50,6 +50,9 @@ class LedPipeline(
     private val smoothed = DoubleArray(layout.total * 3)
     private val scale = brightness / 100.0
     private var previous = Long.MIN_VALUE
+    private var bar = 0
+    private var candidate = 0
+    private var candidateFrames = 0
 
     init {
         require(width > 0 && height > 0 && brightness in 1..100)
@@ -66,6 +69,8 @@ class LedPipeline(
         previous = timestampNs
         val alpha = if (last == Long.MIN_VALUE) 1.0 else
             1 - exp(-(timestampNs - last).coerceIn(0L, 250_000_000L) / (profile.tauMs * 1_000_000))
+        updateBar(pixels)
+        val content = height - 2 * bar
         var brightSamples = 0
         for (direction in sides.indices) {
             val side = sides[direction]
@@ -75,11 +80,12 @@ class LedPipeline(
                 var green = 0
                 var blue = 0
                 for (d in 0 until side.depth) {
+                    // Top and bottom sample just inside letterbox bars; the sides span only the picture rows.
                     val rgb = when (direction) {
-                        0 -> pixels.rgb(p, d)
-                        1 -> pixels.rgb(width - 1 - d, p)
-                        2 -> pixels.rgb(width - 1 - p, height - 1 - d)
-                        else -> pixels.rgb(d, height - 1 - p)
+                        0 -> pixels.rgb(p, bar + d)
+                        1 -> pixels.rgb(width - 1 - d, bar + p * content / height)
+                        2 -> pixels.rgb(width - 1 - p, height - 1 - bar - d)
+                        else -> pixels.rgb(d, height - 1 - bar - p * content / height)
                     }
                     val r = rgb shr 16
                     val g = (rgb shr 8) and 255
@@ -119,6 +125,44 @@ class LedPipeline(
             }
         }
         return brightSamples <= samples / 100
+    }
+
+    /**
+     * Letterbox bars: black rows from the top edge, applied to both edges because subtitles often sit in the
+     * bottom bar. A larger bar must hold for [BAR_FRAMES] frames so dark scenes do not crop the picture; a
+     * smaller one applies at once so content is never skipped. shortcut: no pillarbox (side bar) detection,
+     * add the same scan over columns if 4:3 content matters.
+     */
+    private fun updateBar(pixels: PixelAccess) {
+        val limit = height / 4
+        var rows = 0
+        while (rows < limit && darkRow(pixels, rows)) rows++
+        if (rows == limit) return
+        if (rows <= bar) {
+            bar = rows
+            candidateFrames = 0
+            return
+        }
+        if (rows != candidate) {
+            candidate = rows
+            candidateFrames = 0
+        }
+        if (++candidateFrames >= BAR_FRAMES) bar = candidate
+    }
+
+    private fun darkRow(pixels: PixelAccess, y: Int): Boolean {
+        var bright = 0
+        var x = 0
+        while (x < width) {
+            val rgb = pixels.rgb(x, y)
+            if (maxOf(rgb shr 16, (rgb shr 8) and 255, rgb and 255) > 24 && ++bright > 1) return false
+            x += 4
+        }
+        return true
+    }
+
+    private companion object {
+        const val BAR_FRAMES = 15
     }
 }
 

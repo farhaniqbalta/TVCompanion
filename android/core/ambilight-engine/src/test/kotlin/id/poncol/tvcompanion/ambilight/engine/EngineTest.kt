@@ -101,6 +101,29 @@ class EngineTest {
         assertTrue(out[0].toInt() in 28..32)
     }
 
+    @Test fun letterboxBarsAreSkippedOnceStableAndDroppedAtOnce() {
+        // A 2.39:1 film on a 16:9 capture: 12 black rows above and below red content.
+        val raw = ByteBuffer.allocate(160 * 90 * 4)
+        val pixels = PixelAccess(160, 90).apply { bind(raw, 640, 4) }
+        fun fill(fromRow: Int, toRow: Int) {
+            for (y in fromRow until toRow) for (x in 0 until 160) raw.put(y * 640 + x * 4, 200.toByte())
+        }
+        fill(12, 78)
+        val pipeline = LedPipeline(160, 90, LedLayout(listOf(1, 0, 1, 0)), LightingProfile.RESPONSIVE, 100)
+        val out = ByteArray(6)
+        var time = 1L
+        fun frame() { pipeline.process(pixels, time, out); time += 250_000_000L }
+        frame()
+        assertEquals("a new bar waits for stable frames", 0, out[0].toInt() and 255)
+        repeat(20) { frame() }
+        assertTrue("top LED samples inside the bar", (out[0].toInt() and 255) > 190)
+        assertTrue("bottom LED samples inside the bar", (out[3].toInt() and 255) > 190)
+        // The film ends and full-screen content fills the old bar: sampling moves back to the edge at once.
+        for (y in 0 until 12) for (x in 0 until 160) raw.put(y * 640 + x * 4 + 2, 255.toByte())
+        frame()
+        assertTrue("blue at the top edge is used immediately", (out[2].toInt() and 255) > 190)
+    }
+
     @Test fun cadenceRetainsThirtyWithJitterAndCapsSixty() {
         for (fps in listOf(24, 30, 60)) {
             val gate = FrameCadence(30)
