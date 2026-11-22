@@ -21,7 +21,7 @@ TVCompanion is an Android TV app and an iPhone/iPad companion. The TV drives the
 
 <table>
 <tr>
-<td><img src="docs/images/tv-ambilight.png" alt="Ambilight screen: synchronizing with a WLED controller, Cinema style" /></td>
+<td><img src="docs/ambient-lighting/images/strip-setup.png" alt="Ambilight strip setup: a 129-LED strip mapped around the screen (40 top, 23 right, 41 bottom, 25 left), first LED bottom left, running clockwise" /></td>
 <td><img src="docs/images/ambient-bounce.png" alt="Bounce Ambient look: a glowing ball on black; magenta and violet light where it hits the edges" /></td>
 </tr>
 </table>
