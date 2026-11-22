@@ -198,3 +198,11 @@ Owner device checks (not yet run):
 - [ ] 3. Record the overlay permission: `adb shell appops get id.poncol.tvcompanion SYSTEM_ALERT_WINDOW`. A real background start of `ConsentActivity` and Ambient is the first device check of the Phase 2 plan.
 - [ ] 4. AirPlay music: the Ambient button still opens and closes; Back closes Ambient; D-pad look switching still works.
 - [ ] 5. Notifications and AirPlay screens unchanged; boot defaults unchanged.
+
+## Quick Controls iOS tab — 2026-11-22
+
+Built before the Android control listener (owner's order), so the tab can't reach a real TV yet: against the TV it shows "Can't reach the TV controls".
+
+- `swift test` in `ios/TVCompanionKit`: 20/20 (new: `ControlWire` encoding, pairing proof, full/unknown/oversized/wrong-version responses).
+- `xcodebuild … -destination 'generic/platform=iOS Simulator' build`: BUILD SUCCEEDED.
+- Not yet checked: the tab's look on a device or simulator, and everything end-to-end (pairing, each control, `would_end_playback` confirmation, TV unreachable/forgotten). These are Phase 2 device checks.
