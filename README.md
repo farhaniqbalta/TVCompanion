@@ -21,16 +21,12 @@ TVCompanion is an Android TV app and an iPhone/iPad companion. The TV drives the
 
 <table>
 <tr>
-<td><img src="docs/images/tv-light.png" alt="Light screen: the Bardi light is on at 10% white, confirmed on the local network" /></td>
 <td><img src="docs/images/tv-ambilight.png" alt="Ambilight screen: synchronizing with a WLED controller, Cinema style" /></td>
-</tr>
-<tr>
-<td><img src="docs/images/tv-airplay.png" alt="AirPlay screen: listening for a connection, with background options" /></td>
 <td><img src="docs/images/ambient-bounce.png" alt="Bounce Ambient look: a glowing ball on black; magenta and violet light where it hits the edges" /></td>
 </tr>
 </table>
 
-*Bounce, bottom right, is built for Ambilight: each time the ball hits an edge, that part of the LED strip lights up in the room.*
+*Bounce, right, is built for Ambilight: each time the ball hits an edge, that part of the LED strip lights up in the room.*
 
 <p align="center"><img src="docs/images/ios-controls.png" width="300" alt="iPhone Controls tab: TV connected; tiles for Light (on, blue), Ambilight, Ambient, AirPlay (playing) and Notifications (listening); light colour swatches" /></p>
 
