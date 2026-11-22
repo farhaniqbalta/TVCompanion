@@ -4,4 +4,6 @@ package id.poncol.tvcompanion.domain
 interface AutoStartSettings {
     var notificationsOnBoot: Boolean
     var airplayOnBoot: Boolean
+    /** Restore the iPhone control listener after boot when an iPhone is paired. */
+    var controlsOnBoot: Boolean
 }

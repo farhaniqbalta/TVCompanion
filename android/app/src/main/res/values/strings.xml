@@ -19,4 +19,15 @@ without leaving what you’re watching.</string>
     <string name="home_airplay_description">Extend your Mac desktop.
 Mirror a screen to your TV.</string>
     <string name="home_airplay_action">Open AirPlay →</string>
+    <string name="home_pair_controls">Pair iPhone for Controls</string>
+    <string name="controls_eyebrow">TVCOMPANION / IPHONE CONTROLS</string>
+    <string name="controls_title">Pair iPhone</string>
+    <string name="controls_instructions">On your iPhone, open TVCompanion, choose Controls and enter this code.</string>
+    <string name="controls_expires">This code works for 2 minutes.</string>
+    <string name="controls_expired">The code expired. Get a new code to pair.</string>
+    <string name="controls_paired">Paired. Your iPhone can now use Controls.</string>
+    <string name="controls_failed">iPhone controls can\'t start on this TV.</string>
+    <string name="controls_new_code">Get a new code</string>
+    <string name="controls_forget">Forget paired iPhones</string>
+    <string name="controls_back">← Home</string>
 </resources>

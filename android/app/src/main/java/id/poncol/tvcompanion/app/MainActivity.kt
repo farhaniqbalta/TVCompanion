@@ -83,9 +83,14 @@ class MainActivity : Activity() {
         }
         ui.spacer(root, 12)
         ui.text(root, getString(R.string.home_hint), 13f)
+        val pair = ui.button(root, getString(R.string.home_pair_controls)) {
+            homeFocus = 4
+            startActivity(Intent(this, id.poncol.tvcompanion.app.control.ControlPairingActivity::class.java))
+        }
+        pair.setOnFocusChangeListener { _, focused -> if (focused) homeFocus = 4 }
         val initialFocus = homeFocus
         setContentView(scroll)
-        (when (initialFocus) { 1 -> notifications; 2 -> airplay; 3 -> ambilight; else -> lights }).requestFocus()
+        (when (initialFocus) { 1 -> notifications; 2 -> airplay; 3 -> ambilight; 4 -> pair; else -> lights }).requestFocus()
     }
     private fun showLight() {
         closeAmbilightStatus()

@@ -20,6 +20,9 @@ class TVCompanionApplication : Application(), ReceiverEngineProvider, AutoStartS
     override var airplayOnBoot: Boolean
         get() = boot.getBoolean("airplay", false)
         set(value) { boot.edit().putBoolean("airplay", value).apply() }
+    override var controlsOnBoot: Boolean
+        get() = boot.getBoolean("controls", true)
+        set(value) { boot.edit().putBoolean("controls", value).apply() }
     override fun receiverCapabilities() = UxPlayReceiverEngine.capabilities()
     override fun createReceiverEngine(): ReceiverEngine = UxPlayReceiverEngine(this)
 }
