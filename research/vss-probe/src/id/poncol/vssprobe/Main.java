@@ -81,6 +81,7 @@ public class Main extends BroadcastReceiver {
                 case "fb": out = frameBuffer(args); break;
                 case "himem": out = himem(); break;
                 case "fb420": out = frameBuffer420(i(args[0])); break;
+                case "fb420a": out = frameBuffer420Allocator(i(args[0])); break;
                 default: out = "unknown command";
             }
             Log.i(TAG, cmd + " -> " + out + " (" + (System.nanoTime() - t0) / 1000 + " us)");
@@ -185,6 +186,56 @@ public class Main extends BroadcastReceiver {
         android.os.SharedMemory.unmap(view);
         shm.close();
         return out + " buffer avg=" + (sum / size) + " nonzero=" + nonZero;
+    }
+
+    /**
+     * Same as fb420, but the buffer comes from android.hidl.allocator@1.0::IAllocator/ashmem:
+     * the VSS service may use fds created by hal_allocator, not ones created by the app.
+     */
+    private String frameBuffer420Allocator(int size) throws Exception {
+        Object allocator = Class.forName("android.os.HwBinder")
+                .getMethod("getService", String.class, String.class)
+                .invoke(null, "android.hidl.allocator@1.0::IAllocator", "ashmem");
+        Object req = parcelClass.newInstance();
+        Object rep = parcelClass.newInstance();
+        p(req, "writeInterfaceToken", "android.hidl.allocator@1.0::IAllocator");
+        p(req, "writeInt64", (long) size);
+        transact.invoke(allocator, 1, req, rep, 0); // allocate(uint64) -> (bool, memory)
+        p(rep, "verifySuccess");
+        boolean ok = (Boolean) p(rep, "readBool");
+        Object mem = parcelClass.getMethod("readHidlMemory").invoke(rep);
+        if (!ok) return "allocate failed";
+
+        req = parcelClass.newInstance();
+        Object vssRep = parcelClass.newInstance();
+        p(req, "writeInterfaceToken", FQ);
+        parcelClass.getMethod("writeHidlMemory", mem.getClass()).invoke(req, mem);
+        transact.invoke(binder, 10, req, vssRep, 0);
+        p(vssRep, "verifySuccess");
+        String out;
+        try {
+            out = "ret=" + p(vssRep, "readInt32");
+        } catch (InvocationTargetException e) {
+            out = "void";
+        }
+        Object handle = mem.getClass().getMethod("getHandle").invoke(mem);
+        FileDescriptor[] fds = (FileDescriptor[]) handle.getClass()
+                .getMethod("getFileDescriptors").invoke(handle);
+        try (FileInputStream in = new FileInputStream(fds[0]);
+             FileChannel ch = in.getChannel()) {
+            MappedByteBuffer buf = ch.map(FileChannel.MapMode.READ_ONLY, 0, size);
+            long sum = 0;
+            int nonZero = 0;
+            for (int k = 0; k < size; k++) {
+                int b = buf.get(k) & 0xff;
+                sum += b;
+                if (b != 0) nonZero++;
+            }
+            out += " buffer avg=" + (sum / size) + " nonzero=" + nonZero;
+        } catch (Throwable t) {
+            out += " map failed: " + t;
+        }
+        return out;
     }
 
     /** MTVSS_GetHimemeorybuffer() -> (int32 ret, hidl_memory). Maps it read-only and summarizes. */

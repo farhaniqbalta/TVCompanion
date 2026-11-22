@@ -150,6 +150,7 @@ Codes 1–17 and 19–20 are INFERRED from function order (the proxy disassembly
 | `GetframeBuffer(0,0,1280,720,0)` (19) | `-1` | MEASURED |
 | `GetConfig` (6) after init | reply still does not parse as `int32 + one buffer` | MEASURED; layout UNKNOWN |
 | `GetframeBuffer420(hidl_memory)` (10) with an app-allocated 1,382,400-byte ashmem buffer | Transaction rejected (`FAILED_TRANSACTION`); `avc: denied { use } scontext=hal_tv_mtkmtalservice_default tcontext=untrusted_app_27 tclass=fd`. Policy grants this fd use to no app domain | MEASURED |
+| `GetframeBuffer420` (10) with a buffer from `android.hidl.allocator@1.0::IAllocator/ashmem` (policy lets the service use `hal_allocator` fds; apps are `hal_allocator_client`) | Call reaches the service; `ret=-2`; service log `un-supported mtal ioctl: MTAL_IOCTYPE_MTVENC … NR 0x21`, `[VSSService]_MTVSS_GetframeBuffer420() m_ret=-2`. Same after `SetTrigger` | MEASURED |
 | `DisConnectEx(0)` (16) | `0` (cleanup) | MEASURED |
 
 The YouTube activity stayed in the foreground throughout. No crash of the vendor service was seen.
@@ -159,6 +160,7 @@ The YouTube activity stayed in the foreground throughout. No crash of the vendor
 **Second attempt: the client-buffer path.** `GetframeBuffer420` takes a `hidl_memory` from the caller, which could avoid the pointer problem. It fails twice over:
 - SELinux forbids the service from using a file descriptor that came from `untrusted_app_27`, so the call never reaches the service (MEASURED).
 - In `libmtal.so`, `_MTVSS_GetframeBuffer420` and `_MTVSS_GetframeAddress420` both use ioctl `0xc0042921`, and `MTVSS_Init_v` uses `0x4040291a`. All are ioctl type `0x29`, the `MTVENC` type the kernel rejects (SOURCE-CONFIRMED).
+- Passing a buffer from the system HIDL allocator gets past the SELinux check. The service then fails on exactly that unsupported `MTVENC` ioctl (MEASURED). This confirms that the kernel, not permissions, is the final block.
 
 **Conclusion.** VSS is reachable, initialisable and sees the video, but on this firmware it delivers no frames to an app. The shared-memory paths (`StartCapture`, `TriggerNextframe420` → `GetHimemeorybuffer`/`GetframeBuffer420`) depend on a video-encoder (`MTVENC`) driver function this kernel lacks, and SELinux additionally blocks an app-supplied buffer. The direct path needs an in-process pointer. **Closed as a capture route** (MEASURED + SOURCE-CONFIRMED). The DRM question did not arise, because no frame was obtained.
 
