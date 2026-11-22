@@ -66,33 +66,93 @@ class TvUi(private val context: Context) {
         parent.addView(this, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         setOnClickListener { action() }
     }
+    class ValueRow(val view: LinearLayout, val value: TextView)
+
+    /** A focusable label/value row; children follow its enabled state so a locked row dims. */
+    fun valueRow(parent: LinearLayout, label: String, onClick: (() -> Unit)? = null): ValueRow {
+        val colors = ColorStateList(arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf()), intArrayOf(0xff6f818a.toInt(), ink))
+        val row = row().apply {
+            id = View.generateViewId(); isFocusable = true; isClickable = onClick != null
+            minimumHeight = dp(52); setPadding(dp(18), dp(10), dp(18), dp(10))
+            background = focusSurface()
+            onClick?.let { action -> setOnClickListener { action() } }
+        }
+        parent.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        TextView(context).apply {
+            text = label; textSize = 17f; setTextColor(colors); isDuplicateParentStateEnabled = true
+            row.addView(this, LinearLayout.LayoutParams(0, -2, 1f))
+        }
+        val value = TextView(context).apply {
+            textSize = 17f; setTextColor(colors); isDuplicateParentStateEnabled = true
+            if (onClick == null) typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+            row.addView(this)
+        }
+        return ValueRow(row, value)
+    }
+
+    /** Left/right change the value (held keys repeat); onChange returns false to reject a value. */
+    fun stepper(parent: LinearLayout, label: String, read: () -> Int, range: () -> IntRange, step: Int = 1,
+                format: (Int) -> String = Int::toString, onChange: (Int) -> Boolean): ValueRow {
+        val row = valueRow(parent, label)
+        fun show() {
+            row.value.text = "‹  ${format(read())}  ›"
+            row.view.contentDescription = "$label ${format(read())}"
+        }
+        fun move(direction: Int): Boolean {
+            val current = read()
+            val next = (current + direction * step).coerceIn(range())
+            if (next != current && onChange(next)) show()
+            return true
+        }
+        row.view.setOnKeyListener { _, keyCode, event ->
+            if (event.action != android.view.KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+            when (keyCode) {
+                android.view.KeyEvent.KEYCODE_DPAD_LEFT -> move(-1)
+                android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> move(1)
+                else -> false
+            }
+        }
+        row.view.accessibilityDelegate = object : View.AccessibilityDelegate() {
+            override fun onInitializeAccessibilityNodeInfo(host: View, info: android.view.accessibility.AccessibilityNodeInfo) {
+                super.onInitializeAccessibilityNodeInfo(host, info)
+                info.addAction(android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_FORWARD)
+                info.addAction(android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_BACKWARD)
+            }
+            override fun performAccessibilityAction(host: View, action: Int, args: android.os.Bundle?) = when (action) {
+                android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD -> move(1)
+                android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD -> move(-1)
+                else -> super.performAccessibilityAction(host, action, args)
+            }
+        }
+        show()
+        return row
+    }
+
     fun icon(parent: LinearLayout, drawable: Int, tint: Int = accent, size: Int = 36) = ImageView(context).apply {
         setImageResource(drawable); imageTintList = ColorStateList.valueOf(tint)
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         parent.addView(this, LinearLayout.LayoutParams(dp(size), dp(size)))
     }
-    fun featureCard(parent: LinearLayout, iconRes: Int, tint: Int, category: String, title: String, description: String, action: String, onClick: () -> Unit): LinearLayout {
+    fun featureCard(parent: LinearLayout, iconRes: Int, tint: Int, category: String, title: String, description: String, action: String?, onClick: () -> Unit): LinearLayout {
         val card = column().apply {
             id = View.generateViewId(); isFocusable = true; isClickable = true
-            setPadding(dp(26), dp(24), dp(26), dp(22))
+            setPadding(dp(22), dp(14), dp(22), dp(12))
             background = StateListDrawable().apply {
                 addState(intArrayOf(android.R.attr.state_pressed), surface(0xff30484b.toInt(), tint, 24, 2))
                 addState(intArrayOf(android.R.attr.state_focused), surface(0xff253c40.toInt(), tint, 24, 2))
                 addState(intArrayOf(), surface(0xff192a31.toInt(), 0xff34474c.toInt(), 24))
             }
-            contentDescription = "$title. $description. $action"
+            contentDescription = listOfNotNull(title, description.trimEnd('.'), action).joinToString(". ")
             setOnClickListener { onClick() }
         }
         parent.addView(card, LinearLayout.LayoutParams(0, -2, 1f))
         val symbol = row()
         card.addView(symbol)
-        icon(symbol, iconRes, tint, 42)
+        icon(symbol, iconRes, tint, 28)
         text(symbol, category, 12f, true).apply { setTextColor(tint); setPadding(dp(16), 0, 0, 0); letterSpacing = .10f }
-        spacer(card, 20)
-        text(card, title, 28f, true)
-        text(card, description, 17f).apply { minLines = 2 }
-        spacer(card, 14)
-        text(card, action, 16f, true).setTextColor(tint)
+        text(card, title, 24f, true)
+        text(card, description, 16f).apply { minLines = 2 }
+        if (action != null) text(card, action, 16f, true).setTextColor(tint)
         // The whole card is one navigation target; decorative text must not duplicate TalkBack.
         for (index in 0 until card.childCount) card.getChildAt(index).importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         return card

@@ -4,7 +4,7 @@ The UI refresh is grounded in [Android TV UI/UX research](UI_UX_RESEARCH.md). Us
 
 ## Screen structure
 
-Home contains three large whole-card targets: Your light, Quiet updates and AirPlay. Each has one action and concise supporting copy. Returning from notification settings restores that home card's focus. No placeholder remote-control tile is shown on Android TV.
+Home uses a two-by-two grid of whole-card targets for Your light, Quiet updates, AirPlay and Ambilight. Each has one action and concise supporting copy. Ambilight displays its session status in the action row. Returning from a feature restores that card's focus. No placeholder remote-control tile is shown on Android TV.
 
 The light page keeps device status beside its primary power action and white-brightness step controls. Status, pending work, unsupported modes and unconfirmed errors are explicit. A displayed value only changes after the controller receives confirmed device state. There is no automatic command on entry and no lamp polling.
 
@@ -37,3 +37,10 @@ Playback has a waiting/recovery screen with connection instructions, Retry, Leav
 Actual TV focus paths, text scale/overscan, waiting layouts and on-video controls still need device review; local compilation and status-mapping tests do not establish visual acceptance.
 
 The Bardi color preview adds a separate color section with six named presets and hue/saturation/color-brightness steps. Selected presets, bulb tint and HSV text follow confirmed state; a minimum decorative tint keeps the glyph visible even when the device color value is zero. White mode labels HSV as stored values. Choosing a color explicitly switches mode while preserving brightness approximately; returning to white preserves the stored white level. Off/unsupported controls remain unavailable, and no slider streams device writes.
+
+
+## Ambilight
+
+The everyday screen holds what changes day to day: a short status headline with its explanation underneath, the start/stop action, three named styles with a one-line effect each, brightness, and what happens when sync stops. Strip setup and Playback compatibility open on demand. The dashboard card and both screens use the Ambilight TV-glow icon.
+
+Strip setup holds rarely changed wiring: a static diagram of the layout (edge LEDs in their test colours, a ring on LED 0, an arrow toward LED 1), the WLED address beside Test LEDs, and the edge counts. Numbers change with left/right steppers (held keys repeat) instead of the on-screen keyboard; only the address is typed. Settings save as they change; there is no Save button. Style, brightness and the stop choice stay adjustable during sync. While a session runs, Strip setup controls dim, directional navigation skips them, and one line says to stop screen sync first. Both screens stack into one column at narrow widths or larger text scales.
