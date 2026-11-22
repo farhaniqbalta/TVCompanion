@@ -28,6 +28,7 @@ class AmbilightSettingsActivity : Activity() {
     private lateinit var stripSetup: Button
     private lateinit var styles: List<Button>
     private lateinit var stopMode: TvUi.ValueRow
+    private lateinit var contrasts: List<Button>
     private var needsAddress = false
     private val observer: (AmbilightState) -> Unit = ::render
 
@@ -83,10 +84,20 @@ class AmbilightSettingsActivity : Activity() {
         styles = LightingProfile.entries.map { profile ->
             ui.button(look, "") {
                 save(prefs.load().copy(profile = profile))
-                showStyles(profile)
+                showOptions(styles, profile.ordinal, names, descriptions)
             }
         }
-        showStyles(config.profile, names, descriptions)
+        showOptions(styles, config.profile.ordinal, names, descriptions)
+        ui.text(look, getString(R.string.ambilight_contrast), 19f, true).setPadding(0, ui.dp(18), 0, 0)
+        val contrastNames = resources.getStringArray(R.array.ambilight_contrast_names)
+        val contrastDescriptions = resources.getStringArray(R.array.ambilight_contrast_descriptions)
+        contrasts = contrastNames.indices.map { index ->
+            ui.button(look, "") {
+                save(prefs.load().copy(dramatic = index == 1))
+                showOptions(contrasts, index, contrastNames, contrastDescriptions)
+            }
+        }
+        showOptions(contrasts, if (config.dramatic) 1 else 0, contrastNames, contrastDescriptions)
         ui.stepper(look, getString(R.string.ambilight_brightness), { prefs.load().brightness }, { 5..100 }, 5, { "$it%" }) { value ->
             save(prefs.load().copy(brightness = value))
             true
@@ -110,13 +121,10 @@ class AmbilightSettingsActivity : Activity() {
         if (sessionAction.isEnabled) sessionAction.requestFocus()
     }
 
-    private fun showStyles(
-        selected: LightingProfile,
-        names: Array<String> = resources.getStringArray(R.array.ambilight_profile_names),
-        descriptions: Array<String> = resources.getStringArray(R.array.ambilight_profile_descriptions),
-    ) {
-        styles.forEachIndexed { index, button ->
-            val chosen = index == selected.ordinal
+    /** Radio-style option buttons: marker and name, with a muted one-line description beneath. */
+    private fun showOptions(buttons: List<Button>, selected: Int, names: Array<String>, descriptions: Array<String>) {
+        buttons.forEachIndexed { index, button ->
+            val chosen = index == selected
             val title = "${if (chosen) "●" else "○"}  ${names[index]}"
             val copy = SpannableString("$title\n${descriptions[index]}")
             copy.setSpan(AbsoluteSizeSpan(15, true), title.length + 1, copy.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -129,10 +137,10 @@ class AmbilightSettingsActivity : Activity() {
         }
     }
 
-    /** Style and brightness also reach a running session immediately; the stop choice is read when sync stops. */
+    /** Style, brightness and contrast also reach a running session immediately; the stop choice is read when sync stops. */
     private fun save(config: AmbilightConfig) {
         prefs.save(config)
-        ambilightSession.look = Look(config.profile, config.brightness)
+        ambilightSession.look = Look(config.profile, config.brightness, config.dramatic)
     }
 
     override fun onStart() {

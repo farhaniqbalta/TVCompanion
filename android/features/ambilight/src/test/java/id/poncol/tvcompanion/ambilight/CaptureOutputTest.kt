@@ -88,6 +88,23 @@ class CaptureOutputTest {
         assertEquals((full + 1) / 2, transport.sent.last()[0].toInt() and 255)
     }
 
+    @Test fun dramaticTogglesOnTheRunningSession() {
+        val controller = SessionController()
+        val epoch = controller.begin()!!
+        controller.attach(epoch) {}
+        controller.activate(epoch)
+        controller.look = Look(engineProfile(), 100)
+        val transport = RecordingTransport()
+        val source = SyntheticFrames()
+        val output = CaptureOutput(AmbilightConfig(), controller, epoch, transport) { _, _ -> }
+        source.start(output::frame) {}
+        source.frame(10, 200.toByte())
+        val normal = transport.sent.last()[0].toInt() and 255
+        controller.look = Look(engineProfile(), 100, dramatic = true)
+        output.keepAlive(1_000_000_010)
+        assertTrue((transport.sent.last()[0].toInt() and 255) in 1 until normal)
+    }
+
     private fun engineProfile() = id.poncol.tvcompanion.ambilight.engine.LightingProfile.RESPONSIVE
 
     @Test fun blankHintNeedsFiveSecondsOfReceivedDarkSamplesAndClearsOnColor() {

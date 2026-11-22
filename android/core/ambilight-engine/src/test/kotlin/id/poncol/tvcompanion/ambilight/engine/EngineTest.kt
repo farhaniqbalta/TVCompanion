@@ -124,6 +124,41 @@ class EngineTest {
         assertTrue("blue at the top edge is used immediately", (out[2].toInt() and 255) > 190)
     }
 
+    @Test fun normalOutputIsTheOriginalBrightnessScale() {
+        val rgb = ByteArray(256 * 3) { (it / 3).toByte() }
+        val out = ByteArray(rgb.size)
+        for (brightness in listOf(1, 5, 50, 73, 100)) {
+            scaleOutput(rgb, out, brightness, false)
+            for (i in rgb.indices) assertEquals(((rgb[i].toInt() and 255) * brightness + 50) / 100, out[i].toInt() and 255)
+        }
+    }
+
+    @Test fun dramaticDimsDarkLedsKeepsHighlightsAndHue() {
+        fun dramatic(r: Int, g: Int, b: Int, brightness: Int = 100): IntArray {
+            val out = ByteArray(3)
+            scaleOutput(byteArrayOf(r.toByte(), g.toByte(), b.toByte()), out, brightness, true)
+            return IntArray(3) { out[it].toInt() and 255 }
+        }
+        // Highlights untouched, black stays black, never brighter than Normal.
+        assertArrayEquals(intArrayOf(255, 255, 255), dramatic(255, 255, 255))
+        assertArrayEquals(intArrayOf(0, 0, 0), dramatic(0, 0, 0))
+        for (v in 0..255) assertTrue(dramatic(v, v, v)[0] <= v)
+        // Contrast: bright:dark ratio of 255:64 (4x) widens to over 8x; shadows dim but stay lit.
+        assertTrue(255.0 / dramatic(64, 64, 64)[0] > 8)
+        assertTrue(dramatic(16, 16, 16)[0] > 0)
+        // Saturated colours keyed by peak, not luma: full blue/red stay full.
+        assertArrayEquals(intArrayOf(0, 0, 255), dramatic(0, 0, 255))
+        assertArrayEquals(intArrayOf(255, 0, 0), dramatic(255, 0, 0))
+        // One gain per LED keeps channel ratios (hue/saturation) within rounding.
+        val warm = dramatic(160, 80, 40)
+        assertEquals(2.0, warm[0].toDouble() / warm[1], 0.05)
+        assertEquals(2.0, warm[1].toDouble() / warm[2], 0.1)
+        // Brightness still scales after the curve.
+        assertEquals((dramatic(200, 100, 50)[0] + 1) / 2.0, dramatic(200, 100, 50, 50)[0].toDouble(), 1.0)
+        // Monotonic and gentle: one input step never jumps more than two output steps (no added flicker).
+        for (v in 1..255) assertTrue(dramatic(v, v, v)[0] - dramatic(v - 1, v - 1, v - 1)[0] in 0..2)
+    }
+
     @Test fun cadenceRetainsThirtyWithJitterAndCapsSixty() {
         for (fps in listOf(24, 30, 60)) {
             val gate = FrameCadence(30)

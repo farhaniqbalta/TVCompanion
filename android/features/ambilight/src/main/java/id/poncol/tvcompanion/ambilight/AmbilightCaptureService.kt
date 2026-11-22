@@ -72,7 +72,7 @@ class AmbilightCaptureService : Service() {
             }
             epoch = requested
             config = AmbilightPreferences(this).load()
-            ambilightSession.look = Look(config.profile, config.brightness)
+            ambilightSession.look = Look(config.profile, config.brightness, config.dramatic)
             checkNotNull(intent)
             val consent = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(EXTRA_CONSENT, Intent::class.java)
                 else @Suppress("DEPRECATION") intent.getParcelableExtra(EXTRA_CONSENT)

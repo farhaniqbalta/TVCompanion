@@ -50,6 +50,13 @@
         <item>Slow, calm changes for films</item><item>Quick changes for games and sport</item><item>Gentle glow in the background</item>
     </string-array>
     <string name="ambilight_brightness">Brightness</string>
+    <string name="ambilight_contrast">Contrast</string>
+    <string-array name="ambilight_contrast_names">
+        <item>Normal</item><item>Dramatic</item>
+    </string-array>
+    <string-array name="ambilight_contrast_descriptions">
+        <item>Lights match the picture</item><item>Dark scenes glow less, bright ones stay bright</item>
+    </string-array>
     <string name="ambilight_stop_mode">When sync stops</string>
     <string-array name="ambilight_stop_modes">
         <item>Return to WLED</item><item>Turn LEDs off</item>

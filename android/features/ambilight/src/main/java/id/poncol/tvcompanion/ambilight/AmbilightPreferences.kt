@@ -28,6 +28,7 @@ internal data class AmbilightConfig(
     val profile: LightingProfile = LightingProfile.CINEMA,
     val brightness: Int = 50,
     val turnOff: Boolean = false,
+    val dramatic: Boolean = false,
 ) {
     fun controllerAddress(): InetAddress = InetAddress.getByAddress(requireNotNull(ipv4Bytes(address)))
 }
@@ -48,6 +49,7 @@ internal class AmbilightPreferences(context: Context) {
             LightingProfile.entries.getOrElse(prefs.getInt("profile", 0)) { defaults.profile },
             prefs.getInt("brightness", defaults.brightness).coerceIn(1, 100),
             prefs.getBoolean("turn_off", false),
+            prefs.getBoolean("dramatic", false),
         )
     } catch (_: ClassCastException) {
         AmbilightConfig()
@@ -62,6 +64,7 @@ internal class AmbilightPreferences(context: Context) {
             .putInt("profile", config.profile.ordinal)
             .putInt("brightness", config.brightness)
             .putBoolean("turn_off", config.turnOff)
+            .putBoolean("dramatic", config.dramatic)
         config.layout.counts.forEachIndexed { index, value -> edit.putInt("side_$index", value) }
         edit.apply()
     }
