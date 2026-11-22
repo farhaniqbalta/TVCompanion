@@ -284,4 +284,5 @@ Measured on the Skyworth Android 14 TV (4 cores, 1.4 GB RAM) under the heaviest 
   - PSS 26.8 MB (main) and 51.6 MB (`:airplay`).
   - Three foreground services stay up (Quick Controls listener, AirPlay background listening, notification receiver). `:airplay` stays resident because background listening is on.
 - **Not done:** a 20–30 minute soak (skipped by the owner).
+- **Follow-up (`7def36f`):** at the owner's request, Edge Orbit's glow is shallower (0.11 → 0.065) and its light ends at 0.22 instead of 0.32, keeping the light on the orbit. This should only make it cheaper; not re-measured.
 
