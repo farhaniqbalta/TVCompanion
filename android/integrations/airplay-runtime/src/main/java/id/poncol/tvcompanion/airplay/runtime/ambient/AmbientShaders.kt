@@ -4,7 +4,7 @@ package id.poncol.tvcompanion.airplay.runtime.ambient
 object AmbientShaders {
     const val CONTRACT = "// ambient-contract: 1"
     const val DEFAULT_LOOK = "aurora"
-    val LOOKS: List<String> = listOf("aurora", "strings", "dusk", "ripples", "chromatic_flow", "edge_orbit")
+    val LOOKS: List<String> = listOf("aurora", "strings", "dusk", "chromatic_flow", "edge_orbit", "bounce")
     const val COLUMNS = 128
 
     data class Sources(val vertex: String, val fragment: String, val look: String)
