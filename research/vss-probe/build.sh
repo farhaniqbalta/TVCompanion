@@ -13,7 +13,7 @@ rm -rf out && mkdir -p out/classes
 javac -source 8 -target 8 -nowarn -cp "$JAR" -d out/classes src/id/poncol/vssprobe/Main.java
 "$BT/d8" --min-api 26 --lib "$JAR" --output out $(find out/classes -name '*.class')
 
-for T in 27 34; do
+for T in ${TARGETS:-27 34}; do
   cat > out/AndroidManifest.xml <<EOF
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="id.poncol.vssprobe$T">
   <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="$T"/>
