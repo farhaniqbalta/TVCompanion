@@ -9,14 +9,11 @@ import android.widget.ScrollView
 import id.poncol.tvcompanion.airplay.feature.AirPlaySettingsActivity
 import id.poncol.tvcompanion.ambilight.AmbilightSettingsActivity
 import id.poncol.tvcompanion.ambilight.R as AmbilightR
-import id.poncol.tvcompanion.application.LightController
 import id.poncol.tvcompanion.designsystem.TvUi
 import id.poncol.tvcompanion.notifications.presentation.NotificationSettingsActivity
 import id.poncol.tvcompanion.smarthome.LightScreen
-import id.poncol.tvcompanion.tuya.TuyaLightGateway
 
 class MainActivity : Activity() {
-    private var lightController: LightController? = null
     private val main = Handler(Looper.getMainLooper())
     private var showingLight = false
     private var restoreLight = false
@@ -29,7 +26,8 @@ class MainActivity : Activity() {
         if (savedInstanceState?.getBoolean("light") == true ||
             (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0 && intent.getBooleanExtra("open_light", false))) showLight() else showHome()
     }
-    private fun releaseLight() { lightController?.close(); lightController = null; main.removeCallbacksAndMessages(null) }
+    // The shared controller outlives this screen; detaching LightScreen stops its observation.
+    private fun releaseLight() { main.removeCallbacksAndMessages(null) }
     private fun showHome() {
         releaseLight(); showingLight = false
         val ui = TvUi(this)
@@ -85,15 +83,19 @@ class MainActivity : Activity() {
         }
         ui.spacer(root, 12)
         ui.text(root, getString(R.string.home_hint), 13f)
+        val pair = ui.button(root, getString(R.string.home_pair_controls)) {
+            homeFocus = 4
+            startActivity(Intent(this, id.poncol.tvcompanion.app.control.ControlPairingActivity::class.java))
+        }
+        pair.setOnFocusChangeListener { _, focused -> if (focused) homeFocus = 4 }
         val initialFocus = homeFocus
         setContentView(scroll)
-        (when (initialFocus) { 1 -> notifications; 2 -> airplay; 3 -> ambilight; else -> lights }).requestFocus()
+        (when (initialFocus) { 1 -> notifications; 2 -> airplay; 3 -> ambilight; 4 -> pair; else -> lights }).requestFocus()
     }
     private fun showLight() {
         closeAmbilightStatus()
         releaseLight(); showingLight = true
-        val controller = LightController(TuyaLightGateway(applicationContext), { task -> main.post { task() }; Unit })
-        lightController = controller
+        val controller = (application as TVCompanionApplication).light
         setContentView(LightScreen(this, controller) { showHome() })
         controller.refresh()
     }

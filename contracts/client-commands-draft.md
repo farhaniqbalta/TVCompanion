@@ -1,3 +1,5 @@
+> **Superseded** by [`controls-v1.md`](controls-v1.md) (2026-11-22). Kept for history.
+
 # Apple-client commands — design boundary, not an endpoint
 
 Status: Phase 1 design only. No command listener, route, authorization service or shared headless executor is implemented. Existing notification v1 remains notifications-only. Google TV is the orchestration host; Apple devices are clients.

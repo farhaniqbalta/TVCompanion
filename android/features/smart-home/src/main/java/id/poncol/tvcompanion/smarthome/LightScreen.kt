@@ -7,6 +7,7 @@ import android.widget.*
 import id.poncol.tvcompanion.application.LightController
 import id.poncol.tvcompanion.domain.LightCommand
 import id.poncol.tvcompanion.domain.LightColor
+import id.poncol.tvcompanion.domain.LightPresets
 import id.poncol.tvcompanion.domain.LightState
 import id.poncol.tvcompanion.designsystem.TvUi
 import id.poncol.tvcompanion.designsystem.R as DesignR
@@ -15,6 +16,8 @@ import id.poncol.tvcompanion.designsystem.R as DesignR
 // Constructed programmatically with feature state; intentionally not XML-inflatable.
 @android.annotation.SuppressLint("ViewConstructor")
 class LightScreen(context: Context, private val controller: LightController, back: () -> Unit) : ScrollView(context) {
+    // The controller is shared with other callers; the screen only stops watching it.
+    private var observation: AutoCloseable? = null
     init {
         isFillViewport = true
         val ui = TvUi(context)
@@ -69,18 +72,16 @@ class LightScreen(context: Context, private val controller: LightController, bac
         val colorHint = ui.text(colors, copy(R.string.light_color_unavailable), 16f)
         val white = ui.button(colors, copy(R.string.light_white_mode)) { controller.execute(LightCommand.WhiteMode) }
         ui.text(colors, copy(R.string.light_color_presets_help), 16f)
-        val presets = listOf(
-            R.string.light_red to 0, R.string.light_orange to 30, R.string.light_yellow to 60,
-            R.string.light_green to 120, R.string.light_blue to 240, R.string.light_purple to 280)
+        val labels = mapOf("red" to R.string.light_red, "orange" to R.string.light_orange, "yellow" to R.string.light_yellow,
+            "green" to R.string.light_green, "blue" to R.string.light_blue, "purple" to R.string.light_purple)
+        val presets = LightPresets.HUES.entries.map { (name, hue) -> Triple(name, labels.getValue(name), hue) }
         val colorButtons = mutableListOf<Button>()
         val presetButtons = mutableListOf<Pair<Button, Int>>()
         presets.chunked(if (wide) 3 else 2).forEach { group ->
             val row = ui.row(); colors.addView(row)
-            group.forEach { (label, hue) ->
+            group.forEach { (name, label, hue) ->
                 val button = ui.button(row, copy(label)) {
-                    controller.state.light?.let { ColorControls.base(it) }?.let {
-                        controller.execute(LightCommand.Color(it.copy(hue = hue, saturation = 1000)))
-                    }
+                    controller.state.light?.let { LightPresets.command(it, name) }?.let { controller.execute(it) }
                 }
                 button.layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply {
                     marginEnd = ui.dp(8); topMargin = ui.dp(8)
@@ -113,7 +114,7 @@ class LightScreen(context: Context, private val controller: LightController, bac
         ui.spacer(root, 12)
         ui.text(root, copy(R.string.light_footer), 13f)
         var initialRead = true
-        controller.observe { state ->
+        observation = controller.observe { state ->
             val light = state.light
             val focused = findFocus()
             status.text = copy(if (light == null) R.string.light_unavailable else if (light.on) R.string.light_on else R.string.light_off)
@@ -166,5 +167,9 @@ class LightScreen(context: Context, private val controller: LightController, bac
             }
         }
         refresh.requestFocus()
+    }
+    override fun onDetachedFromWindow() {
+        observation?.close(); observation = null
+        super.onDetachedFromWindow()
     }
 }

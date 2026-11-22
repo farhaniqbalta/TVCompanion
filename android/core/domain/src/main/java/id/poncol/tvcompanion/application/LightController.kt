@@ -5,7 +5,10 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
 
-/** UI-independent state holder. One operation at a time; no polling or write retry. */
+enum class LightOutcome { CONFIRMED, BUSY, UNSUPPORTED, UNAVAILABLE, UNCONFIRMED, CLOSED }
+data class LightResult(val outcome: LightOutcome, val state: LightController.State)
+
+/** UI-independent state holder shared by every caller. One operation at a time; no polling or write retry. */
 class LightController(
     private val gateway: LightGateway,
     private val dispatch: ((() -> Unit) -> Unit),
@@ -14,40 +17,73 @@ class LightController(
     data class State(val light: LightState? = null, val busy: Boolean = false, val message: String = "Refresh to read your light")
     var state = State()
         private set
-    private var observer: ((State) -> Unit)? = null
+    private val observers = linkedSetOf<(State) -> Unit>()
+    // Completion of the single running operation; taken exactly once by its result or by close().
+    private var pending: ((LightResult) -> Unit)? = null
     @Volatile private var closed = false
     // Public methods and dispatch callbacks run on the caller's UI/event thread.
-    fun observe(observer: (State) -> Unit) { if (!closed) { this.observer = observer; observer(state) } }
-    fun refresh() = run(null)
-    fun execute(command: LightCommand) {
-        val light = state.light ?: return
-        if (command is LightCommand.Brightness && !light.supportsBrightness) return
-        if (command is LightCommand.Color && !light.supportsColor) return
-        if (command is LightCommand.WhiteMode && !light.supportsWhiteMode) return
-        run(command)
+    fun observe(observer: (State) -> Unit): AutoCloseable {
+        if (closed) return AutoCloseable {}
+        observers.add(observer); observer(state)
+        return AutoCloseable { observers.remove(observer) }
     }
-    private fun publish(next: State) { if (!closed) { state = next; observer?.invoke(next) } }
-    private fun run(command: LightCommand?) {
-        if (closed || state.busy) return
-        publish(state.copy(busy = true, message = if (command == null) "Reading local status…" else "Confirming your change…"))
+    fun refresh(done: ((LightResult) -> Unit)? = null) = run(null, done, NO_BUILD)
+    fun execute(command: LightCommand, done: ((LightResult) -> Unit)? = null) {
+        val light = state.light
+        val supported = light != null && when (command) {
+            is LightCommand.Brightness -> light.supportsBrightness
+            is LightCommand.Color -> light.supportsColor
+            LightCommand.WhiteMode -> light.supportsWhiteMode
+            is LightCommand.Power -> true
+        }
+        if (!supported) { done?.invoke(LightResult(if (closed) LightOutcome.CLOSED else LightOutcome.UNSUPPORTED, state)); return }
+        run(command, done, NO_BUILD)
+    }
+    /** Remote path: one worker job reads, builds the command from that fresh state, then writes. */
+    fun readThenExecute(build: (LightState) -> LightCommand?, done: (LightResult) -> Unit) = run(null, done, build)
+
+    private fun publish(next: State) { if (!closed) { state = next; observers.toList().forEach { it(next) } } }
+    private fun run(command: LightCommand?, done: ((LightResult) -> Unit)?, build: (LightState) -> LightCommand?) {
+        if (closed) { done?.invoke(LightResult(LightOutcome.CLOSED, state)); return }
+        if (state.busy) { done?.invoke(LightResult(LightOutcome.BUSY, state)); return }
+        val writing = command != null
+        publish(state.copy(busy = true, message = if (writing) "Confirming your change…" else "Reading local status…"))
+        pending = done
         try {
             worker.execute {
-                val next = try {
-                    val light = if (command == null) gateway.read() else gateway.execute(command)
-                    State(light, message = "Confirmed on your local network")
+                var wrote = writing
+                val (next, outcome) = try {
+                    var light = if (command != null) gateway.execute(command) else gateway.read()
+                    var outcome = LightOutcome.CONFIRMED
+                    if (command == null && build !== NO_BUILD) {
+                        val built = build(light)
+                        if (built == null) outcome = LightOutcome.UNSUPPORTED
+                        else { wrote = true; light = gateway.execute(built) }
+                    }
+                    State(light, message = "Confirmed on your local network") to outcome
                 } catch (_: Exception) {
-                    State(message = if (command == null) "Light unavailable. Check setup and connection, then refresh."
-                        else "Change unconfirmed. Refresh before trying again; it may have applied.")
+                    if (wrote) State(message = "Change unconfirmed. Refresh before trying again; it may have applied.") to LightOutcome.UNCONFIRMED
+                    else State(message = "Light unavailable. Check setup and connection, then refresh.") to LightOutcome.UNAVAILABLE
                 }
-                if (!closed) dispatch { publish(next) }
+                dispatch {
+                    val callback = pending; pending = null
+                    if (closed) { callback?.invoke(LightResult(LightOutcome.CLOSED, state)); return@dispatch }
+                    publish(next); callback?.invoke(LightResult(outcome, next))
+                }
             }
-        } catch (_: RejectedExecutionException) { publish(State(message = "Connection closed")) }
+        } catch (_: RejectedExecutionException) {
+            pending = null
+            publish(State(message = "Connection closed")); done?.invoke(LightResult(LightOutcome.CLOSED, state))
+        }
     }
     override fun close() {
         if (closed) return
-        closed = true; observer = null
+        closed = true; observers.clear()
+        val callback = pending; pending = null
         worker.shutdownNow()
         // Interrupting a worker alone does not release its active socket.
         try { gateway.close() } catch (_: Exception) { /* Cleanup must not crash the screen. */ }
+        callback?.invoke(LightResult(LightOutcome.CLOSED, state))
     }
+    private companion object { val NO_BUILD: (LightState) -> LightCommand? = { null } }
 }

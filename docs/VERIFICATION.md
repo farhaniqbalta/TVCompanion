@@ -178,3 +178,46 @@ Debug builds now log GPU time per look (`gpu mean/max` in the 10 s `TVCAmbient` 
 | aurora, ripples | 1280x720 | ~1 ms | 30 fps |
 
 The user approved how `strings` looks at 540p ("looks fine"). Ambient now opens every look at full size and falls back automatically: if two consecutive 3 s windows each have a mean frame interval over 33.9 ms (first 1 s after a look loads or the surface is created ignored; healthy looks measured 33.33-33.39 ms over 10 s, `dusk` 34.05 ms, so a single stall cannot trigger it), the surface is set to 960x540 and the look is remembered for the process lifetime, so switching back to it goes straight to 540p. Detection is generic, never keyed to look names. Debug builds log `look=<name> fallback=960x540 interval=<mean>us`. Covered by `AmbientDownscaleTest` (JVM); **the automatic fallback itself has not yet been run on the TV**.
+
+## Quick Controls Phase 1 (headless entry points) — 2026-11-22
+
+Branch `feature/quick-controls`. Nothing was installed on the TV.
+
+```sh
+cd android && ./gradlew clean test assembleDebug
+```
+
+- `BUILD SUCCESSFUL`; 331 JVM test results (debug + release variants), 0 failures, 0 errors, 2 skipped (pre-existing). New tests: `LightPresetsTest` (4), `LightControllerTest` (+7, 14 total), `AmbilightFacadeTest` (2), `AmbientShortcutTest` (3), `AirPlayWireTest` (bit 128 → `ambientShowing`).
+- No feature module depends on another feature (`grep "project(':features:"` in feature/integration build files: no matches).
+- iOS packages unchanged (baseline: TVCompanionKit 15/15, TVCompanionAudio 2/2).
+
+Owner device checks (not yet run):
+
+- [x] 1. **PASS (2026-11-22, Claude over adb):** Light screen reads the lamp ("Light is on · Confirmed"); Turn off → confirmed off, Turn on → confirmed on, restored to 10 % white; leave and re-enter keeps the state; presets render. The first read after install returned unavailable once, then succeeded.
+- [x] 2. **PASS:** Start opens the capture prompt via `ConsentActivity` (Stop stays enabled behind it); approve → "Synchronizing · Controller: WLED"; Stop → Ready; home card "Ready". Optional prompt skip (`PROJECT_MEDIA allow`) not tried: currently `ignore`.
+- [x] 3. **Recorded:** `SYSTEM_ALERT_WINDOW: allow` (Android 14). Record the overlay permission: `adb shell appops get id.poncol.tvcompanion SYSTEM_ALERT_WINDOW`. A real background start of `ConsentActivity` and Ambient is the first device check of the Phase 2 plan.
+- [x] 4. **PASS (owner, 2026-11-22):** with AirPlay music, Ambient opens and closes, looks switch, Back closes.
+- [x] 5. **PASS:** Notifications "Listening on port 8766", start after reboot On, overlay allowed; AirPlay "Listening for a connection", background listening On; both services running; no crash log.
+
+## Quick Controls iOS tab — 2026-11-22
+
+Built before the Android control listener (owner's order), so the tab can't reach a real TV yet: against the TV it shows "Can't reach the TV controls".
+
+- `swift test` in `ios/TVCompanionKit`: 20/20 (new: `ControlWire` encoding, pairing proof, full/unknown/oversized/wrong-version responses).
+- `xcodebuild … -destination 'generic/platform=iOS Simulator' build`: BUILD SUCCEEDED.
+- Not yet checked: the tab's look on a device or simulator, and everything end-to-end (pairing, each control, `would_end_playback` confirmation, TV unreachable/forgotten). These are Phase 2 device checks.
+
+## Quick Controls end to end — 2026-11-22
+
+TV: Skyworth (Android 14) at the profile address; iPhone 12 Pro Max running the Controls tab; a temporary Mac probe client (mutual TLS, removed after testing) used to read exact replies.
+
+- **Pairing:** the first attempt failed. The AndroidKeyStore key lacked the raw-RSA purpose Conscrypt uses during the TLS handshake (`INCOMPATIBLE_PADDING_MODE`). Fixed with `PURPOSE_DECRYPT` + `ENCRYPTION_PADDING_NONE` and a new key alias. After the fix: TLS 1.2 ECDHE-RSA; an unpaired client gets `denied`; the iPhone paired with the TV code; the TV shows ✓ and stores the client.
+- **Owner on iPhone, TVCompanion in the background:**
+  - Notifications off/on: pass.
+  - Light on/off and presets: pass.
+  - AirPlay "Available in background": failed, then passed after a fix. The passive AirPlay binding died when AirPlay stopped and never reconnected; it now re-arms on `onBindingDied`. Probe: off → `stopped`, on → `ready, available`.
+  - Ambient visualizer with AirPlay music: failed (same cause), then passed after the fix (owner).
+- **Ambilight:**
+  - Without `PROJECT_MEDIA`, a remote start shows the capture prompt on the TV.
+  - The owner ran `adb shell appops set id.poncol.tvcompanion PROJECT_MEDIA allow`. A remote start then skips the prompt (`ConsentActivity` → `MediaProjectionPermissionActivity` auto-approved, `BAL_ALLOW_VISIBLE_WINDOW`).
+  - The test run ended in `error` because the WLED ESP32 was powered off (`WLED /json/info failed: SocketTimeoutException`). That is the correct report, not a fault.

@@ -22,6 +22,7 @@ class AirPlayService : Service() {
     private var displayObserver: ((AirPlaySnapshot) -> Unit)? = null
     private var destroyed = false
     private var foreground = false
+    private var ambientShowing = false
     private val videoPresentation = VideoPresentationPolicy()
     private lateinit var session: ReceiverSession
     override fun onCreate() {
@@ -35,7 +36,7 @@ class AirPlayService : Service() {
             (if (state.capabilities.video) 1 else 0) or (if (state.capabilities.audio) 2 else 0) or (if (state.capabilities.appVideo) 4 else 0), state.capabilities.width ?: 0, state.capabilities.height ?: 0, state.capabilities.maxFps ?: 0,
             (if (state.keepAvailable) 1 else 0) or (if (state.audioActive) 2 else 0) or (if (state.keepSession) 4 else 0) or
             (if (state.backgroundAudio) 8 else 0) or (if (state.autoOpenVideo) 16 else 0) or
-            (if (state.discoverable) 32 else 0) or (if (state.videoActive) 64 else 0)) }
+            (if (state.discoverable) 32 else 0) or (if (state.videoActive) 64 else 0) or (if (ambientShowing) 128 else 0)) }
         catch (_: RemoteException) { }
     }
     private fun publish(state: AirPlaySnapshot) {
@@ -173,7 +174,14 @@ class AirPlayService : Service() {
         fun openAmbient(callback: AmbientCallback) {
             (engine as? AmbientSource)?.openAmbient(callback) ?: main.post { callback.onOpened(null) }
         }
-        fun detachDisplay() { displayObserver = null; surface = null; engine?.attachSurface(null); session.detachDisplay() }
+        /** Main thread. Reported to observers so remote controls can see whether Ambient is on screen. */
+        fun setAmbientShowing(showing: Boolean) {
+            if (destroyed || ambientShowing == showing) return
+            ambientShowing = showing; revision++
+            val count = clients.beginBroadcast()
+            try { for (index in 0 until count) sendState(clients.getBroadcastItem(index), session.snapshot) } finally { clients.finishBroadcast() }
+        }
+        fun detachDisplay() { setAmbientShowing(false); displayObserver = null; surface = null; engine?.attachSurface(null); session.detachDisplay() }
     }
     private val binder = ReceiverBinder()
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

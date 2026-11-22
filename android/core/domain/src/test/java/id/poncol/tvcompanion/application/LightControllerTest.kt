@@ -128,4 +128,57 @@ class LightControllerTest {
         assertTrue(controller.state.light!!.whiteMode); assertEquals(40, controller.state.light?.brightness)
         controller.close()
     }
+
+    @Test fun readThenExecuteWorksWithoutPriorRefresh() {
+        val worker = Worker(); val lamp = Lamp(); val c = LightController(lamp, { it() }, worker)
+        var result: LightResult? = null
+        c.readThenExecute({ LightCommand.Power(false) }) { result = it }
+        worker.complete()
+        assertEquals(LightOutcome.CONFIRMED, result!!.outcome)
+        assertEquals(false, result!!.state.light?.on); assertEquals(1, lamp.reads); assertEquals(1, lamp.writes)
+    }
+    @Test fun readThenExecuteBuildNullIsUnsupportedWithoutWrite() {
+        val worker = Worker(); val lamp = Lamp(); val c = LightController(lamp, { it() }, worker)
+        var result: LightResult? = null
+        c.readThenExecute({ null }) { result = it }; worker.complete()
+        assertEquals(LightOutcome.UNSUPPORTED, result!!.outcome); assertEquals(0, lamp.writes)
+        assertNotNull(c.state.light) // fresh read still published
+    }
+    @Test fun concurrentCallerGetsBusyAndEachDoneFiresOnce() {
+        val worker = Worker(); val lamp = Lamp(); val c = LightController(lamp, { it() }, worker)
+        val seen = mutableListOf<LightOutcome>()
+        c.refresh { seen += it.outcome }
+        c.readThenExecute({ LightCommand.Power(false) }) { seen += it.outcome }
+        assertEquals(listOf(LightOutcome.BUSY), seen)
+        worker.complete()
+        assertEquals(listOf(LightOutcome.BUSY, LightOutcome.CONFIRMED), seen)
+        assertTrue(worker.tasks.isEmpty())
+    }
+    @Test fun failedWriteIsUnconfirmedAndUiExecuteWithoutStateIsUnsupported() {
+        val worker = Worker(); val lamp = Lamp().apply { failWrite = true }; val c = LightController(lamp, { it() }, worker)
+        var ui: LightResult? = null; c.execute(LightCommand.Power(true)) { ui = it }
+        assertEquals(LightOutcome.UNSUPPORTED, ui!!.outcome)
+        var remote: LightResult? = null; c.readThenExecute({ LightCommand.Power(true) }) { remote = it }; worker.complete()
+        assertEquals(LightOutcome.UNCONFIRMED, remote!!.outcome); assertEquals(1, lamp.writes) // no retry
+    }
+    @Test fun multipleObserversAndCloseHandle() {
+        val worker = Worker(); val c = LightController(Lamp(), { it() }, worker)
+        var a = 0; var b = 0
+        val ha = c.observe { a++ }; c.observe { b++ }
+        ha.close(); c.refresh(); worker.complete()
+        assertEquals(1, a); assertEquals(3, b) // initial + busy + result
+    }
+    @Test fun afterCloseEveryCallCompletesClosed() {
+        val c = LightController(Lamp(), { it() }, Worker()); c.close()
+        var r: LightResult? = null; c.readThenExecute({ LightCommand.Power(true) }) { r = it }
+        assertEquals(LightOutcome.CLOSED, r!!.outcome)
+    }
+    @Test fun closingObserverDoesNotCloseControllerOrDropDone() {
+        val worker = Worker(); val lamp = Lamp(); val c = LightController(lamp, { it() }, worker)
+        val screen = c.observe { }
+        var r: LightResult? = null
+        c.readThenExecute({ LightCommand.Power(false) }) { r = it }
+        screen.close(); worker.complete()
+        assertEquals(LightOutcome.CONFIRMED, r!!.outcome); assertEquals(0, lamp.closes); assertFalse(worker.stopped)
+    }
 }
