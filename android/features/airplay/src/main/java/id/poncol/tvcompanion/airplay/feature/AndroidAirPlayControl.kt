@@ -5,8 +5,9 @@ import android.os.*
 import id.poncol.tvcompanion.airplay.ipc.*
 import id.poncol.tvcompanion.domain.airplay.*
 
-/** Screen-scoped private-service adapter; no native dependency or recurring polling. */
-internal class AndroidAirPlayControl(context: Context) : AirPlayReceiverControl {
+/** Private-service adapter; no native dependency or recurring polling.
+ *  With autoCreate = false it only observes a receiver that is already running and never starts `:airplay`. */
+class AndroidAirPlayControl(context: Context, autoCreate: Boolean = true) : AirPlayReceiverControl {
     private val context = context.applicationContext
     private val main = Handler(Looper.getMainLooper())
     private val observers = linkedSetOf<(AirPlaySnapshot) -> Unit>()
@@ -59,7 +60,7 @@ internal class AndroidAirPlayControl(context: Context) : AirPlayReceiverControl 
         override fun onNullBinding(name: ComponentName?) { if (!closed) disconnected(AirPlayIssue.UNSUPPORTED) }
     }
     init {
-        bound = try { this.context.bindService(Intent().setClassName(this.context.packageName, AirPlayWire.SERVICE), connection, Context.BIND_AUTO_CREATE) }
+        bound = try { this.context.bindService(Intent().setClassName(this.context.packageName, AirPlayWire.SERVICE), connection, if (autoCreate) Context.BIND_AUTO_CREATE else 0) }
         catch (_: RuntimeException) { false }
         if (!bound) publish(AirPlaySnapshot(issue = AirPlayIssue.UNAVAILABLE))
     }
