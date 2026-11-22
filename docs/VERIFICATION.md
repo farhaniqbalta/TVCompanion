@@ -237,11 +237,33 @@ Branch `feature/ambient-ambilight-presets` (started by Codex, finished here; `ma
   - Final version: four fields tied to bass (pushes outward), mids (breathes), treble (shimmers) and an anchor, using smoothed band levels. Colours are blended rather than added (no white fog); per-field brightness swing is capped near 25%. Owner: "okay for now"; not re-measured.
 - **Also fixed:** both new looks used fractional multiples of the phase clocks for hue, which made the colour jump at each clock wrap. They now drift through the palette once per slow-clock cycle (about 3 minutes).
 - **Open:**
-  - The 540p automatic fallback did **not** trigger while Edge Orbit ran at 22 fps. It may have been broken by the queued-look change (`2a4f55b`) and needs a look.
+  - ~~The 540p fallback did not trigger~~ Corrected by the performance audit below: the fallback works. The earlier reading came from a cleared log.
   - The Codex plan's Task 4 (long soak, CPU/PSS with Ambilight off and on, reduced-motion pass) is not done.
 - **Bounce (added; Ripples removed):**
   - The owner's idea: a ball bounces on a black screen and lights the wall it hits, which shows off Ambilight. The path is an analytic billiard (17/23 hits per half clock cycle), so there is no new renderer state. The ball speeds up with louder music.
   - Iterations: the first version measured 14.7–16.3 ms GPU (28–29 fps) and showed a hard-edged dark box where the early exit began. Per-frame maths moved to `bounce.vert` (4 runs per frame), and the splashes and halo now fade gradually into the black. A solid-ball experiment was rejected; the final version uses a glowing ball about a third smaller (radius 0.023). Owner: "it's great". The final build has not been re-measured.
   - A faint rim keeps Ambilight's letterbox rule (dark rows held 15 frames) and blank rule (≤1% edge samples above 12) from misreading the black frame.
   - Ripples is removed; a saved `ripples` choice falls back to Aurora.
+
+## Ambient performance audit — 2026-11-22
+
+Measured on the Skyworth Android 14 TV (4 cores, 1.4 GB RAM) under the heaviest real load: AirPlay music, Ambient on screen and Ambilight capturing at the same time. GPU budget is about 14 ms per frame for 30 fps; screen capture shares the GPU.
+
+| Look | GPU before | GPU after (`4a3f78d`) | Resolution |
+|---|---|---|---|
+| Aurora | 9.3 ms | 9.3 ms | 1280x720 |
+| Strings | 13.5 ms | 13.5 ms | 1280x720 (at the limit) |
+| Slow Dusk | 10.3 ms | 10.3 ms | falls back to 960x540 |
+| Chromatic Flow | 11.1 ms (fell back; 37.6 ms frames at 720p) | 12.1 ms | **1280x720, no fallback** |
+| Edge Orbit | 14.5 ms at 540p (48.9 ms frames at 720p) | 10.2 ms at 540p (34.2 ms frames at 720p) | falls back to 960x540 |
+| Bounce | 10.8 ms | 10.8 ms | 1280x720 |
+
+- **What changed:** per-frame maths moved into `.vert` stages for Edge Orbit and Chromatic Flow (Bounce already had one). All six looks hold 30 fps; the automatic 540p fallback works.
+- **Long frames:** occasional single frames of 80–125 ms every 20–30 s. Not GC (each process collected once in about 3 minutes). Likely GPU contention with capture or system memory pressure; not pursued.
+- **CPU:**
+  - AirPlay native receiver thread 32%; `UxPlayReceiverEngine` worker 13.5%; Ambient render 5%; Ambient audio analysis about 5%.
+  - The analysis takes a 1024-sample window every 512 new samples (about 51/s), keeping beat latency near 12 ms. Its "tap dropped" count is cumulative, analysis-only and about 1–2% of blocks; no change.
+  - Ambilight capture 19%.
+- **Memory:** PSS about 26 MB (main) and 51 MB (`:airplay`). The TV itself had 27 MB free and 395 MB in swap (system-wide).
+- **Not measured yet:** the same sweep with Ambilight off, the idle footprint without music, and a 20–30 minute soak.
 
