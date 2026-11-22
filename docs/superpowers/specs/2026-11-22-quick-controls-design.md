@@ -58,11 +58,15 @@ From the iPhone app, switch existing TV features on and off without walking to t
 
 ## Design
 
+### Phase 0 — baseline
+
+Run the existing Android `./gradlew test` and the iOS Kit/Audio package tests on this branch before any change, and record the results.
+
 ### Phase 1 — headless entry points (no network yet)
 
 The smallest refactor that lets non-UI code drive each feature. The screens move onto the same entry points, so there is one code path per operation.
 
-1. **Light: one shared owner per process.**
+1. **Light: one shared owner per process.** Each remote light command reads then writes inside one worker job, so presets never build on hours-old state. Every path calls `done` exactly once: busy, no state yet, exception, closed.
    - `TVCompanionApplication` lazily owns a single `LightController(TuyaLightGateway)`. `LightController` gains multi-observer `observe(): AutoCloseable` and a per-call completion: `execute(command, done: (Outcome) -> Unit)`, `refresh(done)`.
    - Busy calls are rejected immediately with `BUSY`, never queued.
    - `MainActivity` observes and un-observes instead of closing the controller. The controller and gateway close only when the process dies. `TuyaLightGateway` opens a socket for each operation, so idle cost is zero; check this during implementation.
@@ -74,10 +78,10 @@ The smallest refactor that lets non-UI code drive each feature. The screens move
 3. **Ambient: intent shortcut.** `AirPlayPlaybackActivity` accepts `EXTRA_AMBIENT = open|close` and `EXTRA_LOOK`. It saves the look in its own process (no cross-process prefs writes) and opens or closes only if `AmbientPolicy.canOpen`.
    - Showing/not showing is reported back through one new bit in the existing AIDL snapshot `flags` (`ambientShowing`). Add `ambientShowing` to `AirPlaySnapshot`.
    - The playback activity tells its in-process service when Ambient opens and closes.
-4. **AirPlay:** make `AndroidAirPlayControl` reachable from `:app` (public, or a public factory). No behaviour change.
+4. **AirPlay:** make `AndroidAirPlayControl` reachable from `:app` (public, or a public factory), with an option to bind *without* `BIND_AUTO_CREATE`. `status` must not start `:airplay`: if the service isn't running, report `stopped`. Only `airplay.set {available:true}` auto-creates, and it uses the same path as `ACTION_APP_START`. `setKeepAvailable(true)` already starts the receiver with its default name.
 5. **Notifications:** no change. Reuse `AndroidNotificationRuntime` and the existing `STATE_CHANGED` broadcast.
 
-**Phase 1 checkpoint:** all existing unit tests pass. Add new tests for shared-light serialization (UI + second caller → `BUSY`, completion delivered once, observer close). Debug APK builds. TV screens behave as before (owner device check; nothing is installed by the builder).
+**Phase 1 checkpoint:** all existing unit tests pass. Add new tests for shared-light serialization (UI + second caller → `BUSY`, completion delivered once, observer close). Debug APK builds. **Hard stop:** the builder hands over and waits until the owner has run device checks 1 and 3. Phase 2 starts only after the owner confirms.
 
 ### Phase 2 — control gateway (Android, `:app`, package `app.control`)
 
@@ -91,7 +95,7 @@ The smallest refactor that lets non-UI code drive each feature. The screens move
   - One request and one response per connection. 10 s total deadline per connection; at most 2 concurrent connections, extras refused.
 - **Pairing:**
   - The TV owner opens "Pair iPhone" on a small new TV screen, reached from a home card or row. The TV shows a 6-digit code for 2 minutes.
-  - iOS connects without a pin (pairing only, as `TLSChannel` already allows) and sends `proof = SHA-256(code ‖ clientKeyHash ‖ serverKeyHash)`. Including both key hashes defeats a relay in the middle.
+  - iOS connects without a pin (pairing only, as `TLSChannel` already allows) and sends `proof = SHA-256(code ‖ clientKeyHash ‖ serverKeyHash)`. Binding the key hashes stops a captured proof being replayed to a different server. It does **not** stop an active attacker on the LAN during the 2-minute window: a 6-digit code can be brute-forced offline from the proof. That attacker is out of scope, the same model as Google TV's own pairing. Upgrade if wanted: both screens show 4 digits of `H(clientKeyHash‖serverKeyHash)` and the owner confirms on the TV.
   - On success the TV stores the client key hash (max 4 clients) and iOS stores the server key pin in Keychain for that TV profile.
   - 3 wrong proofs close the window. The same screen has "Forget paired iPhones".
 - **Replay/idempotency:** mutual TLS gives freshness per connection. Every command sets an explicit state (`on: true/false`, `preset: "blue"`), so repeating one is harmless. There's no request-ID cache and no expiry field. Revise `contracts/client-commands-draft.md` to this and promote it to `contracts/controls-v1.md`.
@@ -102,7 +106,7 @@ The smallest refactor that lets non-UI code drive each feature. The screens move
 - **Outcomes:** each command returns the feature's state after the operation, plus one of `ok · pending · busy · unavailable · unconfirmed · needs_setup · needs_approval · invalid · denied`.
   - `pending` is for start-type operations that confirm later (Ambilight, AirPlay); iOS re-reads `status` once after ~2 s and on refresh, without polling.
 - **Dispatcher:** a thin `when` over the command. Each branch calls one Phase 1 entry point under its own timeout (light 6 s, others 5 s). A thrown or timed-out branch returns `unavailable`/`unconfirmed` for that feature only. The dispatcher contains no feature logic.
-- **AirPlay safety:** `airplay.set {available:false}` during a playing session returns `invalid` with reason `playing` unless the request carries `confirm: true`. iOS asks the user first.
+- **AirPlay safety:** `setKeepAvailable(false)` already keeps a connected session alive when `keepSession` is on (the default): `heldInBackground = keepAvailable || (keepSession && connected)`. So only when a session is connected **and** `keepSession` is off does `airplay.set {available:false}` return `invalid` with reason `would_end_playback`, unless the request carries `confirm: true`. iOS then asks the user.
 - **Logging:** no keys, codes, client hashes or addresses in logs.
 
 **Phase 2 checkpoint:** JVM unit tests cover:
@@ -123,7 +127,7 @@ The real TLS listener is exercised once with a local JVM test where feasible. An
   - Refresh on tab appear, on pull-to-refresh, and after each command response. Suspended with the other models on background.
   - Each control shows a spinner while waiting and displays only the state the TV returns. Unreachable TV → one banner and disabled controls.
   - Ambient look picker as a menu.
-  - AirPlay off-while-playing asks "This stops the current playback".
+  - When the TV answers `would_end_playback`, iOS asks "This stops the current playback".
 
 **Phase 3 checkpoint:** iOS Kit tests pass; the app builds for the simulator. The UI is checked against a fake client in previews.
 
@@ -135,7 +139,7 @@ The real TLS listener is exercised once with a local JVM test where feasible. An
 4. AndroidKeyStore key serves TLS; pairing, then status, works from the iPhone; "Forget" locks the iPhone out.
 5. Notifications off from iOS, then back on from iOS. The control link survives.
 6. Bardi on/off/preset after the lamp is re-provisioned; UI and iPhone at the same time → one `busy`.
-7. AirPlay off while playing → iOS confirmation shown; playback continues if declined.
+7. AirPlay off while playing (default settings) → playback continues and the receiver stops after the session ends. With "keep session" off → iOS confirmation shown first.
 
 ## Builder's calls (owner may override)
 
@@ -143,6 +147,7 @@ The real TLS listener is exercised once with a local JVM test where feasible. An
 - `ControlService` runs only while something is paired. Boot start defaults on.
 - Pairing lives on a small new TV screen, not inside an existing feature screen.
 - No request-ID/expiry replay cache; relies on mutual TLS plus explicit-state commands.
+- Pairing threat model: an active LAN attacker during the pairing window is out of scope (no fingerprint confirmation).
 
 ## Left to the builder
 
