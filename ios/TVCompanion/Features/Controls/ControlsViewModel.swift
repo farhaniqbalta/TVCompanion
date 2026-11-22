@@ -9,6 +9,8 @@ import TVCompanionKit
     @Published private(set) var banner: String?
     @Published private(set) var paired = false
     @Published private(set) var pairing = false
+    /// The TV's key no longer matches the stored pin; pairing again overwrites it.
+    @Published private(set) var pinChanged = false
     @Published var confirmAirPlayOff = false
     private let store: TVStore
     private let service: ControlService
@@ -62,7 +64,7 @@ import TVCompanionKit
         pairing = true; defer { pairing = false }
         do {
             try await service.pair(tv, code: code)
-            paired = true; banner = nil
+            paired = true; pinChanged = false; banner = nil
             await refresh()
             return true
         } catch CompanionError.invalidCode {
@@ -73,10 +75,11 @@ import TVCompanionKit
 
     func forget() {
         guard let tv = store.profile else { return }
-        service.forget(tv); paired = false; status = nil; banner = nil
+        service.forget(tv); paired = false; pinChanged = false; status = nil; banner = nil
     }
 
-    func suspend() { generation = UUID(); waiting = []; confirmAirPlayOff = false }
+    /// Drops in-flight replies and the shown state, so returning never shows state the TV didn't just confirm.
+    func suspend() { generation = UUID(); waiting = []; confirmAirPlayOff = false; status = nil }
 
     private func apply(_ response: ControlResponse) {
         if let next = response.status { status = next }
@@ -100,6 +103,7 @@ import TVCompanionKit
             banner = "This iPhone is no longer paired. Pair again."
             return
         }
+        if case CompanionError.certificateChanged = error { pinChanged = true }
         status = nil   // Unreachable or untrusted: show nothing rather than stale state.
         banner = message(for: error)
     }

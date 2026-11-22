@@ -17,13 +17,14 @@ struct ControlsView: View {
                 if let banner = model.banner {
                     Section { Label(banner, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary) }
                 }
-                if store.profile != nil && !model.paired { pairSection }
-                if model.paired { features }
+                if store.profile != nil && (!model.paired || model.pinChanged) { pairSection }
+                if model.paired && !model.pinChanged { features }
             }
             .navigationTitle("Controls")
             .refreshable { await model.refresh() }
             .sheet(isPresented: $setup) { TVSetupView() }
             .onAppear { model.appear() }
+            .onChange(of: store.profile?.id) { _, _ in look = nil }
             .alert("This stops the current playback", isPresented: $model.confirmAirPlayOff) {
                 Button("Turn off", role: .destructive) { model.confirmAirPlayOffNow() }
                 Button("Cancel", role: .cancel) {}
@@ -62,15 +63,15 @@ struct ControlsView: View {
 
     private func ambient(_ ambient: ControlStatus.Ambient) -> some View {
         let showing = ambient.state == "showing"
-        let chosen = look ?? ambient.look ?? ambient.looks.first
+        let chosen = ambient.displayedLook(pending: look)
         return Section("Ambient") {
             row("Visualizer", .ambient, on: showing, enabled: ["available", "showing"].contains(ambient.state) && chosen != nil) { open in
                 model.set(.ambient, .ambient(open: open, look: open ? chosen : nil))
             }
             if !ambient.looks.isEmpty {
+                // While showing, the picker reflects only the TV's look; a pick is a request, not a local change.
                 Picker("Look", selection: Binding(get: { chosen ?? "" }, set: { next in
-                    look = next
-                    if showing { model.set(.ambient, .ambient(open: true, look: next)) }
+                    if showing { model.set(.ambient, .ambient(open: true, look: next)) } else { look = next }
                 })) { ForEach(ambient.looks, id: \.self) { Text($0.capitalized).tag($0) } }
                 .disabled(model.waiting.contains(.ambient))
             }

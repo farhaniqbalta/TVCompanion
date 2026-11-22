@@ -210,4 +210,14 @@ final class CompanionTests: XCTestCase {
         XCTAssertThrowsError(try ControlResponse.decode(Data(#"{"v":2,"outcome":"ok"}"#.utf8))) { XCTAssertEqual($0 as? CompanionError, .malformedMessage) }
         XCTAssertThrowsError(try ControlResponse.decode(Data("nope".utf8))) { XCTAssertEqual($0 as? CompanionError, .malformedMessage) }
     }
+    func testDisplayedLookFollowsTheTVWhileShowingAndDropsUnknownPendingChoices() throws {
+        func ambient(_ state: String, _ look: String?) throws -> ControlStatus.Ambient {
+            let body = #"{"state":"\#(state)","look":\#(look.map { "\"\($0)\"" } ?? "null"),"looks":["aurora","dusk"]}"#
+            return try JSONDecoder().decode(ControlStatus.Ambient.self, from: Data(body.utf8))
+        }
+        XCTAssertEqual(try ambient("showing", "aurora").displayedLook(pending: "dusk"), "aurora")   // TV wins while showing
+        XCTAssertEqual(try ambient("available", "aurora").displayedLook(pending: "dusk"), "dusk")   // pending choice before opening
+        XCTAssertEqual(try ambient("available", "aurora").displayedLook(pending: "neon"), "aurora") // unknown on this TV: dropped
+        XCTAssertEqual(try ambient("available", nil).displayedLook(pending: nil), "aurora")
+    }
 }

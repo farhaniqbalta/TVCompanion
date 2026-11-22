@@ -74,3 +74,11 @@ public struct ControlResponse: Decodable, Equatable {
         return response
     }
 }
+
+public extension ControlStatus.Ambient {
+    /// The look to show in a picker: the TV's look while showing; before opening, the user's pending choice if this TV offers it.
+    func displayedLook(pending: String?) -> String? {
+        if state == "showing" { return look ?? looks.first }
+        return pending.flatMap { looks.contains($0) ? $0 : nil } ?? look ?? looks.first
+    }
+}
