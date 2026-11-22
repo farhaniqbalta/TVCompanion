@@ -20,7 +20,7 @@ for T in ${TARGETS:-27 34}; do
   <uses-feature android:name="android.software.leanback" android:required="false"/>
   <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
   <application android:label="VSS probe $T">
-    <activity android:name="id.poncol.vssprobe.Main" android:exported="true"/>
+    <receiver android:name="id.poncol.vssprobe.Main" android:exported="true"/>
   </application>
 </manifest>
 EOF

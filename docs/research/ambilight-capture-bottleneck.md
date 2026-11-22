@@ -20,7 +20,7 @@ The parts TVCompanion controls make no measurable difference:
 
 All of these leave YouTube at about 11.5 fps (**MEASURED**). The cost is paid per composition of the source frame.
 
-**Decision:** keep the current capture pipeline. Stop optimizing the app side. The only lever available to a normal app is the source resolution, i.e. the YouTube quality setting: 480p gives 30 fps, 720p about 21 fps. A real fix needs vendor work: a faster or GPU detile, or HWC virtual-display composition. See §10. **Open lead (2026-11-22):** the vendor video-snapshot service `IMtkVssService` turned out to be reachable from a plain sideloaded app that targets SDK 27 (§6, §6.1). A frame capture through it is untested.
+**Decision:** keep the current capture pipeline. Stop optimizing the app side. The only lever available to a normal app is the source resolution, i.e. the YouTube quality setting: 480p gives 30 fps, 720p about 21 fps. A real fix needs vendor work: a faster or GPU detile, or HWC virtual-display composition. See §10. **Vendor VSS lead (2026-11-22), closed:** the vendor video-snapshot service `IMtkVssService` is reachable from a plain sideloaded app that targets SDK 27. It initialises and connects to the 1080p video, but none of its frame-delivery paths work on this firmware: the encoder-based ones are unsupported, and the direct one needs a memory address inside the vendor process (§6.1).
 
 ## 2. Device and baseline measurements
 
@@ -136,7 +136,26 @@ A throwaway probe APK (`research/vss-probe/`, built without Gradle) calls the se
 
 Codes 1–17 and 19–20 are INFERRED from function order (the proxy disassembly is consistent with it). Only 18 is confirmed on device.
 
-**Not yet tested:** any stateful call (`Init`, `ConnectEx`, `StartCapture`), an actual frame read, the frame's format and cost, and whether protected (DRM) video is blanked. Frames arrive as `hidl_memory`. Mapping that from an app likely needs native code.
+**Stateful calls (same day, YouTube 1080p playing in the foreground, probe run as a no-UI broadcast receiver).** The service logs each MTAL call under tag `MTAL` (pid 525).
+
+| Call sequence | Result | Label |
+|---|---|---|
+| `init`, `info` before MTAL init | both `-9`; service log `MTVSS_Init() fail, ret=-9` | MEASURED |
+| `Hidl_MTAL_Init` (1) → `MTVSS_Init` (11) → `info` | `0`, `0`, `0`; service log `open /dev/mtal_system ok` | MEASURED |
+| `ConnectEx(0)` (15) → `info` | `0`; info words become `0x02D00500 0 0x00010000 0x04380780 0x6000 0x00010000`, i.e. **1280×720** and **1920×1080** as u16 width/height pairs | MEASURED (values); field meaning INFERRED (capture size and video source size) |
+| `StartCapture` (7) | `-2`; service log `un-supported mtal ioctl: MTAL_IOCTYPE_MTVENC … NR 0x1c` | MEASURED |
+| `TriggerNextframe420` (4) | `-2`; same unsupported `MTVENC` ioctl (NR 0x1f) | MEASURED |
+| `GetHimemeorybuffer` (20) | `ret=0`, empty `hidl_memory` (size 0, no handle) | MEASURED |
+| `SetTrigger` (17) | `0` (26 ms) | MEASURED |
+| `GetframeBuffer(0,0,1280,720,0)` (19) | `-1` | MEASURED |
+| `GetConfig` (6) after init | reply still does not parse as `int32 + one buffer` | MEASURED; layout UNKNOWN |
+| `DisConnectEx(0)` (16) | `0` (cleanup) | MEASURED |
+
+The YouTube activity stayed in the foreground throughout. No crash of the vendor service was seen.
+
+**Why `GetframeBuffer` cannot work remotely.** In `libmtal.so`, `MTVSS_GetFrameBuffer` (0x73d48, Thumb) takes four ints plus a fifth argument that is a destination pointer. It returns `-1` without calling the driver when that pointer is 0. Otherwise it passes it to ioctl `0xc0141f05`, which writes the frame there. Over HIDL that fifth argument is a raw `u32`, so it would be an address inside the vendor service's process. A remote app cannot supply a valid one, and guessing would make the kernel write into arbitrary vendor memory. This was not attempted. SOURCE-CONFIRMED (disassembly).
+
+**Conclusion.** VSS is reachable, initialisable and sees the video, but on this firmware it delivers no frames to an app. The shared-memory paths (`StartCapture`, `TriggerNextframe420` → `GetHimemeorybuffer`/`GetframeBuffer420`) depend on a video-encoder (`MTVENC`) driver function this kernel lacks. The direct path needs an in-process pointer. **Closed as a capture route** (MEASURED + SOURCE-CONFIRMED). The DRM question did not arise, because no frame was obtained.
 
 **Product constraints if it works:** the capture would have to live in a separate helper APK targeting SDK 27. It is an undocumented vendor interface that firmware updates could change. It must not be used if it exposes DRM-protected video.
 
@@ -212,7 +231,7 @@ Blocked:
 | Keep pipeline; use YouTube quality 480p or 720p while ambilight runs | 480p: 30 fps; 720p: ~21 fps (MEASURED). YouTube keeps the chosen quality (owner confirmed) | Softer picture on a 1080p panel |
 | Capture-rate cap (surface detach/reattach) | 2 Hz at 1080p: ~23.5 fps but each capture still hitches ~117 ms; 10 Hz at 720p: ~22 fps with system_server ~45% (MEASURED, earlier session). Owner judged it laggy | Rejected |
 | Change capture output size or format | No effect (MEASURED A/B) | Rejected |
-| Native-format capture (consume the tiled/descriptor frame without conversion) | Only possible where no GPU composition happens: HWC virtual-display composition (not offered, MEASURED) or a vendor capture HAL. `libmtal`/`/dev/mtal` is root-only (MEASURED). `IMtkVssService` is reachable from a targetSdk 27 app (MEASURED, §6.1), but capture through it is untested | Open: VSS frame capture not yet tested |
+| Native-format capture (consume the tiled/descriptor frame without conversion) | Only possible where no GPU composition happens: HWC virtual-display composition (not offered, MEASURED) or a vendor capture HAL. `libmtal`/`/dev/mtal` is root-only (MEASURED). `IMtkVssService` is reachable from a targetSdk 27 app but delivers no frames on this firmware (MEASURED, §6.1) | Blocked for a normal app |
 | Privileged capture APIs | Same SurfaceFlinger GPU path or need a platform signature | Violates constraints; no expected gain |
 | Vendor fix: multithreaded or GPU detile, or HWC virtual-display / writeback support | Would attack the measured 75 ms call directly | Needs the TV vendor (MStar/MediaTek firmware) |
 | Pause capture while high-resolution video plays | Avoids the stall | Owner rejected: no ambilight during YouTube |
@@ -234,7 +253,7 @@ This investigation was initiated and steered by the project owner. AI assistance
   - **investigating alternative capture APIs/mechanisms** rather than only tuning MediaProjection.
 
 - **Rootless vendor capture feasibility:** proposed `/vendor/lib/libmtal.so` as a capture route that bypasses MediaProjection. The owner reports this came from their separate investigation of the MStar VSS capture backend. They then asked whether a user copy of the library could be used. Those two questions led to the feasibility checks in §6. The results ruled out direct unprivileged access to `/dev/mtal`, and the owner decided not to pursue repackaging the vendor library as a production workaround.
-- **VSS service:** asked to check `IMtkVssService`, the service behind the VSS backend from their separate study. Approved building and running the reachability probe and its read-only follow-up (§6.1).
+- **VSS service:** asked to check `IMtkVssService`, the service behind the VSS backend from their separate study. Approved building and running the reachability probe, its read-only follow-up and the stateful capture attempts (§6.1), and kept YouTube playing on the TV during them.
 
   The owner also provided the research brief that defined Experiments A–F and the evidence standards used here.
 
@@ -247,13 +266,13 @@ This investigation was initiated and steered by the project owner. AI assistance
 - Implemented the experiment build (config switcher, harness), ran Experiments A, B, C and F, and attempted E.
 - Analysed the Perfetto traces that identified `IMmDisp::mmDetileFromHtoGB`.
 - At the owner's request, ran the `libmtal.so` checks in §6. Pulled the library and listed its exports and dynamic dependencies, found its device-node references, read the `/dev/mtal` permissions and SELinux policy, and ran the app-UID open test.
-- Found `IMtkVssService` registered in the vendor VINTF manifest and running. Read its SELinux rules (the `untrusted_app_27` grant), built the targetSdk 27/34 probes, recovered the transaction order from the proxy library, and ran the read-only `GetVssVideoInform` call (§6.1).
+- Found `IMtkVssService` registered in the vendor VINTF manifest and running. Read its SELinux rules (the `untrusted_app_27` grant), built the targetSdk 27/34 probes, recovered the transaction order from the proxy library, and ran the read-only `GetVssVideoInform` call and the stateful capture sequence. Disassembled `MTVSS_GetFrameBuffer` in `libmtal.so` to explain its `-1` (§6.1).
 - Researched AOSP sources and documentation.
 
 **Status of the owner's hypotheses:**
 
 - *Pixel-format translation is the bottleneck:* **validated.** The trace shows a synchronous detile/conversion of YouTube's vendor-format frame (`mmDetileFromHtoGB`, ~75 ms at 1080p) whenever the capture display is GPU-composited. In the CLI session the agent first proposed a per-frame conversion by mmdisp, and the owner adopted it and framed it as format translation. The owner also reached this hypothesis independently in their separate study. The measured operation is specifically a detile from the decoder's tiled layout into a YV12 GraphicBuffer.
-- *Native-format capture:* the reasoning is confirmed, since avoiding the conversion is exactly what would fix it. Through the display stack it is **not achievable from a normal app**, because HWC offers no virtual-display composition. `libmtal`/`/dev/mtal` is root-only. **`IMtkVssService` reopens the question:** a targetSdk 27 app can call it (§6.1). Whether it actually delivers frames cheaply, and without exposing DRM content, is untested.
+- *Native-format capture:* the reasoning is confirmed, since avoiding the conversion is exactly what would fix it. Through the display stack it is **not achievable from a normal app**, because HWC offers no virtual-display composition. `libmtal`/`/dev/mtal` is root-only. `IMtkVssService` can be called from a targetSdk 27 app, but its frame paths are unsupported on this firmware or need an in-process pointer (§6.1). It remains the right direction for a vendor-level fix.
 - *Alternative capture APIs:* surveyed in §6. Public SDK and NDK paths all go through the same SurfaceFlinger GPU composition. Privileged and vendor paths are out of scope or inaccessible.
 - *Direct vendor capture through `libmtal.so`:* **ruled out for an unprivileged app.** The library loads, but `/dev/mtal` is closed to app UIDs by both file permissions and SELinux. A repackaged copy hits the same wall. Access would need root, a policy change, or platform signing, all outside the constraints.
 - *Rendering-path difference (Chromecast vs YouTube):* consistent with the evidence (Chromecast's layer is an ordinary RGBA buffer), but the decisive harness experiment (E) is blocked.
@@ -277,4 +296,4 @@ The AOSP HWC pages say nothing about sideband streams. The meaning of `SidebandS
 3. **Optional, Experiment E:** unblock with a decoder-friendly clip to test whether a GPU render path moves or removes the cost.
 4. **Vendor route:** if a vendor contact exists, the evidence to share is the single-threaded CPU detile (`mmDetileFromHtoGB`, ~75 ms per 1080p frame) and the missing HWC virtual-display support.
 5. Remove the experiment build from the TV (reinstall `main`) and keep the branch unmerged as a record.
-6. **VSS (Experiment G):** test `MTVSS_Init` → `ConnectEx` → `StartCapture` → one frame read in the probe, then measure the frame cost and the YouTube fps. Check that DRM video is blanked before considering any product use.
+6. **VSS (Experiment G): closed.** No frame path works on this firmware. If a vendor contact exists, ask whether `MTVENC` VSS support (the `StartCapture`/`TriggerNextframe420` ioctls) can be enabled. That would turn VSS into a proper capture API.

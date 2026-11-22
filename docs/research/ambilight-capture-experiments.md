@@ -221,6 +221,18 @@ targetSdk 34  (u:r:untrusted_app)
        scontext=u:r:untrusted_app tcontext=u:object_r:hal_tv_mtkmtalservice_hwservice
 ```
 
+Stateful sequence (YouTube 1080p in the foreground; the probe is a broadcast receiver, so YouTube is not paused):
+
+```sh
+research/vss-probe/run.sh "mtalinit,init,info"     # 0, 0, info zeros
+research/vss-probe/run.sh "connect:0,info"          # 0, words 47187200 0 65536 70780800 24576 65536
+research/vss-probe/run.sh "start,info,himem"        # start -2 (unsupported MTVENC ioctl), himem size 0
+research/vss-probe/run.sh "next420,himem"           # -2 (unsupported MTVENC ioctl), himem size 0
+research/vss-probe/run.sh "trigger,fb:0/0/1280/720/0,himem"   # 0, -1, size 0
+research/vss-probe/run.sh "disconnect:0,info"       # cleanup: 0
+adb logcat -d | grep ' MTAL'                        # service-side log lines
+```
+
 Struct-size method: the probe reads the reply as `status, int32 ret, buffer`. libhwbinder rejects a `readBuffer` whose length differs from the requested one, so the probe repeats the call with sizes 4, 8, …, 1024 and reports the first that parses.
 
 Related static checks:
