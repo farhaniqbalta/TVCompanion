@@ -87,7 +87,9 @@ void main() {
     highp float back = float(k) * 0.035 * motion;
     ballLight += (0.30 - 0.08 * float(k)) * exp(-sq(length(q - ballAt(ux - back, room)) / (size * 0.9)));
   }
-  light += tint * ballLight;
+  // Both glows reach exactly zero at the early-exit boundary above, so the skipped centre leaves no visible edge.
+  light *= smoothstep(0.36, 0.22, dWall);
+  light += tint * ballLight * smoothstep(0.22, 0.14, dBall);
 
   light /= max(1.0 - 0.35 * dot(vP, vP), 0.45);              // keep edge splashes bright for Ambilight
   col += light * 1.3;
