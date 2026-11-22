@@ -31,3 +31,10 @@
 
 - The owner confirmed live screen sync works on the current 30-LED setup. Screen-sync stop modes and performance remain open.
 - The owner recounted the physical strip and confirmed 60 LEDs. Earlier sync evidence still covers the 30-LED software configuration. Full-strip mapping and operation remain open.
+
+## 2026-11-22 — Full strip, UI and colour follow-up
+
+- Split Ambilight into an everyday screen (status, start/stop, described styles, one brightness stepper, stop choice) and Strip setup (address, Test LEDs, edge-count steppers, layout diagram). Settings save as they change. Styles no longer cap brightness.
+- Installed setup is 129 LEDs on WLED 16.0.1 with a 40/23/41/25 layout. The owner confirmed live screen sync.
+- A dark red scene looked pink on the strip. Screen capture analysis showed raw values sent without gamma, with WLED's realtime gamma disabled. The owner enabled it in WLED.
+- Top and bottom LEDs now sample inside letterbox bars, and style and brightness changes apply during sync. Ambilight JVM tests and app lint pass.
