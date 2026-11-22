@@ -16,6 +16,8 @@ import id.poncol.tvcompanion.designsystem.R as DesignR
 // Constructed programmatically with feature state; intentionally not XML-inflatable.
 @android.annotation.SuppressLint("ViewConstructor")
 class LightScreen(context: Context, private val controller: LightController, back: () -> Unit) : ScrollView(context) {
+    // The controller is shared with other callers; the screen only stops watching it.
+    private var observation: AutoCloseable? = null
     init {
         isFillViewport = true
         val ui = TvUi(context)
@@ -112,7 +114,7 @@ class LightScreen(context: Context, private val controller: LightController, bac
         ui.spacer(root, 12)
         ui.text(root, copy(R.string.light_footer), 13f)
         var initialRead = true
-        controller.observe { state ->
+        observation = controller.observe { state ->
             val light = state.light
             val focused = findFocus()
             status.text = copy(if (light == null) R.string.light_unavailable else if (light.on) R.string.light_on else R.string.light_off)
@@ -165,5 +167,9 @@ class LightScreen(context: Context, private val controller: LightController, bac
             }
         }
         refresh.requestFocus()
+    }
+    override fun onDetachedFromWindow() {
+        observation?.close(); observation = null
+        super.onDetachedFromWindow()
     }
 }

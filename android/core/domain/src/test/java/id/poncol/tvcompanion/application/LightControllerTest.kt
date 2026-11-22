@@ -173,4 +173,12 @@ class LightControllerTest {
         var r: LightResult? = null; c.readThenExecute({ LightCommand.Power(true) }) { r = it }
         assertEquals(LightOutcome.CLOSED, r!!.outcome)
     }
+    @Test fun closingObserverDoesNotCloseControllerOrDropDone() {
+        val worker = Worker(); val lamp = Lamp(); val c = LightController(lamp, { it() }, worker)
+        val screen = c.observe { }
+        var r: LightResult? = null
+        c.readThenExecute({ LightCommand.Power(false) }) { r = it }
+        screen.close(); worker.complete()
+        assertEquals(LightOutcome.CONFIRMED, r!!.outcome); assertEquals(0, lamp.closes); assertFalse(worker.stopped)
+    }
 }
