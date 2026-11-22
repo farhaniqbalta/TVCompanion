@@ -39,10 +39,13 @@ void main() {
              + capFade * (vCapCol0 * along(q.x, vCap0) * (vCap0.z > 0.0 ? top : 1.0 - top)
                         + vCapCol1 * along(q.x, vCap1) * (vCap1.z > 0.0 ? top : 1.0 - top));
 
-  // Ball: a solid disc with a one-pixel anti-aliased edge (no glow, halo or trail).
-  float px = 1.0 / uRes.y;
-  float ball = 1.0 - smoothstep(vBall.z - px, vBall.z + px, dBall);
-  light += vTint * ball;
+  // Ball: white-hot core, a tight halo that fades out on its own, and a short trail.
+  float size = vBall.z;
+  float ball = exp(-sq(dBall / size)) + vBall.w * exp(-dBall / 0.022)
+      + 0.22 * exp(-sq(length(q - vTrailA.xy) / (size * 0.9)))
+      + 0.14 * exp(-sq(length(q - vTrailA.zw) / (size * 0.9)))
+      + 0.06 * exp(-sq(length(q - vTrailB) / (size * 0.9)));
+  light += vTint * ball * smoothstep(0.16, 0.05, dBall);
 
   light /= max(1.0 - 0.35 * dot(vP, vP), 0.45);              // keep edge splashes bright for Ambilight
   col += light * 1.3;

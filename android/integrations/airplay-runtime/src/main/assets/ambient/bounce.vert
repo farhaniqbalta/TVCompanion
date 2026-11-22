@@ -2,7 +2,7 @@
 // Everything here is the same for the whole frame, so it runs 4 times per frame instead of once per pixel.
 const highp float PI = 3.14159265359;
 const highp float TWO_PI = 6.28318530718;
-const float R = 0.035;          // ball radius
+const float R = 0.023;          // ball radius
 const float KX = 17.0;          // wall hits per half clock cycle (integers: the path closes, no jump at wrap)
 const float KY = 23.0;
 
