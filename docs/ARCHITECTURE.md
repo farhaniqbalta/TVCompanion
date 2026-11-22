@@ -52,7 +52,7 @@ Original apps remain independent. Reuse source and tests, never private credenti
 
 ## Future integration contracts
 
-The client-command draft is superseded by [Quick Controls v1](../contracts/controls-v1.md), now implemented (see *Quick Controls gateway* below). The [external receiver control draft](../contracts/external-receiver-control-draft.md) keeps future Binder/AIDL types outside the pure domain and all media processing in the same APK's dedicated receiver process. The private AirPlay control port is implemented in the Phase 2 video preview. See the [Phase 1 implementation record](phase-1/IMPLEMENTATION_CHANGELOG.md).
+The client-command draft is superseded by [Quick Controls v1](../contracts/controls-v1.md), now implemented (see *Quick Controls gateway* below). Notifications deliberately stay on plaintext HTTP for iOS Shortcuts compatibility; the planned move to App Intents over the control channel, and the checks it must pass first, are recorded in [decision 22](DECISIONS.md#notification-transport--2026-11-22). The [external receiver control draft](../contracts/external-receiver-control-draft.md) keeps future Binder/AIDL types outside the pure domain and all media processing in the same APK's dedicated receiver process. The private AirPlay control port is implemented in the Phase 2 video preview. See the [Phase 1 implementation record](phase-1/IMPLEMENTATION_CHANGELOG.md).
 
 ## AirPlay video preview process boundary
 
