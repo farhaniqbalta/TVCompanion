@@ -56,32 +56,37 @@ void main() {
   highp float outside = length(max(e, 0.0)) + min(max(e.x, e.y), 0.0) - RADIUS;
   highp float d = max(-outside, 0.0);                  // distance in from the rounded border
 
+  highp float hb = uPhase.w / TWO_PI;              // one smooth palette loop per slow clock cycle (~3 min)
+  vec3 colA = palette(hb);
+  vec3 colB = palette(hb + 0.5);
+  vec3 bg = uBase * 0.30 + mix(colA, colB, 0.5) * 0.03;
+  // The dark centre (most of the screen) needs none of the orbit work.
+  if (d > 0.42) {
+    fragColor = vec4(finish(bg * (0.92 + 0.12 * uLevel), vP), 1.0);
+    return;
+  }
+
   highp float orbit = orbitOf(q, b);
   float motion = 1.0 - uReduced;
-  highp float head = mix(fract(4.0 * uPhase.x / TWO_PI), 0.125, uReduced);
-  highp float hb = fract(uPhase.y / TWO_PI * 0.30);
+  highp float head = mix(fract(5.0 * uPhase.x / TWO_PI), 0.125, uReduced);   // integer laps per cycle: no jump at wrap
 
   highp float behindA = fract(head - orbit);
   highp float behindB = fract(head + 0.5 - orbit);
   float sA = streak(behindA);
   float sB = streak(behindB);
   if (uReduced < 0.5) {
-    sA += wave(behindA, uBeatAges.x) + wave(behindA, uBeatAges.y) + wave(behindA, uBeatAges.z) + wave(behindA, uBeatAges.w);
-    sB += 0.7 * (wave(behindB, uBeatAges.x) + wave(behindB, uBeatAges.y) + wave(behindB, uBeatAges.z) + wave(behindB, uBeatAges.w));
+    if (behindA < 0.42) sA += wave(behindA, uBeatAges.x) + wave(behindA, uBeatAges.y) + wave(behindA, uBeatAges.z) + wave(behindA, uBeatAges.w);
+    if (behindB < 0.42) sB += 0.7 * (wave(behindB, uBeatAges.x) + wave(behindB, uBeatAges.y) + wave(behindB, uBeatAges.z) + wave(behindB, uBeatAges.w));
   }
 
   // Thin bright core at the border with a soft glow inward; bass breathes the glow, never the core.
-  float core = exp(-sq(d / 0.035));
+  float core = exp(-sq(d / 0.045));
   float glow = exp(-d / (0.11 + motion * 0.05 * uBass));
   float profile = core + 0.55 * glow;
+  vec3 rim = mix(colA, colB, 0.5 + 0.5 * cos(TWO_PI * orbit));   // faint colour all round, so the LEDs never go dark
 
-  vec3 colA = palette(hb);
-  vec3 colB = palette(hb + 0.5);
-  vec3 rim = palette(hb + 0.25 + 0.5 * orbit);          // faint colour all round, so the LEDs never go dark
-
-  vec3 light = profile * (colA * sA * 0.95 + colB * sB * 0.75) + rim * glow * 0.12;
+  vec3 light = profile * (colA * sA * 1.55 + colB * sB * 1.25) + rim * glow * 0.24;
   light /= max(1.0 - 0.35 * dot(vP, vP), 0.45);         // undo the shared vignette at the edges Ambilight samples
-  vec3 col = uBase * 0.55 + palette(hb + 0.25) * 0.035 + light;
-  col *= 0.92 + 0.12 * uLevel;
+  vec3 col = (bg + light) * (0.92 + 0.12 * uLevel);
   fragColor = vec4(finish(col, vP), 1.0);
 }

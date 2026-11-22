@@ -49,7 +49,8 @@ class AmbientShadersTest {
     @Test fun noNonIntegerPhaseMultipliers() {
         val phase = """uPhase\.[xyzw]"""
         val fraction = """\d*\.\d*[1-9]\d*"""
-        val bad = Regex("""$phase\s*\*\s*$fraction|$fraction\s*\*\s*$phase""")
+        // Also catch "uPhase.x / TWO_PI * 0.3": a fractional cycle count jumps when the clock wraps.
+        val bad = Regex("""$phase\s*\*\s*$fraction|$fraction\s*\*\s*$phase|$phase\s*/\s*TWO_PI\s*\*\s*$fraction""")
         dir.listFiles()!!.forEach { assertNull(it.name, bad.find(it.readText())) }
     }
     @Test fun cycleWrapsBothWays() {

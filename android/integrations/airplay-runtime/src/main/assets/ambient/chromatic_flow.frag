@@ -12,7 +12,7 @@ float field(vec2 p, vec2 center, vec2 radius) {
 void main() {
   highp vec2 p = vP / vec2(uAspect, 1.0);
   float motion = 1.0 - 0.88 * uReduced;
-  highp float hb = fract(uPhase.x / TWO_PI * 0.12 + uPhase.w / TWO_PI * 0.03);
+  highp float hb = uPhase.w / TWO_PI;   // whole cycles only, so the hue never jumps when the clock wraps
   float swell = 1.0 + motion * (0.12 * uBass + 0.05 * uPulse);
 
   vec2 c0 = vec2(-0.36, 0.08) + motion * vec2(0.09 * sin(uPhase.x), 0.12 * cos(uPhase.y));
