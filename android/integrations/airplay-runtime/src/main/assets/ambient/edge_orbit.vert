@@ -36,7 +36,7 @@ void main() {
   vRimB = satB * 0.24 * level;
   vBg = (uBase * 0.15 + mix(colA, colB, 0.5) * 0.025) * level;
   highp float head = mix(fract(5.0 * uPhase.x / TWO_PI), 0.125, uReduced);   // integer laps per cycle: no jump at wrap
-  vMisc = vec4(head, 0.11 + motion * 0.05 * uBass, 0.0, 0.0);
+  vMisc = vec4(head, 0.065 + motion * 0.03 * uBass, 0.0, 0.0);   // shallow glow: the light stays on the orbit
   // Unrolled on purpose: no dynamic indexing of outputs (Mali driver safety).
   vWaveAmp = motion * vec4(waveAmp(uBeatAges.x), waveAmp(uBeatAges.y), waveAmp(uBeatAges.z), waveAmp(uBeatAges.w));
   vWavePos = uBeatAges * 0.55;

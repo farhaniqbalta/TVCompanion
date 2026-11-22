@@ -2,7 +2,7 @@
 const highp float PI = 3.14159265359;
 const highp float TWO_PI = 6.28318530718;
 const float RADIUS = 0.30;      // corner radius of the orbit path; removes the mitred "box" seams
-const float REACH = 0.32;       // light ends here; covers Ambilight's sampled bands (~0.21 deep at the sides)
+const float REACH = 0.22;       // light ends here, hugging the edge (Ambilight samples ~0.12 top/bottom, ~0.21 sides)
 
 // Clockwise position (0..1) around a rounded rectangle, starting at the top-left of the top edge.
 highp float orbitOf(highp vec2 q, highp vec2 b) {
@@ -67,7 +67,7 @@ void main() {
   float glow = exp(-d / vMisc.y);
   float rimMix = 0.5 + 0.5 * cos(TWO_PI * orbit);      // faint colour all round, so the LEDs never go dark
   vec3 light = (core + 0.55 * glow) * (vA * sA + vB * sB) + glow * mix(vRimA, vRimB, rimMix);
-  light *= smoothstep(REACH, REACH - 0.12, d);          // soft fade to zero at the boundary: no visible line
+  light *= smoothstep(REACH, REACH - 0.10, d);          // soft fade to zero at the boundary: no visible line
   light /= max(1.0 - 0.35 * dot(vP, vP), 0.45);         // undo the shared vignette at the edges Ambilight samples
   fragColor = vec4(finish(vBg + light, vP), 1.0);
 }
