@@ -255,4 +255,11 @@ final class CompanionTests: XCTestCase {
         XCTAssertEqual(try status(light: "on", preset: nil).lightTile.detail, "On")
         XCTAssertEqual(try status(light: "off", preset: nil).lightTile, ControlTile(isOn: false, enabled: true, detail: "Off"))
     }
+    func testLookIdsBecomeReadableNames() throws {
+        XCTAssertEqual(ControlNames.look("chromatic_flow"), "Chromatic Flow")
+        XCTAssertEqual(ControlNames.look("aurora"), "Aurora")
+        let body = #"{"ambient":{"state":"showing","look":"edge_orbit","looks":["aurora","edge_orbit"]},"ambilight":{"state":"off"},"light":{"state":"off","presets":[]},"notifications":{"state":"paused"},"airplay":{"state":"stopped","available":false}}"#
+        let s = try JSONDecoder().decode(ControlStatus.self, from: Data(body.utf8))
+        XCTAssertEqual(s.ambientTile.detail, "Showing · Edge Orbit")
+    }
 }
