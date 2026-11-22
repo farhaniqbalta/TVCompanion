@@ -206,3 +206,18 @@ Built before the Android control listener (owner's order), so the tab can't reac
 - `swift test` in `ios/TVCompanionKit`: 20/20 (new: `ControlWire` encoding, pairing proof, full/unknown/oversized/wrong-version responses).
 - `xcodebuild … -destination 'generic/platform=iOS Simulator' build`: BUILD SUCCEEDED.
 - Not yet checked: the tab's look on a device or simulator, and everything end-to-end (pairing, each control, `would_end_playback` confirmation, TV unreachable/forgotten). These are Phase 2 device checks.
+
+## Quick Controls end to end — 2026-11-22
+
+TV: Skyworth (Android 14) at the profile address; iPhone 12 Pro Max running the Controls tab; a temporary Mac probe client (mutual TLS, removed after testing) used to read exact replies.
+
+- **Pairing:** the first attempt failed. The AndroidKeyStore key lacked the raw-RSA purpose Conscrypt uses during the TLS handshake (`INCOMPATIBLE_PADDING_MODE`). Fixed with `PURPOSE_DECRYPT` + `ENCRYPTION_PADDING_NONE` and a new key alias. After the fix: TLS 1.2 ECDHE-RSA; an unpaired client gets `denied`; the iPhone paired with the TV code; the TV shows ✓ and stores the client.
+- **Owner on iPhone, TVCompanion in the background:**
+  - Notifications off/on: pass.
+  - Light on/off and presets: pass.
+  - AirPlay "Available in background": failed, then passed after a fix. The passive AirPlay binding died when AirPlay stopped and never reconnected; it now re-arms on `onBindingDied`. Probe: off → `stopped`, on → `ready, available`.
+  - Ambient visualizer with AirPlay music: failed (same cause), then passed after the fix (owner).
+- **Ambilight:**
+  - Without `PROJECT_MEDIA`, a remote start shows the capture prompt on the TV.
+  - The owner ran `adb shell appops set id.poncol.tvcompanion PROJECT_MEDIA allow`. A remote start then skips the prompt (`ConsentActivity` → `MediaProjectionPermissionActivity` auto-approved, `BAL_ALLOW_VISIBLE_WINDOW`).
+  - The test run ended in `error` because the WLED ESP32 was powered off (`WLED /json/info failed: SocketTimeoutException`). That is the correct report, not a fault.
