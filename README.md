@@ -2,85 +2,131 @@
 
 <img src="brand/banner.svg" width="320" alt="TVCompanion logo" />
 
-A local-first Google TV hub with Apple-device clients. Control your room, receive quiet updates, and grow capabilities without coupling the UI to device protocols.
+**Turn a Google TV into a calm, local-first hub for the room, controlled from your iPhone.**
 
-## Platforms
+TVCompanion is an Android TV app and an iPhone/iPad companion. The TV drives the room's smart light, syncs an LED strip to the picture, receives AirPlay from Apple devices, shows quiet notifications, and turns music into a visualizer. The iPhone acts as its remote and control panel. Everything stays on your home network: no cloud, no accounts, no analytics.
 
-| Directory | Target | Status |
-| --- | --- | --- |
-| [`android/`](android/) | **Android TV / Google TV**, with TV screens and D-pad input; not an Android phone app | Bardi light controls, notifications, Ambilight, an integrated AirPlay preview, and the paired-iPhone Quick Controls listener |
-| [`ios/`](ios/) | **iPhone and iPad** companion, with **Mac support planned for evaluation** | Remote v2 controls, voice, `alert`/`alert2` sender and the Controls tab; Phase 3 accepted on the tested setup |
-| [`contracts/`](contracts/) | Integration documentation and synthetic examples | Notification HTTP v1 and Quick Controls v1 contracts |
-| [`docs/`](docs/) | Architecture, design, development and decisions | Foundation documentation |
+<img src="docs/images/tv-home.png" alt="TVCompanion home screen on the TV: Your light, Quiet updates, AirPlay and Ambilight cards" />
 
-Google TV is the primary orchestration host; iPhone, iPad and future Mac software are clients, not peer hubs. The planned AirPlay receiver will be bundled in the single TVCompanion APK and run in a dedicated `:airplay` process, owning discovery, decoding and rendering. Mac media will go directly to that receiver; Binder/AIDL carries control, status and lifecycle events only. AirPlay video is integrated in the same APK as a foreground-only preview. The initial [TV experiment](docs/phase-2/TV_RECEIVER_EXPERIMENT.md) proved Mac extended desktop; the [integrated preview](docs/phase-2/SINGLE_APK_INTEGRATION.md) is now installed and user-confirmed. The newer audio/background candidate is implemented but awaits device review.
+## What it does
 
-`ios/` is the Apple application workspace name, not a claim of current macOS support. Android and Apple applications have independent builds, dependencies, signing, and releases. CleanYourTV remains an external launcher; TVCompanion does not depend on or modify it.
+| | On the TV | From the iPhone |
+|---|---|---|
+| **Smart light** | Power, brightness and colour presets for a Bardi (Tuya) bulb over the local network. Every change is confirmed by reading the lamp back. | On/off and colour presets in the Controls tab |
+| **Ambilight** | Screen capture drives a WLED LED strip around the TV in real time, with Cinema, Responsive and Soft styles | Start and stop remotely |
+| **AirPlay** | A built-in receiver: Mac extended desktop, iPhone mirroring and music, in its own process | Background listening on/off |
+| **Ambient** | Music visualizers that react to the beat and colour the room: Aurora, Strings, Slow Dusk, Chromatic Flow, Edge Orbit and Bounce | Open or close with a chosen look |
+| **Notifications** | Small, dismissible overlays over whatever is playing, with source filters and privacy modes | Send normal or urgent messages, or switch the receiver on/off |
+| **Remote** | | Google TV Remote v2: D-pad, media keys, voice and keyboard |
 
-## Android application
+<table>
+<tr>
+<td><img src="docs/images/tv-light.png" alt="Light screen: the Bardi light is on at 10% white, confirmed on the local network" /></td>
+<td><img src="docs/images/tv-ambilight.png" alt="Ambilight screen: synchronizing with a WLED controller, Cinema style" /></td>
+</tr>
+<tr>
+<td><img src="docs/images/tv-airplay.png" alt="AirPlay screen: listening for a connection, with background options" /></td>
+<td><img src="docs/images/ambient-bounce.png" alt="Bounce Ambient look: a glowing ball on black; magenta and violet light where it hits the edges" /></td>
+</tr>
+</table>
 
-- A TV dashboard with two large feature cards, shared typography, focus states and native vector icons.
-- A compact light-control page and categorized notification settings with local previews, explicit appearance choices and masked pairing details. See the [UI/UX research](docs/UI_UX_RESEARCH.md).
-- Direct Tuya 3.5 LAN light status, power, white brightness and a guarded HSV color-control preview, adapted from the existing Bardi proof of concept. Writes require fresh state and readback; failures remain unconfirmed until refreshed.
-- Notification settings, source filtering, previews, transient non-interactive overlays, expiry, deduplication, and bounded queues, adapted from TVNotify.
-- `alert2` uses the existing notification endpoint and a large, dismissible TV overlay. Existing appearance/privacy settings and queue limits still apply.
-- An AirPlay preview card opens the same APK’s receiver: native networking and video rendering stay in `:airplay`, with a replaceable engine and control-only AIDL. Discovery, session retention, hidden audio and automatic video presentation have separate controls.
-- No background lamp polling, dashboard animation loop, notification history, cloud bridge, analytics, or automatic receiver retry loop. Notification and AirPlay boot starts are independent opt-in choices.
-- Protocol behavior, UI-independent state handling, and transport regression tests.
+*Bounce, bottom right, is built for Ambilight: each time the ball hits an edge, that part of the LED strip lights up in the room.*
 
-The new application identity is `id.poncol.tvcompanion`. It does not replace existing apps or inherit their private settings. Notification reception starts by default once its permissions are granted (see *Receiver defaults*) and uses port **8766**, so it can coexist with TVNotify's 8765 during development. Use one receiver for normal operation to avoid duplicate overlays and resident processes.
+## Engineering highlights
 
-The receiver currently uses authenticated **unencrypted LAN HTTP** inherited from the prototype. Use non-sensitive demo messages on a trusted LAN. Encrypted transport and stronger pairing remain release work. Automatic capture of other iPhone apps' notifications is not implemented or established by this receiver.
+- **Local-first by design.** Devices are controlled directly over the LAN (Tuya 3.5, WLED/DDP, AirPlay, Google TV Remote v2). There is no polling loop, cloud bridge, notification history or telemetry.
+- **Process isolation where it matters.** The AirPlay receiver (native networking, decoding and rendering) runs in a private `:airplay` process. The main app talks to it over a control-only AIDL interface; no media frames cross the boundary.
+- **Secure device control.** The iPhone Controls tab uses **mutual TLS** with an AndroidKeyStore server key, key pinning on both sides and code-based pairing ([contract](contracts/controls-v1.md)). Commands set explicit states, never toggles, and the UI shows only what the TV confirms.
+- **Failure isolation.** Each feature has a headless entry point and fails alone: a lamp that doesn't answer never blocks AirPlay or Ambilight.
+- **A measured GPU budget.** Ambient looks are GLSL shaders against a small contract. Per-frame maths runs in vertex stages; an automatic 540p fallback protects 30 fps; a test fails the build on patterns that make motion jump.
+- **Photosensitivity-aware visuals.** The music-reactive looks avoid flashes and per-beat colour steps, use smoothed audio envelopes, and cap brightness swings.
 
-The [iPhone/iPad app](ios/README.md) pairs with Google TV Remote v2 for D-pad, media keys, voice and focused TV text entry, and sends `alert`/`alert2` messages through the TVCompanion notification receiver. Its pure protocol kit, Keychain-backed credentials, network adapters and SwiftUI views have separate boundaries. Local builds pass, and the user reports Phase 3 device acceptance on the tested setup.
+## Architecture
 
-## Phase 3 — iPhone and iPad companion
-
-Phase 3 is merged into `main` and accepted for the tested home setup by user report. It includes the native iPhone/iPad remote, notification sender, TV-side urgent `alert2` overlay, and the subsequent iOS remote redesign. See the [Phase 3 acceptance record](docs/phase-3/README.md). The combined Android preview uses versionCode 21. On the TV, **Notifications → Start after TV reboot** restores the notification listener; **AirPlay → Start after TV reboot** restores Background listening, Keep session connected, and Background audio. Both choices default off and require notification permission; the notification listener also requires overlay permission. Boot starts the AirPlay receiver, not a past sender session.
-
-**Receiver defaults.** Opening TVCompanion starts the notification listener (when notifications and overlay permission are granted) and AirPlay Background listening (when notifications are granted), once per app process; Background audio is on by default. Nothing is saved: a receiver or option the user turns off stays off until the main app process restarts (a boot start counts as that process's start). After an app update or reinstall (`MY_PACKAGE_REPLACED`) both receivers restart with the same permission checks. Android does not let a freshly installed app start itself, so a first install starts its receivers on the first launch after notification (and, for notifications, overlay) permission is granted; on Android 13+ that permission is not granted at install. Boot behaviour is unchanged and still follows the two *Start after TV reboot* choices.
-
-## Quick Controls — iPhone and iPad
-
-The iOS **Controls** tab switches TV features without opening their TV screens: Ambient (visualizer and look, while AirPlay music plays), Ambilight start/stop, the Bardi light (power and colour presets), the notification receiver and AirPlay background listening. Tiles show only the state the TV confirms; there is no background polling.
-
-- **Pairing:** on the TV choose **Pair iPhone for Controls** on Home and enter the 6-digit code on the iPhone. Up to four iPhones or iPads can be paired; the same screen forgets them.
-- **Transport:** mutual TLS on port 7380 with an AndroidKeyStore server key and pinned keys on both sides ([contract](contracts/controls-v1.md)). The notification PIN is never used for controls.
-- **TV side:** a main-process foreground service that runs only while a device is paired or a code is showing. Each command goes through the feature's own headless entry point, so a failed or disabled feature never blocks the others.
-- **Ambilight without the TV prompt:** optional, see [Android setup](docs/ANDROID_SETUP.md#iphone-quick-controls).
-
-Design: [Quick Controls design](docs/superpowers/specs/2026-11-22-quick-controls-design.md). Device results: [verification](docs/VERIFICATION.md).
-
-## Phase 1 refactor
-
-The `review/phase-1-architecture` branch contains a targeted refactor: owned Tuya cancellation and fragmented-read deadlines, typed notification lifecycle state, and testable listener/overlay session coordination. The accepted Phase 1 candidate was `0.3.0-phase1-preview`, with 59 passing tests and zero lint findings, with installation and lamp/notification functionality now user-confirmed. See [implementation details](docs/phase-1/IMPLEMENTATION_CHANGELOG.md). The command endpoint remains design-only. The Phase 2 preview now implements the private receiver IPC boundary; no external command server is added.
-
-## Phase 2 integration
-
-`0.4.0-airplay-preview` bundles the receiver in the single TVCompanion APK. The main-process AirPlay screen controls a private `:airplay` service through AIDL; JNI, native networking, MediaCodec and the playback surface stay in that process. See the [integration record](docs/phase-2/SINGLE_APK_INTEGRATION.md) and [architecture decision](docs/DECISIONS.md#phase-2-packaging-correction--2026-10-28).
-
-The `0.7.0-airplay-app-video-preview` candidate adds sender takeover and experimental in-app HLS playback, plus grouped TV controls, per-setting explanations, actionable recovery, accurate media/discovery status and playback controls that appear on remote interaction. It separates **Background listening**, **Keep session connected**, **Background audio** and **Auto-open incoming video**; all four now default on (see *Receiver defaults* below). Open **AirPlay → Open receiver**, then choose **TVCompanion** on the sender. A retained connection can outlive playback without remaining discoverable; hidden audio requires both session retention and Background audio. Incoming video opens once when enabled and Android permits. Open/Stop controls remain in the app, with an ongoing foreground-service notification where the TV exposes it. See [audio/background implementation and pending device review](docs/phase-2/AUDIO_AND_BACKGROUND.md), including Spotify AirPlay setup. The optional [lab](experiments/airplay-lab/README.md) reuses the same runtime/engine and is not a production dependency.
-
-The **0.6.0 Bardi color preview** adds six presets, hue/saturation/color-brightness steps and a return to white mode. New writes require supported fresh status and separate readback; color never turns power on implicitly. Local checks pass, and the user confirmed the requested color controls work on the lamp. See [profile, behavior and verification](docs/BARDI_COLOR_CONTROL.md).
-
-## Get started
-
-See [Android setup](docs/ANDROID_SETUP.md) for build requirements, optional development provisioning, and notification setup. Actual checks and remaining gaps are recorded in [verification](docs/VERIFICATION.md). No device credentials or signing secrets are required to build or run unit tests.
-
-```sh
-python3 scripts/prepare-airplay-native.py
-cd android
-./gradlew :app:assembleDebug :core:domain:test :integrations:airplay-runtime:testDebugUnitTest :ipc:airplay-contract:testDebugUnitTest :integrations:tuya-lan:testDebugUnitTest :features:notifications:testDebugUnitTest :app:lintDebug
+```mermaid
+flowchart LR
+  subgraph iPhone["iPhone / iPad (SwiftUI)"]
+    Remote["Remote tab"]
+    Send["Send message"]
+    Controls["Controls tab"]
+  end
+  subgraph TV["Google TV — single APK"]
+    subgraph Main["main process"]
+      Gateway["ControlService<br/>mutual TLS :7380"]
+      Notify["Notification receiver<br/>HTTP :8766"]
+      Light["LightController → Tuya LAN"]
+      Amb["Ambilight capture → WLED"]
+    end
+    subgraph AirPlayProc[":airplay process"]
+      Receiver["AirPlay receiver<br/>native"]
+      Ambient["Ambient visualizer<br/>GLSL"]
+    end
+  end
+  Remote -- "Google TV Remote v2 (TLS)" --> TV
+  Send -- "notification v1" --> Notify
+  Controls -- "controls v1" --> Gateway
+  Gateway --> Light
+  Gateway --> Amb
+  Gateway --> Notify
+  Gateway -- "AIDL, control only" --> Receiver
+  Receiver --> Ambient
 ```
 
-Full APK builds require JDK 17, Android SDK/build-tools 34, NDK 27.2.12479018 and SDK CMake 3.22.1. The preparation script verifies and caches pinned native dependencies. This preview targets the validated TV’s 32-bit ARM ABI; it is not a general Play Store release. The APK is `android/app/build/outputs/apk/debug/app-debug.apk`. This is a development foundation, not a production release. The app is installed and basic functionality is user-confirmed; broader lifecycle and overlay coexistence still require real-device validation; benchmark work is intentionally out of scope.
+The Android code is split into `core` (domain, design system, Ambilight engine), `features` (screens and services), `integrations` (Tuya, AirPlay runtime, native receiver) and `ipc`. The iOS app keeps its wire formats and state logic in a tested Swift package (`TVCompanionKit`). See [architecture](docs/ARCHITECTURE.md) and [decisions](docs/DECISIONS.md).
 
-## Architecture and contribution
+## Security model
 
-Read [architecture](docs/ARCHITECTURE.md), [design](docs/DESIGN.md), [decisions](docs/DECISIONS.md), and [contribution guidelines](CONTRIBUTING.md). Keep UI replaceable, normalize vendor state behind adapters, and introduce abstractions only at real boundaries.
+| Channel | Protection | Notes |
+|---|---|---|
+| iPhone Controls → TV | Mutual TLS; both keys pinned at pairing | 6-digit pairing code, up to 4 devices, at most 2 connections, 10 s deadline per request |
+| iPhone Remote → TV | Google TV Remote v2 TLS, pinned | The TV's own remote service |
+| Notifications → TV | **Plaintext HTTP + PIN**, LAN only | An accepted, documented risk that keeps iOS Shortcuts automations working; notifications are display-only. The planned move to App Intents over the secure channel is in [decision 22](docs/DECISIONS.md#notification-transport--2026-11-22). |
 
-No repository license has been selected yet. See [source provenance](docs/PROVENANCE.md) for reused components. Do not assume an open-source license from repository visibility alone.
+Known open items, such as the connection-slot exhaustion limit, are tracked in [verification](docs/VERIFICATION.md).
 
-The [licensing assessment](docs/LICENSE_COMPLIANCE.md) records proposed release obligations and unresolved ownership/dependency checks; the [receiver boundary review](docs/phase-2/RECEIVER_BOUNDARY_REVIEW.md) proposes build-time replacement of the native receiver. Neither document adopts a license or implements AirPlay.
+## Measured performance
 
-The latest AirPlay investigation candidate is local and **not installed** at the user's request. Sender replacement and YouTube in-app playback require device validation; Crunchyroll/protected-video support is not promised. See [implementation, limits and test matrix](docs/phase-2/SESSION_AND_APP_VIDEO_REVIEW.md).
+Measured on the test TV (4 cores, 1.4 GB RAM) with AirPlay music, Ambient and Ambilight all running ([full audit](docs/VERIFICATION.md#ambient-performance-audit--2026-11-22)):
+
+- **All six Ambient looks hold 30 fps.** GPU time is 9–13.5 ms per frame against a budget of about 14 ms.
+- **Idle in the background:** about 1% CPU, no wake locks or alarms, about 78 MB total memory.
+- **Ambilight capture:** about 19% of one core while running.
+
+## Repository layout
+
+| Path | What's inside |
+|---|---|
+| [`android/`](android/) | The Android TV app (Kotlin, single APK, `:airplay` process, native receiver via NDK) |
+| [`ios/`](ios/) | The iPhone/iPad companion (SwiftUI) and its Swift packages |
+| [`contracts/`](contracts/) | Wire contracts: [notifications v1](contracts/notifications-v1.md) and [Quick Controls v1](contracts/controls-v1.md) |
+| [`docs/`](docs/) | Architecture, decisions, design notes, verification records and history |
+
+## Getting started
+
+Requirements: JDK 17, Android SDK 34, NDK 27.2.12479018 and CMake 3.22.1 for the TV app; Xcode 16+ (iOS 17+) for the companion. No device credentials or signing secrets are needed to build or run the tests.
+
+```sh
+# Android TV app
+python3 scripts/prepare-airplay-native.py        # fetches and verifies pinned native dependencies
+cd android && ./gradlew test :app:assembleDebug  # APK: android/app/build/outputs/apk/debug/app-debug.apk
+
+# iPhone/iPad app
+swift test --package-path ios/TVCompanionKit
+xcodebuild -project ios/TVCompanion.xcodeproj -scheme TVCompanion -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+```
+
+Then follow [Android setup](docs/ANDROID_SETUP.md) to install the app, provision the light, set up notifications and pair the iPhone. The [iOS guide](ios/README.md) covers pairing the remote.
+
+> **Status:** a personal project, tested on one home setup (a Skyworth Google TV on Android 14, an iPhone 12 Pro Max, a Bardi RGBWW bulb and a WLED strip). The native receiver targets that TV's 32-bit ARM ABI. It is not a store release.
+
+## How it was built
+
+TVCompanion is developed with AI coding assistants (Claude Code and Codex); their commits carry co-author trailers. The maintainer owns the product direction, the design and security decisions, and acceptance: every feature here was tested on the real TV and devices, and several AI proposals were rejected or reworked along the way (see [verification](docs/VERIFICATION.md) and [decisions](docs/DECISIONS.md)). Phase-by-phase detail is in the [project history](docs/PROJECT_HISTORY.md).
+
+## Documentation
+
+[Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) · [Design](docs/DESIGN.md) · [Verification](docs/VERIFICATION.md) · [Android setup](docs/ANDROID_SETUP.md) · [iOS](ios/README.md) · [Contributing](CONTRIBUTING.md) · [Provenance](docs/PROVENANCE.md) · [Licence assessment](docs/LICENSE_COMPLIANCE.md)
+
+## License
+
+No license has been chosen yet, so all rights are reserved. Don't assume an open-source license from the repository being public. Reused components and their origins are listed in [source provenance](docs/PROVENANCE.md).
