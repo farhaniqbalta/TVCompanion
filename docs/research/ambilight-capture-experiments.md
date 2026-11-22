@@ -195,6 +195,54 @@ AV1/SurfaceView delivered 1 frame: buffer 1920x1080, 3037.50 KiB, format 0x15 (n
 - A **synchronous compositor stall** is claimed only from trace evidence: a vendor slice nested in SurfaceFlinger's composition, with the present count dropping in step. Low fps alone isn't enough.
 - **CPU vs hardware wait:** the share of a slice's wall time during which its thread was `Running` in `sched_slice`.
 
+## Experiment G: IMtkVssService probe
+
+The probe source (`research/vss-probe/`: `Main.java`, `build.sh`, `run.sh`) was deleted after the research. Recover it with `git checkout 2fc80ec -- research/vss-probe` to rerun the commands below.
+
+```sh
+research/vss-probe/build.sh                 # builds out/vssprobe27.apk and out/vssprobe34.apk
+TARGETS=27 research/vss-probe/build.sh      # SDK 27 only
+adb install -r -t research/vss-probe/out/vssprobe27.apk
+adb logcat -c; adb shell am start -W -n id.poncol.vssprobe27/id.poncol.vssprobe.Main
+adb logcat -d -s 'VssProbe:*'
+adb shell 'ps -A -o LABEL,NAME | grep vssprobe'   # confirms untrusted_app_27 vs untrusted_app
+```
+
+Raw output (2026-11-22):
+
+```
+targetSdk 27  (u:r:untrusted_app_27)
+  getService -> android.os.HwRemoteBinder@b2e677f0
+  ping ok
+  descriptor -> vendor.mediatek.tv.mtkmtalservice@1.0::IMtkVssService
+  GetVssVideoInform ret=-9 size=24 words: 00000000 00000000 00000000 00000000 00000000 00000000
+  GetConfig no struct size in 4..1024 matched
+targetSdk 34  (u:r:untrusted_app)
+  java.util.NoSuchElementException at android.os.HwBinder.getService
+  avc: denied { find } for interface=vendor.mediatek.tv.mtkmtalservice::IMtkVssService
+       scontext=u:r:untrusted_app tcontext=u:object_r:hal_tv_mtkmtalservice_hwservice
+```
+
+Stateful sequence (YouTube 1080p in the foreground; the probe is a broadcast receiver, so YouTube is not paused):
+
+```sh
+research/vss-probe/run.sh "mtalinit,init,info"     # 0, 0, info zeros
+research/vss-probe/run.sh "connect:0,info"          # 0, words 47187200 0 65536 70780800 24576 65536
+research/vss-probe/run.sh "start,info,himem"        # start -2 (unsupported MTVENC ioctl), himem size 0
+research/vss-probe/run.sh "next420,himem"           # -2 (unsupported MTVENC ioctl), himem size 0
+research/vss-probe/run.sh "trigger,fb:0/0/1280/720/0,himem"   # 0, -1, size 0
+research/vss-probe/run.sh "mtalinit,init,connect:0,info,fb420:1382400,disconnect:0"   # fb420: FAILED_TRANSACTION, avc denied fd use
+research/vss-probe/run.sh "mtalinit,init,connect:0,fb420a:1382400,trigger,fb420a:1382400,disconnect:0"   # allocator buffer: reaches service, -2 unsupported MTVENC ioctl
+research/vss-probe/run.sh "disconnect:0,info"       # cleanup: 0
+adb logcat -d | grep ' MTAL'                        # service-side log lines
+```
+
+Struct-size method: the probe reads the reply as `status, int32 ret, buffer`. libhwbinder rejects a `readBuffer` whose length differs from the requested one, so the probe repeats the call with sizes 4, 8, …, 1024 and reports the first that parses.
+
+Related static checks:
+- `lshal -i`, the `/vendor/etc/vintf/manifest.xml` entry for `vendor.mediatek.tv.mtkmtalservice`, `vendor_hwservice_contexts`, and the compiled policy (`vendor_sepolicy.cil` + `plat_sepolicy.cil`) grep for `hal_tv_mtkmtalservice`.
+- `libmtal.so`: `llvm-nm -D`, `llvm-readelf -d`, `strings`; `ls -lZ /dev/mtal`; `run-as id.poncol.tvcompanion sh -c 'exec 3</dev/mtal'` → `Permission denied`.
+
 ## Known limitations
 
 - One device, one YouTube video, one firmware build. Each condition was measured in short windows (3 × 2.2 s, 10 s traces).
