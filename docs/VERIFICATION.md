@@ -221,3 +221,68 @@ TV: Skyworth (Android 14) at the profile address; iPhone 12 Pro Max running the 
   - Without `PROJECT_MEDIA`, a remote start shows the capture prompt on the TV.
   - The owner ran `adb shell appops set id.poncol.tvcompanion PROJECT_MEDIA allow`. A remote start then skips the prompt (`ConsentActivity` → `MediaProjectionPermissionActivity` auto-approved, `BAL_ALLOW_VISIBLE_WINDOW`).
   - The test run ended in `error` because the WLED ESP32 was powered off (`WLED /json/info failed: SocketTimeoutException`). That is the correct report, not a fault.
+
+## Ambient looks: Edge Orbit and Chromatic Flow — 2026-11-22
+
+Branch `feature/ambient-ambilight-presets` (started by Codex, finished here; `main` merged in). Debug builds installed on the Skyworth Android 14 TV; owner judged the looks with AirPlay music.
+
+- **Tests:** `:integrations:airplay-runtime:testDebugUnitTest`, `:core:ambilight-engine:test`, `:app:testDebugUnitTest`, `:app:assembleDebug` pass. `AmbientShadersTest` 12/12 with `AMBIENT_GLSLC` set to the NDK `glslc` (no skips). The compiler caught a reserved word (`half`) and the phase test caught a fractional multiplier during the iterations. iOS `TVCompanionKit` 26/26.
+- **Edge Orbit (accepted "good enough for now"):**
+  - Iteration 1 (rainbow edge with a comet per beat) and iteration 2 (the original two ribbons with a positional beat kick) were rejected: too busy, then "clunky".
+  - Final version: a rounded orbit path (radius 0.30, no corner seams), two head-and-tail streaks on a bold cyan/violet/magenta/amber path, and beats as waves running down each tail. 5 laps per clock cycle (owner asked for it faster). Light ends 0.32 in from the edge with a 0.12 soft fade; the dark centre exits early.
+  - Performance: the first streak version measured 45 ms per frame (22 fps, GPU 20.7 ms). After the early exit and fewer palette lookups it is expected at 30 fps; the final build was not re-measured.
+- **Chromatic Flow:**
+  - A beat-flash version was withdrawn as a photosensitivity risk (per-beat hue steps and an edge flash).
+  - The calm version measured 30 fps (GPU 7.5 ms) but was not responsive enough.
+  - Final version: four fields tied to bass (pushes outward), mids (breathes), treble (shimmers) and an anchor, using smoothed band levels. Colours are blended rather than added (no white fog); per-field brightness swing is capped near 25%. Owner: "okay for now"; not re-measured.
+- **Also fixed:** both new looks used fractional multiples of the phase clocks for hue, which made the colour jump at each clock wrap. They now drift through the palette once per slow-clock cycle (about 3 minutes).
+- **Open:**
+  - ~~The 540p fallback did not trigger~~ Corrected by the performance audit below: the fallback works. The earlier reading came from a cleared log.
+  - The Codex plan's Task 4 (long soak, CPU/PSS with Ambilight off and on, reduced-motion pass) is not done.
+- **Bounce (added; Ripples removed):**
+  - The owner's idea: a ball bounces on a black screen and lights the wall it hits, which shows off Ambilight. The path is an analytic billiard (17/23 hits per half clock cycle), so there is no new renderer state. The ball speeds up with louder music.
+  - Iterations: the first version measured 14.7–16.3 ms GPU (28–29 fps) and showed a hard-edged dark box where the early exit began. Per-frame maths moved to `bounce.vert` (4 runs per frame), and the splashes and halo now fade gradually into the black. A solid-ball experiment was rejected; the final version uses a glowing ball about a third smaller (radius 0.023). Owner: "it's great". The final build has not been re-measured.
+  - A faint rim keeps Ambilight's letterbox rule (dark rows held 15 frames) and blank rule (≤1% edge samples above 12) from misreading the black frame.
+  - Ripples is removed; a saved `ripples` choice falls back to Aurora.
+
+## Ambient performance audit — 2026-11-22
+
+Measured on the Skyworth Android 14 TV (4 cores, 1.4 GB RAM) under the heaviest real load: AirPlay music, Ambient on screen and Ambilight capturing at the same time. GPU budget is about 14 ms per frame for 30 fps; screen capture shares the GPU.
+
+| Look | GPU before | GPU after (`4a3f78d`) | Resolution |
+|---|---|---|---|
+| Aurora | 9.3 ms | 9.3 ms | 1280x720 |
+| Strings | 13.5 ms | 13.5 ms | 1280x720 (at the limit) |
+| Slow Dusk | 10.3 ms | 10.3 ms | falls back to 960x540 |
+| Chromatic Flow | 11.1 ms (fell back; 37.6 ms frames at 720p) | 12.1 ms | **1280x720, no fallback** |
+| Edge Orbit | 14.5 ms at 540p (48.9 ms frames at 720p) | 10.2 ms at 540p (34.2 ms frames at 720p) | falls back to 960x540 |
+| Bounce | 10.8 ms | 10.8 ms | 1280x720 |
+
+- **What changed:** per-frame maths moved into `.vert` stages for Edge Orbit and Chromatic Flow (Bounce already had one). All six looks hold 30 fps; the automatic 540p fallback works.
+- **Long frames:** occasional single frames of 80–125 ms every 20–30 s. Not GC (each process collected once in about 3 minutes). Likely GPU contention with capture or system memory pressure; not pursued.
+- **CPU:**
+  - AirPlay native receiver thread 32%; `UxPlayReceiverEngine` worker 13.5%; Ambient render 5%; Ambient audio analysis about 5%.
+  - The analysis takes a 1024-sample window every 512 new samples (about 51/s), keeping beat latency near 12 ms. Its "tap dropped" count is cumulative, analysis-only and about 1–2% of blocks; no change.
+  - Ambilight capture 19%.
+- **Memory:** PSS about 26 MB (main) and 51 MB (`:airplay`). The TV itself had 27 MB free and 395 MB in swap (system-wide).
+- **Ambilight off** (same session; Slow Dusk and Edge Orbit already at 540p because the fallback lasts for the process lifetime):
+
+  | Look | GPU, Ambilight on | GPU, Ambilight off |
+  |---|---|---|
+  | Bounce | 10.8 ms | 10.7 ms |
+  | Aurora | 9.3 ms | 9.0 ms |
+  | Strings | 13.5 ms | 13.3 ms |
+  | Slow Dusk | 10.3 ms | 10.1 ms |
+  | Chromatic Flow | 12.1 ms | 11.8 ms |
+  | Edge Orbit | 10.2 ms | 10.0 ms |
+
+  Capture costs the looks only 0.1–0.4 ms of GPU but about 19% CPU in the main process. With capture off, the occasional 80–125 ms frames disappear (longest about 37 ms outside look switches). So the hitches, and likely the Slow Dusk and Edge Orbit fallbacks, come from capture competing with the display.
+- **Short soak** (stopped at the owner's request after 2 minutes, Edge Orbit, Ambilight off): steady 33.3 ms frames, longest 39 ms, GPU about 10 ms. PSS 25.5→26.9 MB (main) and 51.2→54.0 MB (`:airplay`); too short to call growth.
+- **Idle in the background** (no music, Ambient closed, TV on the launcher):
+  - CPU about 1.1% (main) and 0.2% (`:airplay`) over 10 s.
+  - No wake locks or alarms held by TVCompanion. While the AirPlay playback screen stays open it keeps the screen on, as intended.
+  - PSS 26.8 MB (main) and 51.6 MB (`:airplay`).
+  - Three foreground services stay up (Quick Controls listener, AirPlay background listening, notification receiver). `:airplay` stays resident because background listening is on.
+- **Not done:** a 20–30 minute soak (skipped by the owner).
+- **Follow-up (`7def36f`):** at the owner's request, Edge Orbit's glow is shallower (0.11 → 0.065) and its light ends at 0.22 instead of 0.32, keeping the light on the orbit. This should only make it cheaper; not re-measured.
+

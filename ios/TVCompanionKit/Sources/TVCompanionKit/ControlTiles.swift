@@ -36,7 +36,7 @@ public extension ControlStatus {
         }
     }
     var ambientTile: ControlTile {
-        let look = (ambient.look ?? ambient.looks.first)?.capitalized
+        let look = (ambient.look ?? ambient.looks.first).map(ControlNames.look)
         switch ambient.state {
         case "showing": return ControlTile(isOn: true, enabled: true, detail: look.map { "Showing · \($0)" } ?? "Showing")
         case "available": return ControlTile(isOn: false, enabled: look != nil, detail: look.map { "Off · \($0)" } ?? "Off")
@@ -65,4 +65,9 @@ public extension ControlStatus {
         default: return .unknown
         }
     }
+}
+
+/// Readable names for wire IDs such as `chromatic_flow`.
+public enum ControlNames {
+    public static func look(_ id: String) -> String { id.replacingOccurrences(of: "_", with: " ").capitalized }
 }

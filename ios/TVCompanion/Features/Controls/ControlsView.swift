@@ -168,7 +168,7 @@ struct ControlsView: View {
         let current = s.ambient.displayedLook(pending: nil)
         ForEach(s.ambient.looks, id: \.self) { look in
             Button { model.set(.ambient, .ambient(open: true, look: look)) } label: {
-                Label(s.ambient.state == "showing" ? look.capitalized : "Show with \(look.capitalized)",
+                Label(s.ambient.state == "showing" ? ControlNames.look(look) : "Show with \(ControlNames.look(look))",
                       systemImage: current == look && s.ambient.state == "showing" ? "checkmark" : "sparkles")
             }
         }
