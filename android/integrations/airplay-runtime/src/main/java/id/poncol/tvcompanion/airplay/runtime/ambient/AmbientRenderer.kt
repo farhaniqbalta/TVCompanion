@@ -3,6 +3,7 @@ package id.poncol.tvcompanion.airplay.runtime.ambient
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.opengl.EGL14
+import android.opengl.EGLContext
 import android.opengl.GLES30.*
 import android.opengl.GLSurfaceView
 import android.os.Handler
@@ -30,6 +31,7 @@ internal class AmbientRenderer(
     private val motion = AmbientMotion(reduced)
     private val frame = FloatArray(AmbientFrame.SIZE)
     private val loc = IntArray(AmbientShaders.UNIFORMS.size)
+    private var ownerContext: EGLContext? = null
     private var program = 0
     private var vbo = 0
     private var width = 1f
@@ -52,9 +54,11 @@ internal class AmbientRenderer(
     private var maxGpuNs = 0L
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) = guard {
+        // Names from a lost context can be reused by the new one.
+        clearGlHandles()
+        ownerContext = EGL14.eglGetCurrentContext()
         val bits = IntArray(1).also { glGetIntegerv(GL_RED_BITS, it, 0) }[0]
         if (bits < 8) throw IllegalStateException("GL_RED_BITS=$bits")
-        program = 0   // ids from a lost context are not ours to delete
         val linked = loadLook()
         val verts = ByteBuffer.allocateDirect(VERTEX_COUNT * 2 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
         for (i in 0..AmbientShaders.COLUMNS) {
@@ -71,7 +75,6 @@ internal class AmbientRenderer(
         downscale.reset(startNs)
         if (debug) {
             val ext = glGetString(GL_EXTENSIONS) ?: ""
-            gpuQueries = null; gpuFrame = 0   // ids from a lost context are not ours to delete
             if ("GL_EXT_disjoint_timer_query" in ext) gpuQueries = IntArray(3).also { glGenQueries(3, it, 0) }
             if (!loggedInfo) {
                 loggedInfo = true
@@ -85,7 +88,7 @@ internal class AmbientRenderer(
     /** GL thread (via queueEvent). The old program is replaced; onSurfaceCreated reloads lookName after context loss. */
     fun useLook(name: String) = guard {
         lookName = name
-        if (EGL14.eglGetCurrentContext() == EGL14.EGL_NO_CONTEXT) return@guard   // onSurfaceCreated will load it
+        if (!ownsCurrentContext()) return@guard   // onSurfaceCreated will load it
         val linked = loadLook()
         glUniform2f(loc[U_RES], width, height)
         glUniform1f(loc[U_ASPECT], width / height)
@@ -122,6 +125,7 @@ internal class AmbientRenderer(
     }
 
     override fun onDrawFrame(gl: GL10?) = guard {
+        if (program == 0) return@guard
         val now = System.nanoTime()
         val dt = ((now - lastNs) / 1e9f).coerceIn(0f, 0.1f)
         val status = subscription()?.read(frame) ?: AmbientStatus.CLOSED
@@ -152,10 +156,36 @@ internal class AmbientRenderer(
         lastNs = now
     }
 
-    /** GL thread (via queueEvent, before the context goes). */
-    fun releaseGl() = guard {
-        gpuQueries?.let { glDeleteQueries(it.size, it, 0) }
+    /** GL thread via queueEvent. EGL teardown handles resources if the owning context is gone. */
+    fun releaseGl() {
+        try {
+            if (ownsCurrentContext()) {
+                if (program != 0) {
+                    glUseProgram(0)
+                    glDeleteProgram(program)
+                }
+                if (vbo != 0) glDeleteBuffers(1, intArrayOf(vbo), 0)
+                gpuQueries?.let { glDeleteQueries(it.size, it, 0) }
+            }
+        } finally {
+            clearGlHandles()
+        }
+    }
+
+    private fun ownsCurrentContext(): Boolean {
+        val owner = ownerContext ?: return false
+        return owner != EGL14.EGL_NO_CONTEXT && EGL14.eglGetCurrentContext() == owner
+    }
+
+    private fun clearGlHandles() {
+        ownerContext = null
+        program = 0
+        vbo = 0
         gpuQueries = null
+        gpuFrame = 0
+        gpuSamples = 0
+        sumGpuNs = 0
+        maxGpuNs = 0
     }
 
     private fun readGpu(query: Int) {
