@@ -5,9 +5,6 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
-import android.media.projection.MediaProjectionConfig
-import android.media.projection.MediaProjectionManager
-import android.os.Build
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.Spanned
@@ -18,9 +15,6 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import id.poncol.tvcompanion.ambilight.AmbilightCaptureService.Companion.ACTION_START
-import id.poncol.tvcompanion.ambilight.AmbilightCaptureService.Companion.EXTRA_CONSENT
-import id.poncol.tvcompanion.ambilight.AmbilightCaptureService.Companion.EXTRA_EPOCH
 import id.poncol.tvcompanion.ambilight.engine.LightingProfile
 import id.poncol.tvcompanion.designsystem.TvUi
 
@@ -35,12 +29,10 @@ class AmbilightSettingsActivity : Activity() {
     private lateinit var styles: List<Button>
     private lateinit var stopMode: TvUi.ValueRow
     private var needsAddress = false
-    private var pendingConsent = 0L
     private val observer: (AmbilightState) -> Unit = ::render
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        pendingConsent = savedInstanceState?.getLong("consent_epoch") ?: 0L
         ui = TvUi(this)
         prefs = AmbilightPreferences(this)
         val config = prefs.load()
@@ -153,16 +145,6 @@ class AmbilightSettingsActivity : Activity() {
         super.onStop()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.putLong("consent_epoch", pendingConsent)
-        super.onSaveInstanceState(outState)
-    }
-
-    override fun onDestroy() {
-        if (isFinishing && pendingConsent != 0L) ambilightSession.cancel(pendingConsent)
-        super.onDestroy()
-    }
-
     private fun render(state: AmbilightState) {
         val busy = state.phase in setOf(Phase.STARTING, Phase.ACTIVE, Phase.STOPPING)
         if (busy) needsAddress = false
@@ -191,60 +173,19 @@ class AmbilightSettingsActivity : Activity() {
             busy -> R.string.ambilight_stop
             else -> R.string.ambilight_start
         })
-        sessionAction.isEnabled = state.phase != Phase.STOPPING && (busy || pendingConsent == 0L)
+        // Disabled while the approval prompt is pending, as before.
+        sessionAction.isEnabled = state.phase != Phase.STOPPING && !(state.phase == Phase.STARTING && !ambilightSession.attached)
     }
 
-    @Suppress("DEPRECATION")
     private fun requestConsent() {
-        if (pendingConsent != 0L) return
-        if (prefs.load().address.isEmpty()) {
+        if (Ambilight.requestStart(this) == AmbilightStart.NOT_SET_UP) {
             needsAddress = true
             render(ambilightSession.state)
             stripSetup.requestFocus()
-            return
-        }
-        val epoch = ambilightSession.begin() ?: return
-        pendingConsent = epoch
-        try {
-            val projection = getSystemService(MediaProjectionManager::class.java)
-            val request = if (Build.VERSION.SDK_INT >= 34) {
-                runCatching {
-                    projection.createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay())
-                }.getOrElse { projection.createScreenCaptureIntent() }
-            } else projection.createScreenCaptureIntent()
-            startActivityForResult(request, SCREEN_CAPTURE)
-        } catch (_: RuntimeException) {
-            pendingConsent = 0
-            ambilightSession.cancel(epoch, Issue.CONSENT)
-        }
-    }
-
-    @Deprecated("The platform result callback supports API 26 without an additional dependency.")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != SCREEN_CAPTURE) return
-        val epoch = pendingConsent
-        pendingConsent = 0
-        val state = ambilightSession.state
-        if (epoch == 0L || state.epoch != epoch || state.phase != Phase.STARTING) {
-            render(state)
-            return
-        }
-        if (resultCode != RESULT_OK || data == null) {
-            ambilightSession.cancel(epoch, Issue.CONSENT)
-            return
-        }
-        try {
-            startForegroundService(Intent(this, AmbilightCaptureService::class.java)
-                .setAction(ACTION_START).putExtra(EXTRA_EPOCH, epoch).putExtra(EXTRA_CONSENT, data))
-        } catch (_: RuntimeException) {
-            ambilightSession.cancel(epoch, Issue.CAPTURE)
         }
     }
 
     companion object {
-        private const val SCREEN_CAPTURE = 4048
-
         fun observeStatus(context: Context, update: (String) -> Unit): AutoCloseable {
             val configured = AmbilightPreferences(context).load().address.isNotEmpty()
             val observer: (AmbilightState) -> Unit = { state ->

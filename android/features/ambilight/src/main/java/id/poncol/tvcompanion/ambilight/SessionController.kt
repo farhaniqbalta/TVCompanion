@@ -29,6 +29,8 @@ internal class SessionController {
     private val observers = linkedSetOf<(AmbilightState) -> Unit>()
     private var stopResources: (() -> Unit)? = null
     @Volatile var look = Look(LightingProfile.CINEMA, 50)
+    /** True once a capture service owns the session; STARTING without it means approval is pending. */
+    val attached: Boolean get() = stopResources != null
     var state = AmbilightState(epoch = SecureRandom().nextLong().ushr(2))
         private set
 
