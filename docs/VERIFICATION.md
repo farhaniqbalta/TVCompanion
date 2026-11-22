@@ -178,3 +178,23 @@ Debug builds now log GPU time per look (`gpu mean/max` in the 10 s `TVCAmbient` 
 | aurora, ripples | 1280x720 | ~1 ms | 30 fps |
 
 The user approved how `strings` looks at 540p ("looks fine"). Ambient now opens every look at full size and falls back automatically: if two consecutive 3 s windows each have a mean frame interval over 33.9 ms (first 1 s after a look loads or the surface is created ignored; healthy looks measured 33.33-33.39 ms over 10 s, `dusk` 34.05 ms, so a single stall cannot trigger it), the surface is set to 960x540 and the look is remembered for the process lifetime, so switching back to it goes straight to 540p. Detection is generic, never keyed to look names. Debug builds log `look=<name> fallback=960x540 interval=<mean>us`. Covered by `AmbientDownscaleTest` (JVM); **the automatic fallback itself has not yet been run on the TV**.
+
+## Quick Controls Phase 1 (headless entry points) — 2026-11-22
+
+Branch `feature/quick-controls`. Nothing was installed on the TV.
+
+```sh
+cd android && ./gradlew clean test assembleDebug
+```
+
+- `BUILD SUCCESSFUL`; 331 JVM test results (debug + release variants), 0 failures, 0 errors, 2 skipped (pre-existing). New tests: `LightPresetsTest` (4), `LightControllerTest` (+7, 14 total), `AmbilightFacadeTest` (2), `AmbientShortcutTest` (3), `AirPlayWireTest` (bit 128 → `ambientShowing`).
+- No feature module depends on another feature (`grep "project(':features:"` in feature/integration build files: no matches).
+- iOS packages unchanged (baseline: TVCompanionKit 15/15, TVCompanionAudio 2/2).
+
+Owner device checks (not yet run):
+
+- [ ] 1. Light screen: refresh, on/off, colour presets, White, brightness work as before. Leave and re-enter the screen: the state is still shown.
+- [ ] 2. Ambilight: Start from settings shows the prompt and runs; Stop works; the home card status is unchanged. Optional: `adb shell appops set id.poncol.tvcompanion PROJECT_MEDIA allow`, then Start shows no prompt.
+- [ ] 3. Record the overlay permission: `adb shell appops get id.poncol.tvcompanion SYSTEM_ALERT_WINDOW`. A real background start of `ConsentActivity` and Ambient is the first device check of the Phase 2 plan.
+- [ ] 4. AirPlay music: the Ambient button still opens and closes; Back closes Ambient; D-pad look switching still works.
+- [ ] 5. Notifications and AirPlay screens unchanged; boot defaults unchanged.
