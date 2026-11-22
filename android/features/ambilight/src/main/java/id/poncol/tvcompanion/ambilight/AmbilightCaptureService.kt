@@ -72,6 +72,7 @@ class AmbilightCaptureService : Service() {
             }
             epoch = requested
             config = AmbilightPreferences(this).load()
+            ambilightSession.look = Look(config.profile, config.brightness)
             checkNotNull(intent)
             val consent = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(EXTRA_CONSENT, Intent::class.java)
                 else @Suppress("DEPRECATION") intent.getParcelableExtra(EXTRA_CONSENT)
@@ -199,7 +200,7 @@ class AmbilightCaptureService : Service() {
         val reason = issue
         executor.execute {
             captureThread?.join()
-            val result = if (sent && client?.exit(!testing && config.turnOff) != true) Issue.STOP_OUTPUT else reason
+            val result = if (sent && client?.exit(!testing && AmbilightPreferences(this).load().turnOff) != true) Issue.STOP_OUTPUT else reason
             executor.shutdown()
             main.post { complete(result) }
         }

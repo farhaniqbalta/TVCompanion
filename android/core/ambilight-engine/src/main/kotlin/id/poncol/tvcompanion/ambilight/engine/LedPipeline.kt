@@ -12,7 +12,8 @@ class LedPipeline(
     private val width: Int,
     private val height: Int,
     layout: LedLayout,
-    private val profile: LightingProfile,
+    /** Changeable between frames; the next frame smooths with the new speed. */
+    var profile: LightingProfile,
     brightness: Int,
 ) {
     private class Side(val length: Int, val depth: Int, count: Int) {

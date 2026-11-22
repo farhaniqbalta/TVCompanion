@@ -13,6 +13,7 @@ internal class CaptureOutput(
     private val health: (Boolean, Boolean) -> Unit,
 ) {
     private val rgb = ByteArray(config.layout.total * 3)
+    private val scaled = ByteArray(rgb.size)
     private val cadence = FrameCadence(30)
     private var useSourceTime = true
     private var lastSourceTime = 0L
@@ -48,9 +49,12 @@ internal class CaptureOutput(
         if (pixels.width != width || pixels.height != height) {
             width = pixels.width
             height = pixels.height
-            pipeline = LedPipeline(width, height, config.layout, config.profile, config.brightness)
+            // Brightness is applied at send time so keepalive resends pick up changes on a paused picture.
+            pipeline = LedPipeline(width, height, config.layout, session.look.profile, 100)
         }
-        val dark = checkNotNull(pipeline).process(pixels, now, rgb)
+        val current = checkNotNull(pipeline)
+        current.profile = session.look.profile
+        val dark = current.process(pixels, now, rgb)
         if (!dark || now - lastSample > 500_000_000L) blankSince = 0
         if (dark && blankSince == 0L) blankSince = now
         lastSample = now
@@ -75,7 +79,9 @@ internal class CaptureOutput(
     private fun output(now: Long) = session.send(epoch) {
         attempted = true
         lastOutput = now
-        val failed = !transport.send(rgb)
+        val brightness = session.look.brightness
+        for (i in rgb.indices) scaled[i] = (((rgb[i].toInt() and 255) * brightness + 50) / 100).toByte()
+        val failed = !transport.send(scaled)
         if (failed) droppedOutput++
         if (failed != sendError) {
             sendError = failed

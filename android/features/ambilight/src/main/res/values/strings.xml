@@ -4,7 +4,7 @@
     <string name="ambilight_help">Playback compatibility</string>
     <string name="ambilight_compatibility_help">Unprotected Chromecast video and AirPlay mirroring worked in diagnostic tests. The tested native YouTube, Netflix and Crunchyroll cast sessions returned black pixels.</string>
     <string name="ambilight_permission_help">Android asks for permission each time you start. Choose the entire display so sync follows you between apps.</string>
-    <string name="ambilight_locked">Stop screen sync to change settings.</string>
+    <string name="ambilight_locked">Stop screen sync to change the strip setup.</string>
     <string name="ambilight_selected">Selected</string>
 
     <string name="ambilight_start">Start screen sync</string>

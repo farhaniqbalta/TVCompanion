@@ -1,9 +1,13 @@
 package id.poncol.tvcompanion.ambilight
 
+import id.poncol.tvcompanion.ambilight.engine.LightingProfile
 import java.security.SecureRandom
 
 internal enum class Phase { OFF, STARTING, ACTIVE, STOPPING, ERROR }
 internal enum class Issue { CONSENT, CAPTURE, REVOKED, CONTROLLER, STOP_OUTPUT, TEST_COMPLETE }
+
+/** Style and brightness the running session reads every frame, so changes apply without a restart. */
+internal data class Look(val profile: LightingProfile, val brightness: Int)
 
 internal data class LedCountMismatch(val configured: Int, val available: Int)
 
@@ -24,6 +28,7 @@ internal class SessionController {
     private val sendGate = Any()
     private val observers = linkedSetOf<(AmbilightState) -> Unit>()
     private var stopResources: (() -> Unit)? = null
+    @Volatile var look = Look(LightingProfile.CINEMA, 50)
     var state = AmbilightState(epoch = SecureRandom().nextLong().ushr(2))
         private set
 

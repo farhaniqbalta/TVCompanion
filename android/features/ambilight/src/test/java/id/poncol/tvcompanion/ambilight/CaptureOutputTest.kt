@@ -69,6 +69,27 @@ class CaptureOutputTest {
         source.close()
     }
 
+    @Test fun brightnessChangesApplyToTheRunningSessionWithoutNewFrames() {
+        val controller = SessionController()
+        val epoch = controller.begin()!!
+        controller.attach(epoch) {}
+        controller.activate(epoch)
+        controller.look = Look(engineProfile(), 100)
+        val transport = RecordingTransport()
+        val source = SyntheticFrames()
+        val output = CaptureOutput(AmbilightConfig(), controller, epoch, transport) { _, _ -> }
+        source.start(output::frame) {}
+        source.frame(10, 200.toByte())
+        val full = transport.sent.last()[0].toInt() and 255
+        assertTrue(full > 0)
+        // A paused picture sends no new frames; the keepalive resend must carry the new brightness.
+        controller.look = Look(engineProfile(), 50)
+        output.keepAlive(1_000_000_010)
+        assertEquals((full + 1) / 2, transport.sent.last()[0].toInt() and 255)
+    }
+
+    private fun engineProfile() = id.poncol.tvcompanion.ambilight.engine.LightingProfile.RESPONSIVE
+
     @Test fun blankHintNeedsFiveSecondsOfReceivedDarkSamplesAndClearsOnColor() {
         val controller = SessionController()
         val epoch = controller.begin()!!

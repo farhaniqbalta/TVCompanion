@@ -32,10 +32,8 @@ class AmbilightSettingsActivity : Activity() {
     private lateinit var details: TextView
     private lateinit var sessionAction: Button
     private lateinit var stripSetup: Button
-    private lateinit var locked: TextView
     private lateinit var styles: List<Button>
     private lateinit var stopMode: TvUi.ValueRow
-    private val settingsControls = mutableListOf<View>()
     private var needsAddress = false
     private var pendingConsent = 0L
     private val observer: (AmbilightState) -> Unit = ::render
@@ -73,7 +71,6 @@ class AmbilightSettingsActivity : Activity() {
                 Phase.STOPPING -> Unit
             }
         }
-        locked = ui.text(session, getString(R.string.ambilight_locked), 16f).apply { visibility = View.GONE }
         ui.text(session, getString(R.string.ambilight_permission_help), 16f).setPadding(0, ui.dp(8), 0, 0)
         val links = ui.row()
         left.addView(links)
@@ -93,15 +90,15 @@ class AmbilightSettingsActivity : Activity() {
         val descriptions = resources.getStringArray(R.array.ambilight_profile_descriptions)
         styles = LightingProfile.entries.map { profile ->
             ui.button(look, "") {
-                prefs.save(prefs.load().copy(profile = profile))
+                save(prefs.load().copy(profile = profile))
                 showStyles(profile)
-            }.also { settingsControls += it }
+            }
         }
         showStyles(config.profile, names, descriptions)
         ui.stepper(look, getString(R.string.ambilight_brightness), { prefs.load().brightness }, { 5..100 }, 5, { "$it%" }) { value ->
-            prefs.save(prefs.load().copy(brightness = value))
+            save(prefs.load().copy(brightness = value))
             true
-        }.also { settingsControls += it.view }
+        }
         val stopModes = resources.getStringArray(R.array.ambilight_stop_modes)
         stopMode = ui.valueRow(look, getString(R.string.ambilight_stop_mode)) {
             AlertDialog.Builder(this)
@@ -115,7 +112,6 @@ class AmbilightSettingsActivity : Activity() {
         }
         stopMode.value.text = stopModes[if (config.turnOff) 1 else 0]
         stopMode.value.setTextColor(ui.muted)
-        settingsControls += stopMode.view
 
         setContentView(scroll)
         render(ambilightSession.state)
@@ -139,6 +135,12 @@ class AmbilightSettingsActivity : Activity() {
             button.contentDescription = "${names[index]}. ${descriptions[index]}" +
                 if (chosen) ". ${getString(R.string.ambilight_selected)}" else ""
         }
+    }
+
+    /** Style and brightness also reach a running session immediately; the stop choice is read when sync stops. */
+    private fun save(config: AmbilightConfig) {
+        prefs.save(config)
+        ambilightSession.look = Look(config.profile, config.brightness)
     }
 
     override fun onStart() {
@@ -190,10 +192,6 @@ class AmbilightSettingsActivity : Activity() {
             else -> R.string.ambilight_start
         })
         sessionAction.isEnabled = state.phase != Phase.STOPPING && (busy || pendingConsent == 0L)
-        val moveFocus = settingsControls.any { it.hasFocus() } && busy
-        settingsControls.forEach { it.isEnabled = !busy }
-        locked.visibility = if (busy && !state.testing) View.VISIBLE else View.GONE
-        if (moveFocus && sessionAction.isEnabled) sessionAction.requestFocus()
     }
 
     @Suppress("DEPRECATION")

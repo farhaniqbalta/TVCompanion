@@ -8,6 +8,6 @@ Use 160×90 RGBA latest-image capture with an up-to-30 FPS deadline and a reusab
 
 The diagnostic supports this design conditionally. The installed product must still demonstrate moving color output and measure overhead on the target TV.
 
-Settings changes require Stop so the session can use one validated layout and address snapshot. Styles set only smoothing speed; one user brightness (5–100%) scales output, and the LED test stays capped at 25%. Private/link-local IPv4 is supported for direct WLED control. The merged app network policy permits framework cleartext HTTP only to localhost. WLED uses a dedicated direct HTTP socket restricted to its private or link-local address and avoids redirects and proxies.
+Address and layout changes require Stop so the session can use one validated snapshot; style and brightness are read live, with brightness applied at send time so keepalive resends reflect it. Styles set only smoothing speed; one user brightness (5–100%) scales output, and the LED test stays capped at 25%. Private/link-local IPv4 is supported for direct WLED control. The merged app network policy permits framework cleartext HTTP only to localhost. WLED uses a dedicated direct HTTP socket restricted to its private or link-local address and avoids redirects and proxies.
 
 On resize, the capture surface stays 160×90 and the sampler follows the centered content region. Non-16:9 and OEM behavior require device verification.
