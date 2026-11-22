@@ -239,4 +239,9 @@ Branch `feature/ambient-ambilight-presets` (started by Codex, finished here; `ma
 - **Open:**
   - The 540p automatic fallback did **not** trigger while Edge Orbit ran at 22 fps. It may have been broken by the queued-look change (`2a4f55b`) and needs a look.
   - The Codex plan's Task 4 (long soak, CPU/PSS with Ambilight off and on, reduced-motion pass) is not done.
+- **Bounce (added; Ripples removed):**
+  - The owner's idea: a ball bounces on a black screen and lights the wall it hits, which shows off Ambilight. The path is an analytic billiard (17/23 hits per half clock cycle), so there is no new renderer state. The ball speeds up with louder music.
+  - Iterations: the first version measured 14.7–16.3 ms GPU (28–29 fps) and showed a hard-edged dark box where the early exit began. Per-frame maths moved to `bounce.vert` (4 runs per frame), and the splashes and halo now fade gradually into the black. A solid-ball experiment was rejected; the final version uses a glowing ball about a third smaller (radius 0.023). Owner: "it's great". The final build has not been re-measured.
+  - A faint rim keeps Ambilight's letterbox rule (dark rows held 15 frames) and blank rule (≤1% edge samples above 12) from misreading the black frame.
+  - Ripples is removed; a saved `ripples` choice falls back to Aurora.
 
