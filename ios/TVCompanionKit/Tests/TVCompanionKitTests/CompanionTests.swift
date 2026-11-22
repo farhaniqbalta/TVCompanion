@@ -220,4 +220,39 @@ final class CompanionTests: XCTestCase {
         XCTAssertEqual(try ambient("available", "aurora").displayedLook(pending: "neon"), "aurora") // unknown on this TV: dropped
         XCTAssertEqual(try ambient("available", nil).displayedLook(pending: nil), "aurora")
     }
+    private func status(ambient: String = "available", ambilight: String = "off", light: String = "on", preset: String? = "blue",
+                        notifications: String = "listening", airplay: String = "ready", available: Bool = true) throws -> ControlStatus {
+        let p = preset.map { "\"\($0)\"" } ?? "null"
+        let body = #"{"ambient":{"state":"\#(ambient)","look":"dusk","looks":["aurora","dusk"]},"ambilight":{"state":"\#(ambilight)"},"light":{"state":"\#(light)","preset":\#(p),"presets":["blue","white"]},"notifications":{"state":"\#(notifications)"},"airplay":{"state":"\#(airplay)","available":\#(available)}}"#
+        return try JSONDecoder().decode(ControlStatus.self, from: Data(body.utf8))
+    }
+    func testTilesDescribeConfirmedStateInPlainWords() throws {
+        let s = try status()
+        XCTAssertEqual(s.lightTile, ControlTile(isOn: true, enabled: true, detail: "On · Blue"))
+        XCTAssertEqual(s.ambientTile, ControlTile(isOn: false, enabled: true, detail: "Off · Dusk"))
+        XCTAssertEqual(s.ambilightTile, ControlTile(isOn: false, enabled: true, detail: "Off"))
+        XCTAssertEqual(s.notificationsTile, ControlTile(isOn: true, enabled: true, detail: "Listening"))
+        XCTAssertEqual(s.airplayTile, ControlTile(isOn: true, enabled: true, detail: "Ready"))
+    }
+    func testTransitionalStatesShowProgressNotOn() throws {
+        XCTAssertEqual(try status(ambilight: "needs_approval").ambilightTile, ControlTile(isOn: true, enabled: true, detail: "Approve on the TV", inProgress: true))
+        XCTAssertEqual(try status(ambilight: "starting").ambilightTile, ControlTile(isOn: true, enabled: true, detail: "Starting…", inProgress: true))
+        XCTAssertEqual(try status(ambilight: "stopping").ambilightTile, ControlTile(isOn: false, enabled: false, detail: "Stopping…", inProgress: true))
+        XCTAssertEqual(try status(notifications: "starting").notificationsTile, ControlTile(isOn: true, enabled: true, detail: "Starting…", inProgress: true))
+    }
+    func testUnavailableAndUnknownStatesDisableOnlyThatTile() throws {
+        let s = try status(ambient: "unavailable", ambilight: "not_set_up", light: "unavailable", preset: nil, notifications: "dancing")
+        XCTAssertEqual(s.ambientTile, ControlTile(isOn: false, enabled: false, detail: "Play music over AirPlay"))
+        XCTAssertEqual(s.ambilightTile, ControlTile(isOn: false, enabled: false, detail: "Set up on the TV first"))
+        XCTAssertEqual(s.lightTile, ControlTile(isOn: false, enabled: false, detail: "Not responding"))
+        XCTAssertEqual(s.notificationsTile, ControlTile(isOn: false, enabled: false, detail: "Unknown"))
+        XCTAssertTrue(s.airplayTile.enabled)
+    }
+    func testAirPlayTileFollowsBackgroundPreferenceAndSession() throws {
+        XCTAssertEqual(try status(airplay: "playing").airplayTile, ControlTile(isOn: true, enabled: true, detail: "Playing now"))
+        XCTAssertEqual(try status(airplay: "stopped", available: false).airplayTile, ControlTile(isOn: false, enabled: true, detail: "Off"))
+        XCTAssertEqual(try status(ambient: "showing").ambientTile, ControlTile(isOn: true, enabled: true, detail: "Showing · Dusk"))
+        XCTAssertEqual(try status(light: "on", preset: nil).lightTile.detail, "On")
+        XCTAssertEqual(try status(light: "off", preset: nil).lightTile, ControlTile(isOn: false, enabled: true, detail: "Off"))
+    }
 }

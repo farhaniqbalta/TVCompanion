@@ -11,6 +11,9 @@ import TVCompanionKit
     @Published private(set) var pairing = false
     /// The TV's key no longer matches the stored pin; pairing again overwrites it.
     @Published private(set) var pinChanged = false
+    /// The TV didn't answer at all (as opposed to answering with an outcome).
+    @Published private(set) var unreachable = false
+    @Published private(set) var refreshing = false
     @Published var confirmAirPlayOff = false
     private let store: TVStore
     private let service: ControlService
@@ -29,6 +32,8 @@ import TVCompanionKit
     func refresh() async {
         guard let tv = store.profile, paired else { return }
         let token = generation
+        refreshing = true
+        defer { if generation == token { refreshing = false } }
         do {
             let response = try await service.send(.status, to: tv)
             if generation == token { apply(response) }
@@ -79,9 +84,10 @@ import TVCompanionKit
     }
 
     /// Drops in-flight replies and the shown state, so returning never shows state the TV didn't just confirm.
-    func suspend() { generation = UUID(); waiting = []; confirmAirPlayOff = false; status = nil }
+    func suspend() { generation = UUID(); waiting = []; confirmAirPlayOff = false; status = nil; refreshing = false }
 
     private func apply(_ response: ControlResponse) {
+        unreachable = false
         if let next = response.status { status = next }
         banner = switch response.outcome {
         case .ok, .pending: nil
@@ -104,6 +110,10 @@ import TVCompanionKit
             return
         }
         if case CompanionError.certificateChanged = error { pinChanged = true }
+        switch error {
+        case CompanionError.timedOut, CompanionError.disconnected: unreachable = true
+        default: break
+        }
         status = nil   // Unreachable or untrusted: show nothing rather than stale state.
         banner = message(for: error)
     }
