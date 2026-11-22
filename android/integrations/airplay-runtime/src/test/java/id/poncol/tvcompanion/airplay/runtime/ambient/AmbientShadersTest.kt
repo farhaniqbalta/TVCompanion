@@ -9,7 +9,7 @@ class AmbientShadersTest {
     @Test fun shippedLooksCarryContractHeader() {
         val files = dir.listFiles()!!.map { it.name }.toSet()
         assertEquals(setOf("aurora.vert", "aurora.frag", "dusk.frag", "strings.vert", "strings.frag",
-            "chromatic_flow.frag", "edge_orbit.frag", "bounce.frag"), files)
+            "chromatic_flow.frag", "edge_orbit.frag", "bounce.vert", "bounce.frag"), files)
         dir.listFiles()!!.forEach { assertEquals(it.name, AmbientShaders.CONTRACT, it.readLines().first()) }
     }
     @Test fun stringsKeepsBeatMathPerVertexAndHighp() {
