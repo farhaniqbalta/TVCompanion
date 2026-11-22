@@ -38,3 +38,4 @@
 - Installed setup is 129 LEDs on WLED 16.0.1 with a 40/23/41/25 layout. The owner confirmed live screen sync.
 - A dark red scene looked pink on the strip. Screen capture analysis showed raw values sent without gamma, with WLED's realtime gamma disabled. The owner enabled it in WLED.
 - Top and bottom LEDs now sample inside letterbox bars, and style and brightness changes apply during sync. Ambilight JVM tests and app lint pass.
+- The owner reported that letterbox sampling and live brightness changes work during screen sync. WLED's current limit is 1600 mA on a 5 V 2 A adapter; brightness is acceptable to the owner. Stop modes, a 30-minute soak and start with WLED off remain untested.
