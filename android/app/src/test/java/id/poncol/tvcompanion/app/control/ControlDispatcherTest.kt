@@ -54,4 +54,8 @@ class ControlDispatcherTest {
         handle(ControlCommand.Notifications(false))
         assertTrue(fake.calls.indexOf("setNotifications") < fake.calls.indexOf("notifications"))
     }
+    @Test fun presetIsValidatedWithoutReadingTheLampFirst() {
+        assertOutcome("pending", ControlCommand.LightPreset("purple"))
+        assertEquals("lightPreset", fake.calls.first())   // no lamp read before the write
+    }
 }

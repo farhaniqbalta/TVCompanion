@@ -16,11 +16,12 @@ import id.poncol.tvcompanion.app.TVCompanionApplication
 
 /** Process-local pairing state shared by ControlService and ControlPairingActivity. Main thread only. */
 object ControlPairing {
-    var window: PairingWindow? = null
+    // Read by connection threads.
+    @Volatile var window: PairingWindow? = null
         internal set
-    var pairedAt = 0L
+    @Volatile var pairedAt = 0L
         internal set
-    var failed = false
+    @Volatile var failed = false
         internal set
     private val listeners = linkedSetOf<() -> Unit>()
     fun listen(listener: () -> Unit): AutoCloseable { listeners.add(listener); listener(); return AutoCloseable { listeners.remove(listener) } }

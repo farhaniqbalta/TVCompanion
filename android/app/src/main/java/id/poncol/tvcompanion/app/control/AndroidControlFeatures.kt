@@ -25,6 +25,7 @@ import id.poncol.tvcompanion.domain.airplay.AirPlayPhase
 import id.poncol.tvcompanion.notifications.infrastructure.AndroidNotificationRuntime
 import id.poncol.tvcompanion.notifications.infrastructure.ReceiverService
 import id.poncol.tvcompanion.notifications.infrastructure.ReceiverSettings
+import id.poncol.tvcompanion.tuya.TuyaLightGateway
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -39,9 +40,10 @@ class AndroidControlFeatures(context: Context, private val light: LightControlle
     private val notificationRuntime = AndroidNotificationRuntime(this.context, ReceiverSettings(this.context))
     @Volatile private var lightConfirmedAt = 0L
     @Volatile private var lastLight: LightState? = null
+    @Volatile private var lightFailedAt = 0L
 
     /** Runs [block] on main and waits for its single answer; a timeout or throw becomes an exception for the dispatcher. */
-    private fun <T : Any> onMain(timeoutMs: Long = 5_000, block: ((T) -> Unit) -> Unit): T {
+    private fun <T : Any> onMain(timeoutMs: Long = 3_000, block: ((T) -> Unit) -> Unit): T {
         val answer = AtomicReference<T?>()
         val latch = CountDownLatch(1)
         main.post {
@@ -52,6 +54,8 @@ class AndroidControlFeatures(context: Context, private val light: LightControlle
         return answer.get() ?: throw IllegalStateException("no answer")
     }
     private fun <T : Any> mainValue(block: () -> T): T = onMain { it(block()) }
+    /** A write whose answer timed out may still apply later, so it is unconfirmed, never unavailable. */
+    private inline fun write(block: () -> Outcome): Outcome = try { block() } catch (_: TimeoutException) { Outcome.UNCONFIRMED }
 
     override fun ambient(): AmbientStatus {
         val snapshot = mainValue { airplay.snapshot }
@@ -66,11 +70,12 @@ class AndroidControlFeatures(context: Context, private val light: LightControlle
         return AmbientStatus(state, look, AmbientShaders.LOOKS)
     }
 
-    override fun setAmbient(open: Boolean, look: String?): Outcome = mainValue {
+    override fun setAmbient(open: Boolean, look: String?): Outcome = write { mainValue {
         val snapshot = airplay.snapshot
+        if (!open && !snapshot.ambientShowing) return@mainValue Outcome.OK   // already in the requested state
         val launched = if (open) look != null && AmbientShortcut.open(context, snapshot, look) else AmbientShortcut.close(context, snapshot)
         if (launched) Outcome.PENDING else Outcome.INVALID
-    }
+    } }
 
     override fun ambilight(): String = when (mainValue { Ambilight.status(context) }) {
         AmbilightStatus.OFF -> "off"
@@ -82,47 +87,52 @@ class AndroidControlFeatures(context: Context, private val light: LightControlle
         AmbilightStatus.ERROR -> "error"
     }
 
-    override fun setAmbilight(on: Boolean): Outcome = mainValue {
+    override fun setAmbilight(on: Boolean): Outcome = write { mainValue {
         if (!on) { Ambilight.stop(); Outcome.PENDING } else when (Ambilight.requestStart(context)) {
             AmbilightStart.REQUESTED -> Outcome.PENDING
             AmbilightStart.BUSY -> Outcome.BUSY
             AmbilightStart.NOT_SET_UP -> Outcome.NEEDS_SETUP
             AmbilightStart.FAILED -> Outcome.UNAVAILABLE
         }
-    }
+    } }
 
     override fun light(): LightStatus {
         // A command's own confirmed readback is fresh enough for the status that follows it; saves a second lamp round trip.
         val recent = lastLight?.takeIf { SystemClock.elapsedRealtime() - lightConfirmedAt < FRESH_MS }
         if (recent != null) return lightStatus(recent)
+        // A failed read is remembered too, so a command plus its status never waits on an offline lamp twice.
+        if (SystemClock.elapsedRealtime() - lightFailedAt < FRESH_MS) return LightStatus(missingLightState(), null, LightPresets.NAMES)
         val result = onMain<LightResult>(LIGHT_TIMEOUT_MS) { done -> light.refresh { done(it) } }
         remember(result)
         return when (result.outcome) {
             LightOutcome.CONFIRMED -> lightStatus(result.state.light!!)
             LightOutcome.BUSY -> LightStatus("busy", lastLight?.let(::preset), LightPresets.NAMES)
-            else -> LightStatus("unavailable", null, LightPresets.NAMES)
+            else -> LightStatus(missingLightState(), null, LightPresets.NAMES)
         }
     }
+
+    private fun missingLightState() = if (TuyaLightGateway.isConfigured(context)) "unavailable" else "not_set_up"
 
     override fun setLight(on: Boolean): Outcome = lightWrite { LightCommand.Power(on) }
     override fun lightPreset(name: String): Outcome = lightWrite { LightPresets.command(it, name) }
 
-    private fun lightWrite(build: (LightState) -> LightCommand?): Outcome {
+    private fun lightWrite(build: (LightState) -> LightCommand?): Outcome = write {
         val result = onMain<LightResult>(LIGHT_TIMEOUT_MS) { done -> light.readThenExecute(build) { done(it) } }
         remember(result)
-        return when (result.outcome) {
+        when (result.outcome) {
             LightOutcome.CONFIRMED -> Outcome.OK
             LightOutcome.BUSY -> Outcome.BUSY
             LightOutcome.UNSUPPORTED -> Outcome.INVALID
             LightOutcome.UNCONFIRMED -> Outcome.UNCONFIRMED
-            LightOutcome.UNAVAILABLE, LightOutcome.CLOSED -> Outcome.UNAVAILABLE
+            LightOutcome.UNAVAILABLE, LightOutcome.CLOSED -> if (TuyaLightGateway.isConfigured(context)) Outcome.UNAVAILABLE else Outcome.NEEDS_SETUP
         }
     }
 
     private fun remember(result: LightResult) {
         val state = result.state.light
         if (state != null && result.outcome != LightOutcome.BUSY) { lastLight = state; lightConfirmedAt = SystemClock.elapsedRealtime() }
-        if (result.outcome == LightOutcome.UNAVAILABLE || result.outcome == LightOutcome.UNCONFIRMED) { lastLight = null; lightConfirmedAt = 0 }
+        if (state != null && result.outcome != LightOutcome.BUSY) lightFailedAt = 0
+        if (result.outcome == LightOutcome.UNAVAILABLE || result.outcome == LightOutcome.UNCONFIRMED) { lastLight = null; lightConfirmedAt = 0; lightFailedAt = SystemClock.elapsedRealtime() }
     }
 
     private fun lightStatus(state: LightState) = LightStatus(if (state.on) "on" else "off", preset(state), LightPresets.NAMES)
@@ -142,13 +152,13 @@ class AndroidControlFeatures(context: Context, private val light: LightControlle
         ReceiverPhase.PAUSED, ReceiverPhase.STOPPING -> "paused"
     }
 
-    override fun setNotifications(on: Boolean): Outcome = mainValue {
+    override fun setNotifications(on: Boolean): Outcome = write { mainValue {
         when {
             !on -> { notificationRuntime.pause(); Outcome.PENDING }
             !ReceiverService.canStart(context) -> Outcome.UNAVAILABLE
             else -> { notificationRuntime.start(); Outcome.PENDING }
         }
-    }
+    } }
 
     override fun airplay(): AirPlayStatus {
         val s = mainValue { airplay.snapshot }
@@ -164,7 +174,7 @@ class AndroidControlFeatures(context: Context, private val light: LightControlle
             connected = s.connection != AirPlayConnection.NONE, keepSession = s.keepSession)
     }
 
-    override fun setAirPlay(available: Boolean): Outcome = onMain { done ->
+    override fun setAirPlay(available: Boolean): Outcome = write { onMain { done ->
         val running = airplay.snapshot.availability == AirPlayAvailability.AVAILABLE
         when {
             running -> airplay.setKeepAvailable(available) { done(if (it.accepted) Outcome.PENDING else Outcome.UNAVAILABLE) }
@@ -176,7 +186,7 @@ class AndroidControlFeatures(context: Context, private val light: LightControlle
                 done(Outcome.PENDING)
             }
         }
-    }
+    } }
 
     override fun close() { airplay.close() }
 

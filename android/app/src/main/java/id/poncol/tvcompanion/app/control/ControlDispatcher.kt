@@ -1,5 +1,6 @@
 package id.poncol.tvcompanion.app.control
 
+import id.poncol.tvcompanion.domain.LightPresets
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -40,7 +41,7 @@ class ControlDispatcher(private val features: ControlFeatures) {
                 is ControlCommand.Ambilight -> features.setAmbilight(command.on)
                 is ControlCommand.Light -> features.setLight(command.on)
                 is ControlCommand.LightPreset ->
-                    if (command.name !in features.light().presets) Outcome.INVALID else features.lightPreset(command.name)
+                    if (command.name !in LightPresets.NAMES) Outcome.INVALID else features.lightPreset(command.name)
                 is ControlCommand.Notifications -> features.setNotifications(command.on)
                 is ControlCommand.AirPlay -> {
                     val airplay = features.airplay()

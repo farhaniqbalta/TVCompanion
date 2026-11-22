@@ -99,6 +99,8 @@ class TuyaLightGateway internal constructor(
         client?.close()
     }
     companion object {
+        /** True when lamp credentials are provisioned; false means setup is required, not an outage. */
+        fun isConfigured(context: Context): Boolean = Credentials.load(context) != null
         private fun provider(context: Context): () -> LampSession = {
             val config = Credentials.load(context) ?: error("Lamp setup required")
             val key = config.getString("key").toByteArray(Charsets.UTF_8)

@@ -7,7 +7,7 @@ import id.poncol.tvcompanion.domain.airplay.*
 
 /** Private-service adapter; no native dependency or recurring polling.
  *  With autoCreate = false it only observes a receiver that is already running and never starts `:airplay`. */
-class AndroidAirPlayControl(context: Context, autoCreate: Boolean = true) : AirPlayReceiverControl {
+class AndroidAirPlayControl(context: Context, private val autoCreate: Boolean = true) : AirPlayReceiverControl {
     private val context = context.applicationContext
     private val main = Handler(Looper.getMainLooper())
     private val observers = linkedSetOf<(AirPlaySnapshot) -> Unit>()
@@ -56,14 +56,21 @@ class AndroidAirPlayControl(context: Context, autoCreate: Boolean = true) : AirP
             try { service.observe(listener) } catch (_: RemoteException) { disconnected() }
         }
         override fun onServiceDisconnected(name: ComponentName?) { if (!closed) disconnected() }
-        override fun onBindingDied(name: ComponentName?) { if (!closed) disconnected() }
+        override fun onBindingDied(name: ComponentName?) {
+            if (closed) return
+            disconnected()
+            // A passive binding dies when the receiver stops; it never reconnects on its own, so re-arm it for the next start.
+            if (!autoCreate) { runCatching { context.unbindService(this) }; bound = bind() }
+        }
         override fun onNullBinding(name: ComponentName?) { if (!closed) disconnected(AirPlayIssue.UNSUPPORTED) }
     }
     init {
-        bound = try { this.context.bindService(Intent().setClassName(this.context.packageName, AirPlayWire.SERVICE), connection, if (autoCreate) Context.BIND_AUTO_CREATE else 0) }
-        catch (_: RuntimeException) { false }
+        bound = bind()
         if (!bound) publish(AirPlaySnapshot(issue = AirPlayIssue.UNAVAILABLE))
     }
+    private fun bind(): Boolean = try {
+        context.bindService(Intent().setClassName(context.packageName, AirPlayWire.SERVICE), connection, if (autoCreate) Context.BIND_AUTO_CREATE else 0)
+    } catch (_: RuntimeException) { false }
     private fun command(reply: (AirPlayResult) -> Unit, send: (IAirPlayReceiver, Long, IAirPlayEvents) -> Unit) {
         check(Looper.myLooper() == Looper.getMainLooper())
         if (closed) { reply(AirPlayResult(false, AirPlayIssue.CLOSED)); return }
