@@ -33,6 +33,7 @@ internal class AmbientRenderer(
     private val loc = IntArray(AmbientShaders.UNIFORMS.size)
     private var ownerContext: EGLContext? = null
     private var program = 0
+    private var loadedLookName: String? = null
     private var vbo = 0
     private var width = 1f
     private var height = 1f
@@ -85,15 +86,9 @@ internal class AmbientRenderer(
         }
     }
 
-    /** GL thread (via queueEvent). The old program is replaced; onSurfaceCreated reloads lookName after context loss. */
-    fun useLook(name: String) = guard {
+    /** GL thread via queueEvent, which may run before an EGL surface is current. */
+    fun useLook(name: String) {
         lookName = name
-        if (!ownsCurrentContext()) return@guard   // onSurfaceCreated will load it
-        val linked = loadLook()
-        glUniform2f(loc[U_RES], width, height)
-        glUniform1f(loc[U_ASPECT], width / height)
-        downscale.reset(System.nanoTime())
-        if (debug) Log.d(TAG, "look=$linked")
     }
 
     /** Links lookName (falling back to builtin), makes it current and sets the per-program constant uniforms. */
@@ -114,18 +109,29 @@ internal class AmbientRenderer(
         glUniform3fv(loc[U_BASE], 1, BASE, 0)
         glUniform3fv(loc[U_PALETTE], 4, PALETTE, 0)
         glUniform1f(loc[U_REDUCED], if (reduced) 1f else 0f)
+        loadedLookName = lookName
         return linked
     }
 
     override fun onSurfaceChanged(gl: GL10?, w: Int, h: Int) = guard {
         glViewport(0, 0, w, h)
         width = w.toFloat(); height = h.toFloat()
+        setSizeUniforms()
+    }
+
+    private fun setSizeUniforms() {
         glUniform2f(loc[U_RES], width, height)
         glUniform1f(loc[U_ASPECT], width / height)
     }
 
     override fun onDrawFrame(gl: GL10?) = guard {
         if (program == 0) return@guard
+        if (loadedLookName != lookName) {
+            val linked = loadLook()
+            setSizeUniforms()
+            downscale.reset(System.nanoTime())
+            if (debug) Log.d(TAG, "look=$linked")
+        }
         val now = System.nanoTime()
         val dt = ((now - lastNs) / 1e9f).coerceIn(0f, 0.1f)
         val status = subscription()?.read(frame) ?: AmbientStatus.CLOSED
@@ -180,6 +186,7 @@ internal class AmbientRenderer(
     private fun clearGlHandles() {
         ownerContext = null
         program = 0
+        loadedLookName = null
         vbo = 0
         gpuQueries = null
         gpuFrame = 0

@@ -47,7 +47,9 @@ class AmbientShadersTest {
         assertEquals("builtin", AmbientShaders.assemble("x") { "void main(){}" }.look)   // no header
     }
     @Test fun noNonIntegerPhaseMultipliers() {
-        val bad = Regex("""uPhase\.[xyzw]\s*\*\s*\d*\.\d*[1-9]""")
+        val phase = """uPhase\.[xyzw]"""
+        val fraction = """\d*\.\d*[1-9]\d*"""
+        val bad = Regex("""$phase\s*\*\s*$fraction|$fraction\s*\*\s*$phase""")
         dir.listFiles()!!.forEach { assertNull(it.name, bad.find(it.readText())) }
     }
     @Test fun cycleWrapsBothWays() {
