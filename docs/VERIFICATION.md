@@ -196,7 +196,7 @@ Owner device checks (not yet run):
 - [x] 1. **PASS (2026-11-22, Claude over adb):** Light screen reads the lamp ("Light is on · Confirmed"); Turn off → confirmed off, Turn on → confirmed on, restored to 10 % white; leave and re-enter keeps the state; presets render. The first read after install returned unavailable once, then succeeded.
 - [x] 2. **PASS:** Start opens the capture prompt via `ConsentActivity` (Stop stays enabled behind it); approve → "Synchronizing · Controller: WLED"; Stop → Ready; home card "Ready". Optional prompt skip (`PROJECT_MEDIA allow`) not tried: currently `ignore`.
 - [x] 3. **Recorded:** `SYSTEM_ALERT_WINDOW: allow` (Android 14). Record the overlay permission: `adb shell appops get id.poncol.tvcompanion SYSTEM_ALERT_WINDOW`. A real background start of `ConsentActivity` and Ambient is the first device check of the Phase 2 plan.
-- [ ] 4. AirPlay music: the Ambient button still opens and closes; Back closes Ambient; D-pad look switching still works.
+- [x] 4. **PASS (owner, 2026-11-22):** with AirPlay music, Ambient opens and closes, looks switch, Back closes.
 - [x] 5. **PASS:** Notifications "Listening on port 8766", start after reboot On, overlay allowed; AirPlay "Listening for a connection", background listening On; both services running; no crash log.
 
 ## Quick Controls iOS tab — 2026-11-22
