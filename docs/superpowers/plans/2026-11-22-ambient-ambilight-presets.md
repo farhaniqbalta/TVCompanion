@@ -1,5 +1,7 @@
 # Ambient Ambilight Presets Implementation Plan
 
+> **Status (2026-11-22):** Tasks 2–3 implemented by Codex. Both looks were then redesigned with the owner on the TV (see `docs/VERIFICATION.md`, *Ambient looks: Edge Orbit and Chromatic Flow*). Task 4's soak/CPU/PSS evidence and the 540p-fallback check remain open.
+
 > **For agentic workers.** Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task by task. Check off each step after verification.
 
 **Goal.** Expand the Ambient cycle from four looks to six with Chromatic Flow and Edge Orbit, and release Ambient's GL resources safely when the view closes.

@@ -221,3 +221,22 @@ TV: Skyworth (Android 14) at the profile address; iPhone 12 Pro Max running the 
   - Without `PROJECT_MEDIA`, a remote start shows the capture prompt on the TV.
   - The owner ran `adb shell appops set id.poncol.tvcompanion PROJECT_MEDIA allow`. A remote start then skips the prompt (`ConsentActivity` → `MediaProjectionPermissionActivity` auto-approved, `BAL_ALLOW_VISIBLE_WINDOW`).
   - The test run ended in `error` because the WLED ESP32 was powered off (`WLED /json/info failed: SocketTimeoutException`). That is the correct report, not a fault.
+
+## Ambient looks: Edge Orbit and Chromatic Flow — 2026-11-22
+
+Branch `feature/ambient-ambilight-presets` (started by Codex, finished here; `main` merged in). Debug builds installed on the Skyworth Android 14 TV; owner judged the looks with AirPlay music.
+
+- **Tests:** `:integrations:airplay-runtime:testDebugUnitTest`, `:core:ambilight-engine:test`, `:app:testDebugUnitTest`, `:app:assembleDebug` pass. `AmbientShadersTest` 12/12 with `AMBIENT_GLSLC` set to the NDK `glslc` (no skips). The compiler caught a reserved word (`half`) and the phase test caught a fractional multiplier during the iterations. iOS `TVCompanionKit` 26/26.
+- **Edge Orbit (accepted "good enough for now"):**
+  - Iteration 1 (rainbow edge with a comet per beat) and iteration 2 (the original two ribbons with a positional beat kick) were rejected: too busy, then "clunky".
+  - Final version: a rounded orbit path (radius 0.30, no corner seams), two head-and-tail streaks on a bold cyan/violet/magenta/amber path, and beats as waves running down each tail. 5 laps per clock cycle (owner asked for it faster). Light ends 0.32 in from the edge with a 0.12 soft fade; the dark centre exits early.
+  - Performance: the first streak version measured 45 ms per frame (22 fps, GPU 20.7 ms). After the early exit and fewer palette lookups it is expected at 30 fps; the final build was not re-measured.
+- **Chromatic Flow:**
+  - A beat-flash version was withdrawn as a photosensitivity risk (per-beat hue steps and an edge flash).
+  - The calm version measured 30 fps (GPU 7.5 ms) but was not responsive enough.
+  - Final version: four fields tied to bass (pushes outward), mids (breathes), treble (shimmers) and an anchor, using smoothed band levels. Colours are blended rather than added (no white fog); per-field brightness swing is capped near 25%. Owner: "okay for now"; not re-measured.
+- **Also fixed:** both new looks used fractional multiples of the phase clocks for hue, which made the colour jump at each clock wrap. They now drift through the palette once per slow-clock cycle (about 3 minutes).
+- **Open:**
+  - The 540p automatic fallback did **not** trigger while Edge Orbit ran at 22 fps. It may have been broken by the queued-look change (`2a4f55b`) and needs a look.
+  - The Codex plan's Task 4 (long soak, CPU/PSS with Ambilight off and on, reduced-motion pass) is not done.
+
