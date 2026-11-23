@@ -1,4 +1,5 @@
 #include "ambient/ambient_source.h"
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 
@@ -74,7 +75,12 @@ void AmbientSource::run() {
             const int got = tap_.window(window_, 1024, next, endNs, total);
             // window() does not say which generation it read: a reset during the copy invalidates it.
             if (tap_.generation() != before) break;
-            if (got == 2) { next = total; continue; }  // fell behind the ring: skip to the newest audio
+            if (got == 2) {  // fell behind the ring: jump whole hops so the beat clock keeps pace with the audio
+                const uint64_t hops = (total - next) / 512;
+                extractor_.skip((int)std::min<uint64_t>(hops, 512));
+                next += hops * 512;
+                continue;
+            }
             if (got == 1) break;
             extractor_.process(window_, endNs, features);
             analyses_.fetch_add(1, std::memory_order_relaxed);

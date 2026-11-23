@@ -18,15 +18,16 @@ public:
 private:
     static constexpr int H = 512;                       // history frames (~5.9 s)
     static constexpr int LAG_MIN = 29, LAG_MAX = 86;    // 178..60 BPM
-    static constexpr int ESTIMATE_EVERY = 43, MIN_HISTORY = 172, PHASE_SPAN = 344;  // phase from the last ~4 s
+    static constexpr int ESTIMATE_EVERY = 43, MIN_HISTORY = 172;
     float at(const float *ring, int framesAgo) const { return ring[((head_ - 1 - framesAgo) % H + H) % H]; }
     float bestPast(const float *score, int framesAgo, const float *future, int futureLen) const;
+    float phaseSum(int framesAgo) const;  // onset strength on a beat grid through that frame, whole history
     int bestPhase() const;  // frames ago of the most recent beat on the strongest comb through recent onsets
     void estimateTempo();
     void predict();
 
     float odf_[H] = {}, score_[H] = {};
-    int head_ = 0, count_ = 0, sinceEstimate_ = 0;
+    int head_ = 0, count_ = 0, sinceEstimate_ = 0, phaseVotes_ = 0;
     float period_ = 0, pending_ = 0, confidence_ = 0;
     long frame_ = 0, lastBeat_ = -1, predictAt_ = -1, nextBeat_ = -1;
     float future_[2 * LAG_MAX] = {};

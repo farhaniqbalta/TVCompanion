@@ -44,12 +44,18 @@ bool BeatTracker::push(float onset) {
     if (++sinceEstimate_ >= ESTIMATE_EVERY && count_ >= MIN_HISTORY) { sinceEstimate_ = 0; estimateTempo(); estimated = true; }
     if (period_ <= 0) return false;
     if (estimated) {
-        // (Re)anchor the phase from the whole recent history, not one loud hit: a single strong off-beat bass note
-        // must not set the grid, and a grid that did lock half a beat off recovers within a second.
-        const long anchor = n - bestPhase();
+        // (Re)anchor the phase from the whole history, not one loud hit: a single strong off-beat bass note must not
+        // set the grid, and a grid that did lock half a beat off recovers within about a second.
+        // Only on a clear margin: with 8th-note hi-hats both phases score alike, and flipping on noise drops beats.
+        const int phase = bestPhase();
+        const long anchor = n - phase;
         float d = std::fmod((float)(anchor - lastBeat_), period_);
         if (d > period_ / 2) d -= period_; else if (d < -period_ / 2) d += period_;
-        if (lastBeat_ < 0 || std::fabs(d) > period_ / 4) {
+        const int current = lastBeat_ < 0 ? 0 : (int)std::lround(std::fmod((float)(n - lastBeat_), period_));
+        const bool disagrees = std::fabs(d) > period_ / 4 && phaseSum(phase) >= 1.3f * phaseSum(current);
+        phaseVotes_ = disagrees ? phaseVotes_ + 1 : 0;
+        if (lastBeat_ < 0 || phaseVotes_ >= 2) {  // like tempo: a new phase must win twice in a row
+            phaseVotes_ = 0;
             lastBeat_ = anchor;
             nextBeat_ = -1;
             predictAt_ = lastBeat_ + std::lround(period_ / 2);
@@ -63,15 +69,16 @@ bool BeatTracker::push(float onset) {
     return confidence_ >= CONF_MIN;
 }
 
+float BeatTracker::phaseSum(int phase) const {
+    float sum = 0;
+    for (float ago = (float)phase; ago < count_; ago += period_) sum += at(odf_, (int)std::lround(ago));
+    return sum;
+}
+
 int BeatTracker::bestPhase() const {
-    const int p = std::max(1, (int)std::lround(period_)), span = std::min(count_, PHASE_SPAN);
+    const int p = std::max(1, (int)std::lround(period_));
     int best = 0;
-    float bestSum = -1;
-    for (int phase = 0; phase < p && phase < span; ++phase) {
-        float sum = 0;
-        for (float ago = (float)phase; ago < span; ago += period_) sum += at(odf_, (int)std::lround(ago));
-        if (sum > bestSum) { bestSum = sum; best = phase; }
-    }
+    for (int phase = 1; phase < p && phase < count_; ++phase) if (phaseSum(phase) > phaseSum(best)) best = phase;
     return best;
 }
 

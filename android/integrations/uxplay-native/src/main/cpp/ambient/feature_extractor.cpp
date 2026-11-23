@@ -20,6 +20,12 @@ void FeatureExtractor::reset() {
     tracker_.reset();
 }
 
+void FeatureExtractor::skip(int hops) {
+    if (hops >= 512) tracker_.reset();  // longer than the tracker's whole history: start over
+    else for (int i = 0; i < hops; ++i) tracker_.push(0.0f);
+    hasPrev_ = false;
+}
+
 void FeatureExtractor::process(const float *w, int64_t newestPlayoutNs, AmbientFeatures &f) {
     double sq = 0; float peak = 0;
     for (int i = 0; i < N; ++i) {
@@ -41,15 +47,17 @@ void FeatureExtractor::process(const float *w, int64_t newestPlayoutNs, AmbientF
 
     // Log-compressed spectral flux, half-wave rectified per bin (Dixon 2006): bass note changes and kicks count,
     // a rising and a falling bin no longer cancel out.
+    // Broadband beat over a bass-weighted mix on purpose: on real tracks a separate kick/bass term lowered tempo
+    // confidence and doubled the tempo; a half-beat ambiguity from 8th-note hi-hats is resolved by the tracker.
     float flux = 0;
     for (int k = 1; k < FLUX_BINS; ++k) {
         const float l = std::log1p(100.0f * mags_[k] * norm);
         flux += std::max(0.0f, l - prevLog_[k]);
         prevLog_[k] = l;
     }
-    flux = hasPrev_ ? flux / (FLUX_BINS - 1) : 0.0f;
+    onset_ = hasPrev_ ? flux / (FLUX_BINS - 1) : 0.0f;
     hasPrev_ = true;
-    if (tracker_.push(flux)) {
+    if (tracker_.push(onset_)) {
         for (int i = 3; i > 0; --i) f.beatPlayoutNs[i] = f.beatPlayoutNs[i - 1];
         // Hann weights peak mid-window, so an onset registers when it is near the centre, not the newest sample.
         f.beatPlayoutNs[0] = newestPlayoutNs - (int64_t)(N / 2) * 1000000000LL / 44100;

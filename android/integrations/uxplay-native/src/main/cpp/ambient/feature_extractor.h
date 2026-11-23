@@ -17,14 +17,18 @@ public:
     FeatureExtractor();
     void reset();
     void process(const float *window1024, int64_t newestPlayoutNs, AmbientFeatures &features);  // updates in place
+    const BeatTracker &tracker() const { return tracker_; }  // diagnostics and tests
+    float onset() const { return onset_; }                    // last onset strength fed to the tracker
+    void skip(int hops);  // hops that were never analysed: advance the beat clock, forget the previous spectrum
 
 private:
-    static constexpr int N = 1024, FLUX_BINS = 256;  // bins 1..255, up to ~11 kHz
+    static constexpr int N = 1024, FLUX_BINS = 256;  // flux over bins 1..255 (~11 kHz)
     float hann_[N], buf_[N], mags_[N / 2 + 1];
     int bandLo_[16], bandHi_[16];
     float hannSum_ = 0;
     float prevLog_[FLUX_BINS] = {};
     bool hasPrev_ = false;
+    float onset_ = 0;
     BeatTracker tracker_;
 };
 }

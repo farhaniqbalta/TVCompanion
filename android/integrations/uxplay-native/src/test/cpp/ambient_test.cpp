@@ -179,6 +179,21 @@ int main() {
         assert(precision >= 0.95);
     }
 
+    // skippedHopsKeepTheGrid: 20 hops (~230 ms) never analysed mid-stream; beats are back on the kicks within 1 s
+    {
+        const std::vector<float> s = kickTrack(12.0); FeatureExtractor fx; AmbientFeatures f;
+        std::vector<double> beats; uint32_t seen = 0;
+        for (size_t end = 1024; end <= s.size(); end += 512) {
+            if (end == 1024 + 512 * 600) { fx.skip(20); end += 512 * 20; }
+            fx.process(s.data() + end - 1024, (int64_t)((end - 1) * 1e9 / 44100), f);
+            if (f.beatCount != seen) { seen = f.beatCount; beats.push_back(f.beatPlayoutNs[0] / 1e9); }
+        }
+        const double resume = (1024 + 512 * 620) / 44100.0;
+        double recall, precision; scoreBeats(beats, grid(12.0, 118), resume + 1.0, 35, recall, precision);
+        std::cout << "after skip: recall=" << recall << " precision=" << precision << "\n";
+        assert(recall >= 0.95 && precision >= 0.95);
+    }
+
     // noBeatsOnSustainedToneSilenceOrNoise
     {
         std::vector<float> s(8 * 44100);
