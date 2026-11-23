@@ -18,7 +18,7 @@ public enum ControlWire {
 /// Every command sets an explicit state; there are no toggles.
 public enum ControlRequest: Equatable {
     case status, pair(proof: String)
-    case ambient(open: Bool, look: String?), ambilight(on: Bool)
+    case ambient(open: Bool, look: String?), ambilight(on: Bool), ambilightLook(style: String?, contrast: Int?)
     case light(on: Bool), lightPreset(String), notifications(on: Bool)
     case airplay(available: Bool, confirm: Bool)
 
@@ -29,6 +29,8 @@ public enum ControlRequest: Equatable {
         case .pair(let proof): body["cmd"] = "pair"; body["proof"] = proof
         case .ambient(let open, let look): body["cmd"] = "ambient.set"; body["open"] = open; if let look { body["look"] = look }
         case .ambilight(let on): body["cmd"] = "ambilight.set"; body["on"] = on
+        case .ambilightLook(let style, let contrast):
+            body["cmd"] = "ambilight.look"; if let style { body["style"] = style }; if let contrast { body["contrast"] = contrast }
         case .light(let on): body["cmd"] = "light.set"; body["on"] = on
         case .lightPreset(let name): body["cmd"] = "light.preset"; body["name"] = name
         case .notifications(let on): body["cmd"] = "notifications.set"; body["on"] = on
@@ -52,9 +54,14 @@ public struct ControlStatus: Decodable, Equatable {
     public struct Ambient: Decodable, Equatable { public let state: String; public let look: String?; public let looks: [String] }
     public struct Light: Decodable, Equatable { public let state: String; public let preset: String?; public let presets: [String] }
     public struct Simple: Decodable, Equatable { public let state: String }
+    /// Look fields are absent on TVs older than the Ambilight look command. `contrast` is 0–100 in steps of 10; 0 is Normal.
+    public struct Ambilight: Decodable, Equatable {
+        public let state: String
+        public let style: String?, styles: [String]?, contrast: Int?
+    }
     public struct AirPlay: Decodable, Equatable { public let state: String; public let available: Bool }
     public let ambient: Ambient
-    public let ambilight: Simple
+    public let ambilight: Ambilight
     public let light: Light
     public let notifications: Simple
     public let airplay: AirPlay

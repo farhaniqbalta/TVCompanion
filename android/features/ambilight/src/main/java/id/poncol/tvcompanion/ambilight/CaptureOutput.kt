@@ -3,6 +3,7 @@ package id.poncol.tvcompanion.ambilight
 import id.poncol.tvcompanion.ambilight.engine.FrameCadence
 import id.poncol.tvcompanion.ambilight.engine.LedPipeline
 import id.poncol.tvcompanion.ambilight.engine.PixelAccess
+import id.poncol.tvcompanion.ambilight.engine.scaleOutput
 
 /** The capture looper owns all fields and calls. */
 internal class CaptureOutput(
@@ -79,8 +80,8 @@ internal class CaptureOutput(
     private fun output(now: Long) = session.send(epoch) {
         attempted = true
         lastOutput = now
-        val brightness = session.look.brightness
-        for (i in rgb.indices) scaled[i] = (((rgb[i].toInt() and 255) * brightness + 50) / 100).toByte()
+        val look = session.look
+        scaleOutput(rgb, scaled, look.brightness, look.contrast)
         val failed = !transport.send(scaled)
         if (failed) droppedOutput++
         if (failed != sendError) {

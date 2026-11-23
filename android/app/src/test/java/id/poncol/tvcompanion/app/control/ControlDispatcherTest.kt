@@ -15,7 +15,10 @@ class ControlDispatcherTest {
         val ambient = s.getJSONObject("ambient")
         assertEquals("available", ambient.getString("state")); assertEquals("aurora", ambient.getString("look"))
         assertEquals(2, ambient.getJSONArray("looks").length())
-        assertEquals("off", s.getJSONObject("ambilight").getString("state"))
+        val ambilight = s.getJSONObject("ambilight")
+        assertEquals("off", ambilight.getString("state")); assertEquals("cinema", ambilight.getString("style"))
+        assertEquals(3, ambilight.getJSONArray("styles").length()); assertEquals(0, ambilight.getInt("contrast"))
+        assertFalse(ambilight.has("contrasts"))
         val light = s.getJSONObject("light")
         assertEquals("on", light.getString("state")); assertEquals("blue", light.getString("preset")); assertEquals(3, light.getJSONArray("presets").length())
         assertEquals("listening", s.getJSONObject("notifications").getString("state"))
@@ -36,6 +39,16 @@ class ControlDispatcherTest {
         assertOutcome("invalid", ControlCommand.LightPreset("teal"))
         assertTrue(fake.calls.none { it.startsWith("set") || it == "lightPreset" })
         assertOutcome("pending", ControlCommand.Ambient(false, null))   // close needs no look
+    }
+    @Test fun ambilightLookIsValidatedAndAFailedReadKeepsTheState() {
+        assertOutcome("invalid", ControlCommand.AmbilightLook("disco", null))
+        for (bad in listOf(55, 110, -10)) assertOutcome("invalid", ControlCommand.AmbilightLook(null, bad))
+        assertFalse("setAmbilightLook" in fake.calls)
+        fake.next = Outcome.OK
+        assertOutcome("ok", ControlCommand.AmbilightLook("soft", 50)); assertTrue("setAmbilightLook" in fake.calls)
+        fake.throwOn += "ambilightLook"
+        val ambilight = dispatcher.status().getJSONObject("ambilight")
+        assertEquals("off", ambilight.getString("state")); assertFalse(ambilight.has("style"))
     }
     @Test fun airplayOffConfirmRule() {
         fake.airplay = AirPlayStatus("playing", true, connected = true, keepSession = false)

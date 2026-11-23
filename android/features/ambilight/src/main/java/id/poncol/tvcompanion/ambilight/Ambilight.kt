@@ -5,9 +5,12 @@ import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import id.poncol.tvcompanion.ambilight.AmbilightCaptureService.Companion.EXTRA_EPOCH
+import id.poncol.tvcompanion.ambilight.engine.LightingProfile
 
 enum class AmbilightStatus { OFF, NEEDS_APPROVAL, STARTING, RUNNING, STOPPING, NOT_SET_UP, ERROR }
 enum class AmbilightStart { REQUESTED, BUSY, NOT_SET_UP, FAILED }
+/** Style by wire name, for example "cinema", and Dramatic strength 0–100 (0 is Normal). */
+data class AmbilightLook(val style: String, val contrast: Int)
 
 /** Headless entry point for Ambilight. Main thread only, like the session it drives. */
 object Ambilight {
@@ -42,6 +45,27 @@ object Ambilight {
     }
 
     fun stop() = ambilightSession.stop()
+
+    val STYLES = LightingProfile.entries.map { it.name.lowercase() }
+
+    fun validContrast(value: Int) = value in 0..100 && value % 10 == 0
+
+    fun look(context: Context): AmbilightLook = AmbilightPreferences(context).load()
+        .let { AmbilightLook(it.profile.name.lowercase(), it.contrast) }
+
+    /** Saves the given parts and applies them to a running session at once; false for an unknown style or contrast. */
+    fun setLook(context: Context, style: String?, contrast: Int?): Boolean {
+        if ((style != null && style !in STYLES) || (contrast != null && !validContrast(contrast))) return false
+        val prefs = AmbilightPreferences(context)
+        val old = prefs.load()
+        val config = old.copy(
+            profile = style?.let { LightingProfile.entries[STYLES.indexOf(it)] } ?: old.profile,
+            contrast = contrast ?: old.contrast,
+        )
+        prefs.save(config)
+        ambilightSession.look = Look(config.profile, config.brightness, config.contrast)
+        return true
+    }
 
     internal fun status(state: AmbilightState, configured: Boolean, attached: Boolean): AmbilightStatus = when {
         !configured -> AmbilightStatus.NOT_SET_UP

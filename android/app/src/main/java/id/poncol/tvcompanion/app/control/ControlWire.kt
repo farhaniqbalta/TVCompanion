@@ -14,6 +14,7 @@ sealed class ControlCommand {
     data class Pair(val proof: String) : ControlCommand()
     data class Ambient(val open: Boolean, val look: String?) : ControlCommand()
     data class Ambilight(val on: Boolean) : ControlCommand()
+    data class AmbilightLook(val style: String?, val contrast: Int?) : ControlCommand()
     data class Light(val on: Boolean) : ControlCommand()
     data class LightPreset(val name: String) : ControlCommand()
     data class Notifications(val on: Boolean) : ControlCommand()
@@ -85,6 +86,12 @@ object ControlWire {
                     if (look != null && look !is String) null else flag("open")?.let { ControlCommand.Ambient(it, look as String?) }
                 }
                 "ambilight.set" -> flag("on")?.let { ControlCommand.Ambilight(it) }
+                "ambilight.look" -> {
+                    val style = json.opt("style")
+                    val contrast = json.opt("contrast")
+                    if ((style != null && style !is String) || (contrast != null && contrast !is Int) || (style == null && contrast == null)) null
+                    else ControlCommand.AmbilightLook(style as String?, contrast as Int?)
+                }
                 "light.set" -> flag("on")?.let { ControlCommand.Light(it) }
                 "light.preset" -> (json.opt("name") as? String)?.let { ControlCommand.LightPreset(it) }
                 "notifications.set" -> flag("on")?.let { ControlCommand.Notifications(it) }

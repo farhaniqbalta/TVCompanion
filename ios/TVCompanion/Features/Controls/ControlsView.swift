@@ -141,6 +141,7 @@ struct ControlsView: View {
                 tile("Light", "lightbulb.fill", .light, s?.lightTile ?? unknown, lamp: s.flatMap(lampStyle)) { model.set(.light, .light(on: $0)) }
                     .contextMenu { if let s, s.lightTile.isOn { presetMenu(s) } }
                 tile("Ambilight", "sparkles.tv", .ambilight, s?.ambilightTile ?? unknown) { model.set(.ambilight, .ambilight(on: $0)) }
+                    .contextMenu { if let s, s.ambilight.state != "not_set_up" { ambilightMenu(s.ambilight) } }
             }
             GridRow {
                 tile("Ambient", "waveform", .ambient, s?.ambientTile ?? unknown) { open in
@@ -161,6 +162,35 @@ struct ControlsView: View {
             Button { model.set(.light, .lightPreset(name)) } label: {
                 Label(name.capitalized, systemImage: s.light.preset == name ? "checkmark" : "circle.fill")
             }
+        }
+    }
+
+    /// Style and contrast apply to a running sync at once and are kept for the next one, so the menu works while off too.
+    @ViewBuilder private func ambilightMenu(_ a: ControlStatus.Ambilight) -> some View {
+        if let styles = a.styles {
+            Section("Style") {
+                ForEach(styles, id: \.self) { name in
+                    optionButton(ControlNames.look(name), chosen: a.style == name) { model.set(.ambilight, .ambilightLook(style: name, contrast: nil)) }
+                }
+            }
+        }
+        if let contrast = a.contrast {
+            Menu {
+                ForEach(Array(stride(from: 0, through: 100, by: 10)), id: \.self) { value in
+                    optionButton(value == 0 ? "Normal" : "\(value)%", chosen: contrast == value) {
+                        model.set(.ambilight, .ambilightLook(style: nil, contrast: value))
+                    }
+                }
+            } label: {
+                Text("Contrast")
+                Text(contrast == 0 ? "Normal" : "\(contrast)%")
+            }
+        }
+    }
+
+    private func optionButton(_ title: String, chosen: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            if chosen { Label(title, systemImage: "checkmark") } else { Text(title) }
         }
     }
 
