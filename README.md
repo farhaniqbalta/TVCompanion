@@ -15,7 +15,7 @@ TVCompanion is an Android TV app and an iPhone/iPad companion. The TV drives the
 | **Smart light** | Power, brightness and colour presets for a Bardi (Tuya) bulb over the local network. Every change is confirmed by reading the lamp back. | On/off and colour presets in the Controls tab |
 | **Ambilight** | Screen capture drives a WLED LED strip around the TV in real time, with Cinema, Responsive and Soft styles | Start and stop remotely |
 | **AirPlay** | A built-in receiver: Mac extended desktop, iPhone mirroring and music, in its own process | Background listening on/off |
-| **Ambient** | Music visualizers that react to the beat and colour the room: Aurora, Strings, Slow Dusk, Chromatic Flow, Edge Orbit and Bounce | Open or close with a chosen look |
+| **Ambient** | Music visualizers that react to the beat and colour the room: Aurora, Strings, Slow Dusk, Chromatic Flow, Edge Orbit, Bounce and Mirror Bars | Open or close with a chosen look |
 | **Notifications** | Small, dismissible overlays over whatever is playing, with source filters and privacy modes | Send normal or urgent messages, or switch the receiver on/off |
 | **Remote** | | Google TV Remote v2: D-pad, media keys, voice and keyboard |
 

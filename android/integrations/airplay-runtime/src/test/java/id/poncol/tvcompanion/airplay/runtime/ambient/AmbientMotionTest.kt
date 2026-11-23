@@ -50,6 +50,14 @@ class AmbientMotionTest {
         repeat(60) { m.update(frame(bass = 1f), AmbientStatus.OK, 1f / 30f, it / 30f) }
         assertEquals(0f, m.pulse, 0.001f); assertTrue(m.bass > 0.9f)
     }
+    @Test fun bandsFollowInputAndDecayWhenIdle() {
+        val m = AmbientMotion(false)
+        val f = frame().also { for (i in 0..15) it[AmbientFrame.BANDS + i] = i / 15f }
+        repeat(30) { m.update(f, AmbientStatus.OK, 1f / 30f, it / 30f) }
+        for (i in 0..15) assertEquals(i / 15f, m.bands[i], 0.02f)
+        repeat(150) { m.update(frame(recent = false), AmbientStatus.STALE, 1f / 30f, 1f + it / 30f) }
+        m.bands.forEach { assertTrue(it < 0.05f) }
+    }
     @Test fun reducedMotionHasNoPulseAndStaticDither() {
         val m = AmbientMotion(true)
         m.update(frame(beatAgeMs = 50f, bass = 1f), AmbientStatus.OK, 1f / 30f, 0f); val seed = m.ditherSeed

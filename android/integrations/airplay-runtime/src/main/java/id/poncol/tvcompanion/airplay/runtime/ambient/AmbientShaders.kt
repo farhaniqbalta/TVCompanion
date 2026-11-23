@@ -4,14 +4,14 @@ package id.poncol.tvcompanion.airplay.runtime.ambient
 object AmbientShaders {
     const val CONTRACT = "// ambient-contract: 1"
     const val DEFAULT_LOOK = "aurora"
-    val LOOKS: List<String> = listOf("aurora", "strings", "dusk", "chromatic_flow", "edge_orbit", "bounce")
+    val LOOKS: List<String> = listOf("aurora", "strings", "dusk", "chromatic_flow", "edge_orbit", "bounce", "mirror_bars")
     const val COLUMNS = 128
 
     data class Sources(val vertex: String, val fragment: String, val look: String)
 
     val UNIFORMS: List<String> = listOf(
         "uRes", "uAspect", "uPhase", "uLevel", "uBass", "uMid", "uHigh", "uPulse", "uReduced",
-        "uBeatAges", "uBeatCount", "uBase", "uPalette", "uDitherSeed",
+        "uBeatAges", "uBeatCount", "uBase", "uPalette", "uDitherSeed", "uBands",
     )
 
     private val SHARED = """uniform highp vec2 uRes;
@@ -28,6 +28,7 @@ uniform highp float uBeatCount;
 uniform highp vec3 uBase;
 uniform highp vec3 uPalette[4];
 uniform highp float uDitherSeed;
+uniform highp vec4 uBands[4];   // 16 smoothed log bands, 40 Hz..16 kHz, 0..1
 float sq(float x){ return x*x; }
 highp float hash12(highp vec2 p){ highp vec3 p3=fract(vec3(p.xyx)*0.1031); p3+=dot(p3,p3.yzx+33.33); return fract((p3.x+p3.y)*p3.z); }
 """
