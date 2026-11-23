@@ -15,11 +15,15 @@ FeatureExtractor::FeatureExtractor() {
 }
 
 void FeatureExtractor::reset() {
-    std::fill(flux_, flux_ + HISTORY, 0.0f);
-    fluxCount_ = fluxNext_ = 0;
-    prevLow_ = 0;
-    hasBeat_ = false;
-    lastBeatNs_ = 0;
+    std::fill(prevLog_, prevLog_ + FLUX_BINS, 0.0f);
+    hasPrev_ = false;
+    tracker_.reset();
+}
+
+void FeatureExtractor::skip(int hops) {
+    if (hops >= 512) tracker_.reset();  // longer than the tracker's whole history: start over
+    else for (int i = 0; i < hops; ++i) tracker_.push(0.0f);
+    hasPrev_ = false;
 }
 
 void FeatureExtractor::process(const float *w, int64_t newestPlayoutNs, AmbientFeatures &f) {
@@ -41,25 +45,23 @@ void FeatureExtractor::process(const float *w, int64_t newestPlayoutNs, AmbientF
         f.bands[b] = (float)std::min(1.0, std::max(0.0, (20 * std::log10(mag) + 80) / 55));
     }
 
-    const float low = (f.bands[0] + f.bands[1] + f.bands[2] + f.bands[3]) / 4;
-    const float flux = std::max(0.0f, low - prevLow_);
-    prevLow_ = low;
-    float meanFlux = 0;
-    for (int i = 0; i < fluxCount_; ++i) meanFlux += flux_[i];
-    if (fluxCount_) meanFlux /= fluxCount_;
-    flux_[fluxNext_] = flux;
-    fluxNext_ = (fluxNext_ + 1) % HISTORY;
-    fluxCount_ = std::min(fluxCount_ + 1, HISTORY);
-
-    const int64_t sinceBeat = newestPlayoutNs - lastBeatNs_;
-    // Playout going backwards (discontinuity without a reset) must not block beats until it catches up.
-    const bool refractoryOk = !hasBeat_ || sinceBeat < 0 || sinceBeat >= 280000000LL;
-    if (flux > 1.6f * meanFlux + 0.02f && low > 0.25f && refractoryOk) {
+    // Log-compressed spectral flux, half-wave rectified per bin (Dixon 2006): bass note changes and kicks count,
+    // a rising and a falling bin no longer cancel out.
+    // Broadband beat over a bass-weighted mix on purpose: on real tracks a separate kick/bass term lowered tempo
+    // confidence and doubled the tempo; a half-beat ambiguity from 8th-note hi-hats is resolved by the tracker.
+    float flux = 0;
+    for (int k = 1; k < FLUX_BINS; ++k) {
+        const float l = std::log1p(100.0f * mags_[k] * norm);
+        flux += std::max(0.0f, l - prevLog_[k]);
+        prevLog_[k] = l;
+    }
+    onset_ = hasPrev_ ? flux / (FLUX_BINS - 1) : 0.0f;
+    hasPrev_ = true;
+    if (tracker_.push(onset_)) {
         for (int i = 3; i > 0; --i) f.beatPlayoutNs[i] = f.beatPlayoutNs[i - 1];
-        f.beatPlayoutNs[0] = newestPlayoutNs;
+        // Hann weights peak mid-window, so an onset registers when it is near the centre, not the newest sample.
+        f.beatPlayoutNs[0] = newestPlayoutNs - (int64_t)(N / 2) * 1000000000LL / 44100;
         ++f.beatCount;
-        hasBeat_ = true;
-        lastBeatNs_ = newestPlayoutNs;
     }
 }
 }

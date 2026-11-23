@@ -146,6 +146,7 @@ internal class AmbientRenderer(
         glUniform4fv(loc[U_BEAT_AGES], 1, motion.beatAges, 0)
         glUniform1f(loc[U_BEAT_COUNT], motion.beatCount)
         glUniform1f(loc[U_DITHER], motion.ditherSeed)
+        glUniform4fv(loc[U_BANDS], 4, motion.bands, 0)
         val q = gpuQueries
         if (q != null) {
             val slot = (gpuFrame % q.size).toInt()
@@ -270,6 +271,7 @@ internal class AmbientRenderer(
         val U_BASE = u("uBase")
         val U_PALETTE = u("uPalette")
         val U_DITHER = u("uDitherSeed")
+        val U_BANDS = u("uBands")
         val BASE = squared(0x101B21)
         val PALETTE = squared(0xA2E3D0, 0xEFD29A, 0x1F6F78, 0xF2F5F4)   // mint, gold, teal, pale
 

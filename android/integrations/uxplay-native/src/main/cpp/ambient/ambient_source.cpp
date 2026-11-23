@@ -1,4 +1,5 @@
 #include "ambient/ambient_source.h"
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 
@@ -55,7 +56,7 @@ void AmbientSource::publish(const AmbientFeatures &features, uint32_t generation
 void AmbientSource::run() {
     AmbientFeatures features;
     uint32_t generation = tap_.generation();
-    uint64_t lastTotal = 0;
+    uint64_t next = 1024;  // sample index the next analysed window ends at; hop is exactly 512
     extractor_.reset();
     std::unique_lock<std::mutex> lock(wakeMutex_);
     while (!wake_.wait_for(lock, std::chrono::milliseconds(5), [this] { return stop_; })) {
@@ -65,21 +66,27 @@ void AmbientSource::run() {
             generation = before;
             extractor_.reset();
             features = AmbientFeatures{};
-            lastTotal = 0;
+            next = 1024;
             publish(features, generation);
         }
-        int64_t newest = 0;
-        uint64_t total = 0;
-        const bool ok = tap_.latest(window_, 1024, newest, total);
-        // reset() bumps generation before marking the clear: a read in between returns the old total.
-        if (total < lastTotal) lastTotal = 0;
-        // latest() does not say which generation it read: a reset during the copy invalidates the window.
-        if (ok && tap_.generation() == before && total >= lastTotal + 512) {
-            lastTotal = total;
-            extractor_.process(window_, newest, features);
+        for (;;) {
+            int64_t endNs = 0;
+            uint64_t total = 0;
+            const int got = tap_.window(window_, 1024, next, endNs, total);
+            // window() does not say which generation it read: a reset during the copy invalidates it.
+            if (tap_.generation() != before) break;
+            if (got == 2) {  // fell behind the ring: jump whole hops so the beat clock keeps pace with the audio
+                const uint64_t hops = (total - next) / 512;
+                extractor_.skip((int)std::min<uint64_t>(hops, 512));
+                next += hops * 512;
+                continue;
+            }
+            if (got == 1) break;
+            extractor_.process(window_, endNs, features);
             analyses_.fetch_add(1, std::memory_order_relaxed);
-            publish(features, generation);
+            next += 512;
         }
+        publish(features, generation);
         lock.lock();
     }
 }

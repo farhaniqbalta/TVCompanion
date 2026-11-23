@@ -9,7 +9,7 @@ class AmbientShadersTest {
     @Test fun shippedLooksCarryContractHeader() {
         val files = dir.listFiles()!!.map { it.name }.toSet()
         assertEquals(setOf("aurora.vert", "aurora.frag", "dusk.frag", "strings.vert", "strings.frag",
-            "chromatic_flow.vert", "chromatic_flow.frag", "edge_orbit.vert", "edge_orbit.frag", "bounce.vert", "bounce.frag"), files)
+            "chromatic_flow.vert", "chromatic_flow.frag", "edge_orbit.vert", "edge_orbit.frag", "bounce.vert", "bounce.frag", "mirror_bars.frag"), files)
         dir.listFiles()!!.forEach { assertEquals(it.name, AmbientShaders.CONTRACT, it.readLines().first()) }
     }
     @Test fun stringsKeepsBeatMathPerVertexAndHighp() {
@@ -54,9 +54,9 @@ class AmbientShadersTest {
         dir.listFiles()!!.forEach { assertNull(it.name, bad.find(it.readText())) }
     }
     @Test fun cycleWrapsBothWays() {
-        val order = listOf("aurora", "strings", "dusk", "chromatic_flow", "edge_orbit", "bounce")
+        val order = listOf("aurora", "strings", "dusk", "chromatic_flow", "edge_orbit", "bounce", "mirror_bars")
         assertEquals(order, AmbientShaders.LOOKS)
-        order.zipWithNext().plus("bounce" to "aurora").forEach { (from, to) ->
+        order.zipWithNext().plus("mirror_bars" to "aurora").forEach { (from, to) ->
             assertEquals(to, AmbientShaders.cycle(from, 1))
             assertEquals(from, AmbientShaders.cycle(to, -1))
         }

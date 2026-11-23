@@ -286,3 +286,25 @@ Measured on the Skyworth Android 14 TV (4 cores, 1.4 GB RAM) under the heaviest 
 - **Not done:** a 20–30 minute soak (skipped by the owner).
 - **Follow-up (`7def36f`):** at the owner's request, Edge Orbit's glow is shallower (0.11 → 0.065) and its light ends at 0.22 instead of 0.32, keeping the light on the orbit. This should only make it cheaper; not re-measured.
 
+## Ambient beat tracking and Mirror Bars (2026-11-23, PR #18)
+
+Why: on real songs, pulses did not follow the beat. The old detector fired on jumps in averaged low-band energy, with a 280 ms lockout and no idea of tempo. Off-beat bass notes fired, soft kicks were missed, and the analysis hop wandered between 512 and 960 samples (the ~51/s measured above).
+
+- **Host checks (`scripts/check-airplay-native.py`), all passing:**
+  - steady 118 BPM kick: every kick after 3 s gets a beat within 35 ms, with none in between;
+  - louder bass notes on the off-beats: the grid stays on the kicks;
+  - every 4th kick missing: the beat is still sent there;
+  - 20 skipped hops: back on the grid within 1 s;
+  - no beats on a steady tone, silence or white noise;
+  - end to end, every accepted 512-sample hop is analysed exactly once.
+- **Real audio, host harness only** (local files, not in the repo). Tempo confidence was at least 0.2 for 70–92% of the time on orchestral game-soundtrack cues and 6% on a rain recording. A folk jig tracked at 117 BPM. On synthetic pop mixes at 96, 124 and 140 BPM, the variation in beat spacing was 0.16, 0.07 and 0.20.
+- **On the TV** (debug build, AirPlay music, installed with `adb install -r`, data kept):
+  - analysis runs at 85.5–86 per second (it was about 51), and about 0.1% of tap chunks are dropped (analysis only; playback is untouched);
+  - the owner said the beat felt "somehow better";
+  - the analysis thread used about 24% of one core at `-O0`, and about 19% after the FFT twiddle change. Beat timestamps were byte-identical before and after on 7 real tracks (2,532 beats). For the `-O2` build, see PR #19.
+- **Not checked on the TV:** sync by ear. Beats are now stamped about 12 ms earlier, at the window centre, and `SYNC_OFFSET_MS` is still −25 ms. No pop or EDM tracks were tried on the host.
+- **Visual change:** `uPulse` now moves only on beats. A sustained bass no longer holds it up, so Slow Dusk's halo and Bounce's ball are calmer between beats.
+- **Mirror Bars** (new look):
+  - 30 fps on the TV: mean interval 33.4 ms, worst about 36 ms. GPU time is about 14–15 ms (Bounce is about 10.8 ms), and the 540p fallback never triggered.
+  - `AmbientShadersTest` passes 12/12 with `AMBIENT_GLSLC` set, so every look compiles.
+  - Bar height and kick size have not been tuned with the owner.

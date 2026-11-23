@@ -22,6 +22,7 @@
     <string name="airplay_runtime_ambient_look_bounce">Bounce</string>
     <string name="airplay_runtime_ambient_look_chromatic_flow">Chromatic Flow</string>
     <string name="airplay_runtime_ambient_look_edge_orbit">Edge Orbit</string>
+    <string name="airplay_runtime_ambient_look_mirror_bars">Mirror Bars</string>
     <string name="airplay_runtime_return">Leave playback</string>
     <string name="airplay_runtime_stop_action">Stop AirPlay</string>
     <string name="airplay_runtime_leave_stops">Back leaves playback and ends this session. Background listening can remain on.</string>

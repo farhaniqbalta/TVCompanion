@@ -21,24 +21,26 @@ void AmbientTap::submit(const int16_t *stereo, int frames, float multiplier, int
         if (++w == cap) w = 0;
     }
     total_ += (uint64_t)frames;
+    if (sampleRate > 0) rate_ = sampleRate;
     newestNs_ = firstFramePlayoutNs + (sampleRate > 0 ? (int64_t)(frames - 1) * 1000000000LL / sampleRate : 0);
     lastSubmitNs_.store(std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count(), std::memory_order_relaxed);
 }
 
-bool AmbientTap::latest(float *out, size_t count, int64_t &newestPlayoutNs, uint64_t &totalWritten) {
+int AmbientTap::window(float *out, size_t count, uint64_t end, int64_t &endPlayoutNs, uint64_t &totalWritten) {
     std::lock_guard<std::mutex> lock(mutex_);
     applyPendingResetLocked();
     totalWritten = total_;
-    newestPlayoutNs = newestNs_;
     const size_t cap = ring_.size();
-    if (count > cap || total_ < count) return false;
-    size_t r = (size_t)((total_ - count) % cap);
+    if (count > cap || end < count || end > total_) return 1;
+    if (total_ - (end - count) > cap) return 2;
+    endPlayoutNs = newestNs_ - (int64_t)(total_ - end) * 1000000000LL / rate_;
+    size_t r = (size_t)((end - count) % cap);
     for (size_t i = 0; i < count; ++i) {
         out[i] = ring_[r];
         if (++r == cap) r = 0;
     }
-    return true;
+    return 0;
 }
 
 void AmbientTap::reset() noexcept {
