@@ -30,6 +30,8 @@ Every other command requires a paired client certificate. Otherwise the TV repli
 {"v":1,"cmd":"ambient.set","open":true,"look":"aurora"}
 {"v":1,"cmd":"ambient.set","open":false}
 {"v":1,"cmd":"ambilight.set","on":true}
+{"v":1,"cmd":"ambilight.look","style":"soft"}
+{"v":1,"cmd":"ambilight.look","contrast":"dramatic"}
 {"v":1,"cmd":"light.set","on":false}
 {"v":1,"cmd":"light.preset","name":"blue"}
 {"v":1,"cmd":"notifications.set","on":true}
@@ -39,6 +41,7 @@ Every other command requires a paired client certificate. Otherwise the TV repli
 - **Explicit states only:** every command sets a state; there are no toggles.
 - **Looks:** `look` must be one of the status `looks`.
 - **Light presets:** `name` must be one of `presets`, which includes `white`.
+- **Ambilight look:** sends `style`, `contrast`, or both. Each must be one of the status `styles` or `contrasts`. The setting is saved and applies to a running sync at once. It also works while Ambilight is off, and replies `ok`.
 - **AirPlay confirm:** `confirm` is only needed when the TV previously answered `would_end_playback`.
 
 ## Response (every request)
@@ -46,7 +49,7 @@ Every other command requires a paired client certificate. Otherwise the TV repli
 ```json
 {"v":1,"outcome":"ok","reason":null,"status":{
   "ambient":{"state":"available","look":"aurora","looks":["aurora","strings","dusk","ripples"]},
-  "ambilight":{"state":"off"},
+  "ambilight":{"state":"off","style":"cinema","styles":["cinema","responsive","soft"],"contrast":"normal","contrasts":["normal","dramatic"]},
   "light":{"state":"on","preset":"blue","presets":["red","orange","yellow","green","blue","purple","white"]},
   "notifications":{"state":"listening"},
   "airplay":{"state":"playing","available":true}
@@ -68,4 +71,5 @@ Every other command requires a paired client certificate. Otherwise the TV repli
 | Notifications | `listening` · `starting` · `paused` · `failed` |
 | AirPlay | `stopped` · `starting` · `ready` · `playing` · `failed`, plus `available` (background listening preference) |
 
+- **Ambilight look fields** are additive. TVs from before `ambilight.look` send only `state`, and clients hide look options when `styles`/`contrasts` are absent.
 - **Unknown values:** clients must treat an unknown `state` or `outcome` as `unknown` and disable that control, not fail the whole response.

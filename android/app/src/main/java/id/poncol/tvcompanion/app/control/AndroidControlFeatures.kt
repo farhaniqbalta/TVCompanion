@@ -96,6 +96,13 @@ class AndroidControlFeatures(context: Context, private val light: LightControlle
         }
     } }
 
+    override fun ambilightLook(): AmbilightLookStatus = mainValue { Ambilight.look(context) }
+        .let { AmbilightLookStatus(it.style, Ambilight.STYLES, it.contrast, Ambilight.CONTRASTS) }
+
+    override fun setAmbilightLook(style: String?, contrast: String?): Outcome = write { mainValue {
+        if (Ambilight.setLook(context, style, contrast)) Outcome.OK else Outcome.INVALID
+    } }
+
     override fun light(): LightStatus {
         // A command's own confirmed readback is fresh enough for the status that follows it; saves a second lamp round trip.
         val recent = lastLight?.takeIf { SystemClock.elapsedRealtime() - lightConfirmedAt < FRESH_MS }

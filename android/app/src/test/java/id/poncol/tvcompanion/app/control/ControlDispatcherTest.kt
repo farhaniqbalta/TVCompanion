@@ -15,7 +15,10 @@ class ControlDispatcherTest {
         val ambient = s.getJSONObject("ambient")
         assertEquals("available", ambient.getString("state")); assertEquals("aurora", ambient.getString("look"))
         assertEquals(2, ambient.getJSONArray("looks").length())
-        assertEquals("off", s.getJSONObject("ambilight").getString("state"))
+        val ambilight = s.getJSONObject("ambilight")
+        assertEquals("off", ambilight.getString("state")); assertEquals("cinema", ambilight.getString("style"))
+        assertEquals(3, ambilight.getJSONArray("styles").length()); assertEquals("normal", ambilight.getString("contrast"))
+        assertEquals(2, ambilight.getJSONArray("contrasts").length())
         val light = s.getJSONObject("light")
         assertEquals("on", light.getString("state")); assertEquals("blue", light.getString("preset")); assertEquals(3, light.getJSONArray("presets").length())
         assertEquals("listening", s.getJSONObject("notifications").getString("state"))
@@ -36,6 +39,16 @@ class ControlDispatcherTest {
         assertOutcome("invalid", ControlCommand.LightPreset("teal"))
         assertTrue(fake.calls.none { it.startsWith("set") || it == "lightPreset" })
         assertOutcome("pending", ControlCommand.Ambient(false, null))   // close needs no look
+    }
+    @Test fun ambilightLookIsValidatedAndAFailedReadKeepsTheState() {
+        assertOutcome("invalid", ControlCommand.AmbilightLook("disco", null))
+        assertOutcome("invalid", ControlCommand.AmbilightLook(null, "extreme"))
+        assertFalse("setAmbilightLook" in fake.calls)
+        fake.next = Outcome.OK
+        assertOutcome("ok", ControlCommand.AmbilightLook("soft", "dramatic")); assertTrue("setAmbilightLook" in fake.calls)
+        fake.throwOn += "ambilightLook"
+        val ambilight = dispatcher.status().getJSONObject("ambilight")
+        assertEquals("off", ambilight.getString("state")); assertFalse(ambilight.has("style"))
     }
     @Test fun airplayOffConfirmRule() {
         fake.airplay = AirPlayStatus("playing", true, connected = true, keepSession = false)

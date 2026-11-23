@@ -184,6 +184,8 @@ final class CompanionTests: XCTestCase {
         XCTAssertEqual(try json(.lightPreset("blue")), #"{"cmd":"light.preset","name":"blue","v":1}"#)
         XCTAssertEqual(try json(.airplay(available: false, confirm: true)), #"{"available":false,"cmd":"airplay.set","confirm":true,"v":1}"#)
         XCTAssertEqual(try json(.notifications(on: true)), #"{"cmd":"notifications.set","on":true,"v":1}"#)
+        XCTAssertEqual(try json(.ambilightLook(style: "soft", contrast: nil)), #"{"cmd":"ambilight.look","style":"soft","v":1}"#)
+        XCTAssertEqual(try json(.ambilightLook(style: nil, contrast: "dramatic")), #"{"cmd":"ambilight.look","contrast":"dramatic","v":1}"#)
     }
     func testPairingProofMatchesContractAndRejectsBadCodes() throws {
         let client = Data([1, 2, 3]), server = Data([4, 5, 6])
@@ -199,6 +201,13 @@ final class CompanionTests: XCTestCase {
         let r = try ControlResponse.decode(Data(body.utf8))
         XCTAssertEqual(r.outcome, .pending); XCTAssertEqual(r.status?.ambilight.state, "needs_approval")
         XCTAssertEqual(r.status?.light.preset, "blue"); XCTAssertEqual(r.status?.airplay.available, true)
+        XCTAssertNil(r.status?.ambilight.styles)   // older TV: no look fields, no menu
+    }
+    func testAmbilightLookFieldsDecode() throws {
+        let body = #"{"v":1,"outcome":"ok","status":{"ambient":{"state":"available","looks":[]},"ambilight":{"state":"running","style":"soft","styles":["cinema","responsive","soft"],"contrast":"dramatic","contrasts":["normal","dramatic"]},"light":{"state":"off","presets":[]},"notifications":{"state":"listening"},"airplay":{"state":"stopped","available":false}}}"#
+        let a = try XCTUnwrap(ControlResponse.decode(Data(body.utf8)).status?.ambilight)
+        XCTAssertEqual(a.style, "soft"); XCTAssertEqual(a.styles?.count, 3)
+        XCTAssertEqual(a.contrast, "dramatic"); XCTAssertEqual(a.contrasts, ["normal", "dramatic"])
     }
     func testUnknownStatesAndOutcomesDecodeWithoutFailing() throws {
         let body = #"{"v":1,"outcome":"teleported","status":{"ambient":{"state":"dancing","looks":[]},"ambilight":{"state":"off"},"light":{"state":"off","presets":[]},"notifications":{"state":"paused"},"airplay":{"state":"stopped","available":false}}}"#

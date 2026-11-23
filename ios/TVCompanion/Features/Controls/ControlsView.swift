@@ -141,6 +141,7 @@ struct ControlsView: View {
                 tile("Light", "lightbulb.fill", .light, s?.lightTile ?? unknown, lamp: s.flatMap(lampStyle)) { model.set(.light, .light(on: $0)) }
                     .contextMenu { if let s, s.lightTile.isOn { presetMenu(s) } }
                 tile("Ambilight", "sparkles.tv", .ambilight, s?.ambilightTile ?? unknown) { model.set(.ambilight, .ambilight(on: $0)) }
+                    .contextMenu { if let s, s.ambilight.state != "not_set_up" { ambilightMenu(s.ambilight) } }
             }
             GridRow {
                 tile("Ambient", "waveform", .ambient, s?.ambientTile ?? unknown) { open in
@@ -161,6 +162,32 @@ struct ControlsView: View {
             Button { model.set(.light, .lightPreset(name)) } label: {
                 Label(name.capitalized, systemImage: s.light.preset == name ? "checkmark" : "circle.fill")
             }
+        }
+    }
+
+    /// Style and contrast apply to a running sync at once and are kept for the next one, so the menu works while off too.
+    @ViewBuilder private func ambilightMenu(_ a: ControlStatus.Ambilight) -> some View {
+        if let styles = a.styles {
+            Section("Style") {
+                ForEach(styles, id: \.self) { name in
+                    optionButton(name, chosen: a.style == name) { model.set(.ambilight, .ambilightLook(style: name, contrast: nil)) }
+                }
+            }
+        }
+        if let contrasts = a.contrasts {
+            Section("Contrast") {
+                ForEach(contrasts, id: \.self) { name in
+                    optionButton(name, chosen: a.contrast == name) { model.set(.ambilight, .ambilightLook(style: nil, contrast: name)) }
+                }
+            }
+        }
+    }
+
+    private func optionButton(_ name: String, chosen: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(ControlNames.look(name))
+            if let detail = ControlNames.ambilightDetail(name) { Text(detail) }
+            if chosen { Image(systemName: "checkmark") }
         }
     }
 

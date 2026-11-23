@@ -133,30 +133,34 @@ class EngineTest {
         }
     }
 
-    @Test fun dramaticDimsDarkLedsKeepsHighlightsAndHue() {
-        fun dramatic(r: Int, g: Int, b: Int, brightness: Int = 100): IntArray {
-            val out = ByteArray(3)
-            scaleOutput(byteArrayOf(r.toByte(), g.toByte(), b.toByte()), out, brightness, true)
+    @Test fun dramaticDimsLedsRelativeToTheBrightestAndKeepsHue() {
+        /** Scene: the given LED next to a reference LED of [peak] grey; returns the given LED's Dramatic output. */
+        fun dramatic(r: Int, g: Int, b: Int, peak: Int = 220, brightness: Int = 100): IntArray {
+            val out = ByteArray(6)
+            scaleOutput(byteArrayOf(r.toByte(), g.toByte(), b.toByte(), peak.toByte(), peak.toByte(), peak.toByte()), out, brightness, true)
             return IntArray(3) { out[it].toInt() and 255 }
         }
-        // Highlights untouched, black stays black, never brighter than Normal.
-        assertArrayEquals(intArrayOf(255, 255, 255), dramatic(255, 255, 255))
-        assertArrayEquals(intArrayOf(0, 0, 0), dramatic(0, 0, 0))
+        fun normal(v: Int, brightness: Int = 100) = (v * brightness + 50) / 100
+        // Bright side untouched even below 255: the brightest LED and anything at least half of it match Normal.
+        for (brightness in listOf(30, 50, 100)) for (v in 110..220) {
+            assertEquals(normal(v, brightness), dramatic(v, v, v, brightness = brightness)[0])
+        }
+        // Dark side: 220:44 (5x) widens to 12x or more; 220:22 (10x) to 50x or more. Never brighter than Normal.
+        assertTrue(220.0 / dramatic(44, 44, 44)[0] >= 12)
+        assertTrue(220.0 / dramatic(22, 22, 22)[0] >= 50)
         for (v in 0..255) assertTrue(dramatic(v, v, v)[0] <= v)
-        // Contrast: bright:dark ratio of 255:64 (4x) widens to over 8x; shadows dim but stay lit.
-        assertTrue(255.0 / dramatic(64, 64, 64)[0] > 8)
-        assertTrue(dramatic(16, 16, 16)[0] > 0)
-        // Saturated colours keyed by peak, not luma: full blue/red stay full.
-        assertArrayEquals(intArrayOf(0, 0, 255), dramatic(0, 0, 255))
-        assertArrayEquals(intArrayOf(255, 0, 0), dramatic(255, 0, 0))
-        // One gain per LED keeps channel ratios (hue/saturation) within rounding.
-        val warm = dramatic(160, 80, 40)
-        assertEquals(2.0, warm[0].toDouble() / warm[1], 0.05)
-        assertEquals(2.0, warm[1].toDouble() / warm[2], 0.1)
-        // Brightness still scales after the curve.
-        assertEquals((dramatic(200, 100, 50)[0] + 1) / 2.0, dramatic(200, 100, 50, 50)[0].toDouble(), 1.0)
-        // Monotonic and gentle: one input step never jumps more than two output steps (no added flicker).
-        for (v in 1..255) assertTrue(dramatic(v, v, v)[0] - dramatic(v - 1, v - 1, v - 1)[0] in 0..2)
+        // A uniformly dark scene is not crushed.
+        assertArrayEquals(intArrayOf(30, 30, 30), dramatic(30, 30, 30, peak = 30))
+        assertArrayEquals(intArrayOf(0, 0, 0), dramatic(0, 0, 0, peak = 0))
+        // Saturated colours are keyed by their brightest channel, not luma: full blue stays full next to white.
+        assertArrayEquals(intArrayOf(0, 0, 255), dramatic(0, 0, 255, peak = 255))
+        // One gain per LED keeps channel ratios (hue and saturation) within rounding, also when dimmed.
+        val warm = dramatic(80, 40, 20)
+        assertTrue(warm[0] < 80)
+        assertEquals(2.0, warm[0].toDouble() / warm[1], 0.1)
+        assertEquals(2.0, warm[1].toDouble() / warm[2], 0.2)
+        // One input step never jumps more than two output steps (no added flicker).
+        for (v in 1..220) assertTrue(dramatic(v, v, v)[0] - dramatic(v - 1, v - 1, v - 1)[0] in 0..2)
     }
 
     @Test fun cadenceRetainsThirtyWithJitterAndCapsSixty() {

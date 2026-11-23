@@ -70,4 +70,10 @@ public extension ControlStatus {
 /// Readable names for wire IDs such as `chromatic_flow`.
 public enum ControlNames {
     public static func look(_ id: String) -> String { id.replacingOccurrences(of: "_", with: " ").capitalized }
+    /// One-line explanations matching the TV's Ambilight screen; unknown names get none.
+    public static func ambilightDetail(_ id: String) -> String? {
+        ["cinema": "Slow, calm changes for films", "responsive": "Quick changes for games and sport",
+         "soft": "Gentle glow in the background", "normal": "Lights match the picture",
+         "dramatic": "Dark scenes glow less, bright ones stay bright"][id]
+    }
 }

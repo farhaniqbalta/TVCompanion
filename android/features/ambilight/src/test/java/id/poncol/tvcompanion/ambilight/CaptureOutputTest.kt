@@ -28,8 +28,9 @@ class CaptureOutputTest {
             onEnd = ended
         }
 
-        fun frame(atNs: Long, pixel: Byte = 0, sourceTime: Long = atNs) {
+        fun frame(atNs: Long, pixel: Byte = 0, sourceTime: Long = atNs, second: Byte = 0) {
             raw.put(0, pixel)
+            raw.put(8 * 4, second)
             sink(pixels, atNs, sourceTime)
         }
 
@@ -98,11 +99,15 @@ class CaptureOutputTest {
         val source = SyntheticFrames()
         val output = CaptureOutput(AmbilightConfig(), controller, epoch, transport) { _, _ -> }
         source.start(output::frame) {}
-        source.frame(10, 200.toByte())
-        val normal = transport.sent.last()[0].toInt() and 255
+        // Top row: a bright pixel at x=0 and a dim one at x=8.
+        source.frame(10, 200.toByte(), second = 40)
+        val normal = transport.sent.last().map { it.toInt() and 255 }
         controller.look = Look(engineProfile(), 100, dramatic = true)
         output.keepAlive(1_000_000_010)
-        assertTrue((transport.sent.last()[0].toInt() and 255) in 1 until normal)
+        val dramatic = transport.sent.last().map { it.toInt() and 255 }
+        val top = normal.max()
+        normal.forEachIndexed { i, n -> if (n * 2 >= top) assertEquals(n, dramatic[i]) else assertTrue(dramatic[i] <= n) }
+        assertTrue(normal.indices.any { normal[it] > 0 && dramatic[it] < normal[it] })
     }
 
     private fun engineProfile() = id.poncol.tvcompanion.ambilight.engine.LightingProfile.RESPONSIVE
