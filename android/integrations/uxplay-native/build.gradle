@@ -6,7 +6,8 @@ android {
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = '17' }
     ndkVersion '27.2.12479018'
-    defaultConfig { ndk { abiFilters 'armeabi-v7a' }; externalNativeBuild { cmake { cppFlags '-std=c++17'; arguments '-DANDROID_STL=c++_static' } } }
+    // -O2 in every variant: the TV runs the debug build daily and -O0 native code doubled CPU; -g is kept.
+    defaultConfig { ndk { abiFilters 'armeabi-v7a' }; externalNativeBuild { cmake { cppFlags '-std=c++17 -O2'; cFlags '-O2'; arguments '-DANDROID_STL=c++_static' } } }
     externalNativeBuild { cmake { path 'src/main/cpp/CMakeLists.txt'; version '3.22.1' } }
     sourceSets { main.assets.srcDirs = ['.native/notices'] }
 }

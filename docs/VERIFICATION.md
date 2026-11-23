@@ -308,3 +308,20 @@ Why: on real songs, pulses did not follow the beat. The old detector fired on ju
   - 30 fps on the TV: mean interval 33.4 ms, worst about 36 ms. GPU time is about 14–15 ms (Bounce is about 10.8 ms), and the 540p fallback never triggered.
   - `AmbientShadersTest` passes 12/12 with `AMBIENT_GLSLC` set, so every look compiles.
   - Bar height and kick size have not been tuned with the owner.
+
+## Native `-O2` in debug builds (2026-11-23, PR #19)
+
+Why: AGP's Debug build type compiled `uxplay-native` at `-O0`, and the TV runs the debug build daily.
+
+- **Change:** `cppFlags '-std=c++17 -O2'` and `cFlags '-O2'` for every variant; `-g` is kept. Confirmed in `compile_commands.json`: all 60 native files, including the 35 C files.
+- **Checks:** the Ambient native tests pass at `-O2` under ASan/UBSan. `scripts/check-airplay-native.py` and all Gradle unit tests pass.
+- **On the TV** (AirPlay music, Ambient on Mirror Bars, 10 s `top -H` samples):
+
+  | CPU (% of one core) | `-O0` | `-O2` |
+  |---|---|---|
+  | Ambient analysis thread | ~19% | ~4.6% |
+  | AirPlay receiver thread | ~34% | ~2.9% |
+  | System idle (out of 400%) | ~205% | ~249% |
+
+  Mirror Bars stayed at 30 fps and analysis at 86 per second. Logcat showed no errors, and the owner confirmed the music played cleanly. Installed with `adb install -r` (same debug key, data kept).
+
