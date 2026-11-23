@@ -1,7 +1,6 @@
 package id.poncol.tvcompanion.airplay.runtime.ambient
 
 import kotlin.math.exp
-import kotlin.math.max
 import kotlin.math.min
 
 class AmbientMotion(private val reduced: Boolean) {
@@ -35,7 +34,8 @@ class AmbientMotion(private val reduced: Boolean) {
             high = ease(high, mean(frame, 10, 16), dtSec, 80f, 500f)
             val age = beatAges[0]
             val env = if (age < 0.04f) age / 0.04f else exp(-(age - 0.04f) / 0.3f)
-            pulse = if (reduced) 0f else ease(pulse, max(env, 0.6f * bass), dtSec, 40f, 450f)
+            // Beats only: a bass floor here kept the pulse up between beats and hid them. Looks read uBass separately.
+            pulse = if (reduced) 0f else ease(pulse, env, dtSec, 40f, 450f)
         }
         beatCount = frame[AmbientFrame.BEAT_COUNT]
         val speed = (if (idle) 0.5f else 0.6f + 0.7f * level) * (if (reduced) 0.25f else 1f)

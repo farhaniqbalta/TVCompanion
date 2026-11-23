@@ -45,6 +45,11 @@ class AmbientMotionTest {
         assertEquals(-25f, AmbientMotion.SYNC_OFFSET_MS, 0f)
         assertArrayEquals(floatArrayOf(0.425f, 0.925f, 99f, 99f), m.beatAges, 0.001f)
     }
+    @Test fun sustainedBassWithoutBeatsDoesNotPulse() {
+        val m = AmbientMotion(false)
+        repeat(60) { m.update(frame(bass = 1f), AmbientStatus.OK, 1f / 30f, it / 30f) }
+        assertEquals(0f, m.pulse, 0.001f); assertTrue(m.bass > 0.9f)
+    }
     @Test fun reducedMotionHasNoPulseAndStaticDither() {
         val m = AmbientMotion(true)
         m.update(frame(beatAgeMs = 50f, bass = 1f), AmbientStatus.OK, 1f / 30f, 0f); val seed = m.ditherSeed

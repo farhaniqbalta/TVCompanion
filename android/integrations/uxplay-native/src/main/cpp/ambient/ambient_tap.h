@@ -15,8 +15,9 @@ public:
     bool enabled() const noexcept { return enabled_.load(std::memory_order_relaxed); }
     // Interleaved stereo PCM16 already scaled by `multiplier`; stores (L+R)/2/32768/multiplier clamped to [-1,1], 0 when multiplier<=0.
     void submit(const int16_t *stereo, int frames, float multiplier, int64_t firstFramePlayoutNs, int sampleRate) noexcept;
-    // Analyzer thread. Copies newest `count` samples oldest-first; false if fewer than `count` written since reset.
-    bool latest(float *out, size_t count, int64_t &newestPlayoutNs, uint64_t &totalWritten);
+    // Analyzer thread. Copies the `count` samples ending before sample index `end` (since reset), oldest-first, and
+    // that window's newest-sample playout time. 0 copied, 1 not written yet, 2 already overwritten.
+    int window(float *out, size_t count, uint64_t end, int64_t &endPlayoutNs, uint64_t &totalWritten);
     // Clears and bumps generation. If the lock is busy the clear is applied by the next lock holder.
     void reset() noexcept;
     uint32_t generation() const noexcept { return generation_.load(std::memory_order_relaxed); }
@@ -31,6 +32,7 @@ private:
     std::vector<float> ring_;          // preallocated
     uint64_t total_ = 0;
     int64_t newestNs_ = 0;
+    int rate_ = 44100;
     std::atomic<bool> enabled_{false};
     std::atomic<bool> resetPending_{false};
     std::atomic<uint32_t> generation_{0};

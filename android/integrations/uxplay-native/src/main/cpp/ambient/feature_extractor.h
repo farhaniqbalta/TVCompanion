@@ -1,4 +1,5 @@
 #pragma once
+#include "ambient/beat_tracker.h"
 #include <cstdint>
 
 namespace tvc {
@@ -8,7 +9,8 @@ struct AmbientFeatures {
     int64_t beatPlayoutNs[4] = {0, 0, 0, 0};  // newest first, 0 = empty
 };
 
-// Pure 44.1 kHz analysis of one 1024-sample window (hop 512): Hann FFT, 16 log bands, low-band flux onsets.
+// Pure 44.1 kHz analysis of one 1024-sample window (hop 512): Hann FFT, 16 log bands, log spectral flux into a
+// tempo/phase beat tracker. Call once per 512-sample hop, in order.
 // Allocation-free after construction except inside realFftMagnitudes; use from one thread.
 class FeatureExtractor {
 public:
@@ -17,14 +19,12 @@ public:
     void process(const float *window1024, int64_t newestPlayoutNs, AmbientFeatures &features);  // updates in place
 
 private:
-    static constexpr int N = 1024, HISTORY = 86;
+    static constexpr int N = 1024, FLUX_BINS = 256;  // bins 1..255, up to ~11 kHz
     float hann_[N], buf_[N], mags_[N / 2 + 1];
     int bandLo_[16], bandHi_[16];
     float hannSum_ = 0;
-    float flux_[HISTORY] = {};
-    int fluxCount_ = 0, fluxNext_ = 0;
-    float prevLow_ = 0;
-    bool hasBeat_ = false;
-    int64_t lastBeatNs_ = 0;
+    float prevLog_[FLUX_BINS] = {};
+    bool hasPrev_ = false;
+    BeatTracker tracker_;
 };
 }
