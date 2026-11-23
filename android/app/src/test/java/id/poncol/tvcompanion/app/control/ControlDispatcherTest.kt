@@ -17,8 +17,8 @@ class ControlDispatcherTest {
         assertEquals(2, ambient.getJSONArray("looks").length())
         val ambilight = s.getJSONObject("ambilight")
         assertEquals("off", ambilight.getString("state")); assertEquals("cinema", ambilight.getString("style"))
-        assertEquals(3, ambilight.getJSONArray("styles").length()); assertEquals("normal", ambilight.getString("contrast"))
-        assertEquals(2, ambilight.getJSONArray("contrasts").length())
+        assertEquals(3, ambilight.getJSONArray("styles").length()); assertEquals(0, ambilight.getInt("contrast"))
+        assertFalse(ambilight.has("contrasts"))
         val light = s.getJSONObject("light")
         assertEquals("on", light.getString("state")); assertEquals("blue", light.getString("preset")); assertEquals(3, light.getJSONArray("presets").length())
         assertEquals("listening", s.getJSONObject("notifications").getString("state"))
@@ -42,10 +42,10 @@ class ControlDispatcherTest {
     }
     @Test fun ambilightLookIsValidatedAndAFailedReadKeepsTheState() {
         assertOutcome("invalid", ControlCommand.AmbilightLook("disco", null))
-        assertOutcome("invalid", ControlCommand.AmbilightLook(null, "extreme"))
+        for (bad in listOf(55, 110, -10)) assertOutcome("invalid", ControlCommand.AmbilightLook(null, bad))
         assertFalse("setAmbilightLook" in fake.calls)
         fake.next = Outcome.OK
-        assertOutcome("ok", ControlCommand.AmbilightLook("soft", "dramatic")); assertTrue("setAmbilightLook" in fake.calls)
+        assertOutcome("ok", ControlCommand.AmbilightLook("soft", 50)); assertTrue("setAmbilightLook" in fake.calls)
         fake.throwOn += "ambilightLook"
         val ambilight = dispatcher.status().getJSONObject("ambilight")
         assertEquals("off", ambilight.getString("state")); assertFalse(ambilight.has("style"))

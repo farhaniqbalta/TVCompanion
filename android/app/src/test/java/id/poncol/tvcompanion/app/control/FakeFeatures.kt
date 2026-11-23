@@ -7,7 +7,7 @@ class FakeFeatures : ControlFeatures {
     var next = Outcome.PENDING
     var ambient = AmbientStatus("available", "aurora", listOf("aurora", "dusk"))
     var ambilight = "off"
-    var ambilightLook = AmbilightLookStatus("cinema", listOf("cinema", "responsive", "soft"), "normal", listOf("normal", "dramatic"))
+    var ambilightLook = AmbilightLookStatus("cinema", listOf("cinema", "responsive", "soft"), 0)
     var light = LightStatus("on", "blue", listOf("red", "blue", "white"))
     var notifications = "listening"
     var airplay = AirPlayStatus("ready", true, connected = false, keepSession = true)
@@ -24,7 +24,7 @@ class FakeFeatures : ControlFeatures {
     override fun airplay() = call("airplay") { airplay }
     override fun setAmbient(open: Boolean, look: String?) = call("setAmbient") { next }
     override fun setAmbilight(on: Boolean) = call("setAmbilight") { next }
-    override fun setAmbilightLook(style: String?, contrast: String?) = call("setAmbilightLook") { next }
+    override fun setAmbilightLook(style: String?, contrast: Int?) = call("setAmbilightLook") { next }
     override fun setLight(on: Boolean) = call("setLight") { next }
     override fun lightPreset(name: String) = call("lightPreset") { next }
     override fun setNotifications(on: Boolean) = call("setNotifications") { next }

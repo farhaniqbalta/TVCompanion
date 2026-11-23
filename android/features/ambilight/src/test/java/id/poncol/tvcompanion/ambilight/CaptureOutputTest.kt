@@ -89,7 +89,7 @@ class CaptureOutputTest {
         assertEquals((full + 1) / 2, transport.sent.last()[0].toInt() and 255)
     }
 
-    @Test fun dramaticTogglesOnTheRunningSession() {
+    @Test fun contrastChangesApplyToTheRunningSession() {
         val controller = SessionController()
         val epoch = controller.begin()!!
         controller.attach(epoch) {}
@@ -102,7 +102,7 @@ class CaptureOutputTest {
         // Top row: a bright pixel at x=0 and a dim one at x=8.
         source.frame(10, 200.toByte(), second = 40)
         val normal = transport.sent.last().map { it.toInt() and 255 }
-        controller.look = Look(engineProfile(), 100, dramatic = true)
+        controller.look = Look(engineProfile(), 100, contrast = 50)
         output.keepAlive(1_000_000_010)
         val dramatic = transport.sent.last().map { it.toInt() and 255 }
         val top = normal.max()

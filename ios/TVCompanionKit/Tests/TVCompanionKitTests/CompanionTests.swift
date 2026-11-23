@@ -185,7 +185,7 @@ final class CompanionTests: XCTestCase {
         XCTAssertEqual(try json(.airplay(available: false, confirm: true)), #"{"available":false,"cmd":"airplay.set","confirm":true,"v":1}"#)
         XCTAssertEqual(try json(.notifications(on: true)), #"{"cmd":"notifications.set","on":true,"v":1}"#)
         XCTAssertEqual(try json(.ambilightLook(style: "soft", contrast: nil)), #"{"cmd":"ambilight.look","style":"soft","v":1}"#)
-        XCTAssertEqual(try json(.ambilightLook(style: nil, contrast: "dramatic")), #"{"cmd":"ambilight.look","contrast":"dramatic","v":1}"#)
+        XCTAssertEqual(try json(.ambilightLook(style: nil, contrast: 50)), #"{"cmd":"ambilight.look","contrast":50,"v":1}"#)
     }
     func testPairingProofMatchesContractAndRejectsBadCodes() throws {
         let client = Data([1, 2, 3]), server = Data([4, 5, 6])
@@ -204,10 +204,10 @@ final class CompanionTests: XCTestCase {
         XCTAssertNil(r.status?.ambilight.styles)   // older TV: no look fields, no menu
     }
     func testAmbilightLookFieldsDecode() throws {
-        let body = #"{"v":1,"outcome":"ok","status":{"ambient":{"state":"available","looks":[]},"ambilight":{"state":"running","style":"soft","styles":["cinema","responsive","soft"],"contrast":"dramatic","contrasts":["normal","dramatic"]},"light":{"state":"off","presets":[]},"notifications":{"state":"listening"},"airplay":{"state":"stopped","available":false}}}"#
+        let body = #"{"v":1,"outcome":"ok","status":{"ambient":{"state":"available","looks":[]},"ambilight":{"state":"running","style":"soft","styles":["cinema","responsive","soft"],"contrast":50},"light":{"state":"off","presets":[]},"notifications":{"state":"listening"},"airplay":{"state":"stopped","available":false}}}"#
         let a = try XCTUnwrap(ControlResponse.decode(Data(body.utf8)).status?.ambilight)
         XCTAssertEqual(a.style, "soft"); XCTAssertEqual(a.styles?.count, 3)
-        XCTAssertEqual(a.contrast, "dramatic"); XCTAssertEqual(a.contrasts, ["normal", "dramatic"])
+        XCTAssertEqual(a.contrast, 50)
     }
     func testUnknownStatesAndOutcomesDecodeWithoutFailing() throws {
         let body = #"{"v":1,"outcome":"teleported","status":{"ambient":{"state":"dancing","looks":[]},"ambilight":{"state":"off"},"light":{"state":"off","presets":[]},"notifications":{"state":"paused"},"airplay":{"state":"stopped","available":false}}}"#

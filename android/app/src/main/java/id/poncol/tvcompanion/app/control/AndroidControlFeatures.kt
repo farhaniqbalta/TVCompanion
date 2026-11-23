@@ -97,9 +97,9 @@ class AndroidControlFeatures(context: Context, private val light: LightControlle
     } }
 
     override fun ambilightLook(): AmbilightLookStatus = mainValue { Ambilight.look(context) }
-        .let { AmbilightLookStatus(it.style, Ambilight.STYLES, it.contrast, Ambilight.CONTRASTS) }
+        .let { AmbilightLookStatus(it.style, Ambilight.STYLES, it.contrast) }
 
-    override fun setAmbilightLook(style: String?, contrast: String?): Outcome = write { mainValue {
+    override fun setAmbilightLook(style: String?, contrast: Int?): Outcome = write { mainValue {
         if (Ambilight.setLook(context, style, contrast)) Outcome.OK else Outcome.INVALID
     } }
 

@@ -18,7 +18,7 @@ public enum ControlWire {
 /// Every command sets an explicit state; there are no toggles.
 public enum ControlRequest: Equatable {
     case status, pair(proof: String)
-    case ambient(open: Bool, look: String?), ambilight(on: Bool), ambilightLook(style: String?, contrast: String?)
+    case ambient(open: Bool, look: String?), ambilight(on: Bool), ambilightLook(style: String?, contrast: Int?)
     case light(on: Bool), lightPreset(String), notifications(on: Bool)
     case airplay(available: Bool, confirm: Bool)
 
@@ -54,10 +54,10 @@ public struct ControlStatus: Decodable, Equatable {
     public struct Ambient: Decodable, Equatable { public let state: String; public let look: String?; public let looks: [String] }
     public struct Light: Decodable, Equatable { public let state: String; public let preset: String?; public let presets: [String] }
     public struct Simple: Decodable, Equatable { public let state: String }
-    /// Style and contrast fields are absent on TVs older than the Ambilight look command.
+    /// Look fields are absent on TVs older than the Ambilight look command. `contrast` is 0–100 in steps of 10; 0 is Normal.
     public struct Ambilight: Decodable, Equatable {
         public let state: String
-        public let style: String?, styles: [String]?, contrast: String?, contrasts: [String]?
+        public let style: String?, styles: [String]?, contrast: Int?
     }
     public struct AirPlay: Decodable, Equatable { public let state: String; public let available: Bool }
     public let ambient: Ambient

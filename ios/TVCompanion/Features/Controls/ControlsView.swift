@@ -170,24 +170,27 @@ struct ControlsView: View {
         if let styles = a.styles {
             Section("Style") {
                 ForEach(styles, id: \.self) { name in
-                    optionButton(name, chosen: a.style == name) { model.set(.ambilight, .ambilightLook(style: name, contrast: nil)) }
+                    optionButton(ControlNames.look(name), chosen: a.style == name) { model.set(.ambilight, .ambilightLook(style: name, contrast: nil)) }
                 }
             }
         }
-        if let contrasts = a.contrasts {
-            Section("Contrast") {
-                ForEach(contrasts, id: \.self) { name in
-                    optionButton(name, chosen: a.contrast == name) { model.set(.ambilight, .ambilightLook(style: nil, contrast: name)) }
+        if let contrast = a.contrast {
+            Menu {
+                ForEach(Array(stride(from: 0, through: 100, by: 10)), id: \.self) { value in
+                    optionButton(value == 0 ? "Normal" : "\(value)%", chosen: contrast == value) {
+                        model.set(.ambilight, .ambilightLook(style: nil, contrast: value))
+                    }
                 }
+            } label: {
+                Text("Contrast")
+                Text(contrast == 0 ? "Normal" : "\(contrast)%")
             }
         }
     }
 
-    private func optionButton(_ name: String, chosen: Bool, action: @escaping () -> Void) -> some View {
+    private func optionButton(_ title: String, chosen: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(ControlNames.look(name))
-            if let detail = ControlNames.ambilightDetail(name) { Text(detail) }
-            if chosen { Image(systemName: "checkmark") }
+            if chosen { Label(title, systemImage: "checkmark") } else { Text(title) }
         }
     }
 

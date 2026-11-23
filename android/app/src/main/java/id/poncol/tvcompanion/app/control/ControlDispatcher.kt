@@ -9,7 +9,8 @@ enum class Outcome(val wire: String) {
     NEEDS_SETUP("needs_setup"), NEEDS_APPROVAL("needs_approval"), INVALID("invalid")
 }
 data class AmbientStatus(val state: String, val look: String?, val looks: List<String>)
-data class AmbilightLookStatus(val style: String, val styles: List<String>, val contrast: String, val contrasts: List<String>)
+/** `contrast` is the Dramatic strength 0–100 in steps of 10; 0 is Normal. */
+data class AmbilightLookStatus(val style: String, val styles: List<String>, val contrast: Int)
 data class LightStatus(val state: String, val preset: String?, val presets: List<String>)
 /** `connected` and `keepSession` drive the confirm rule only; they are not on the wire. */
 data class AirPlayStatus(val state: String, val available: Boolean, val connected: Boolean, val keepSession: Boolean)
@@ -24,7 +25,7 @@ interface ControlFeatures {
     fun airplay(): AirPlayStatus
     fun setAmbient(open: Boolean, look: String?): Outcome
     fun setAmbilight(on: Boolean): Outcome
-    fun setAmbilightLook(style: String?, contrast: String?): Outcome
+    fun setAmbilightLook(style: String?, contrast: Int?): Outcome
     fun setLight(on: Boolean): Outcome
     fun lightPreset(name: String): Outcome
     fun setNotifications(on: Boolean): Outcome
@@ -44,7 +45,8 @@ class ControlDispatcher(private val features: ControlFeatures) {
                 is ControlCommand.Ambilight -> features.setAmbilight(command.on)
                 is ControlCommand.AmbilightLook -> {
                     val look = features.ambilightLook()
-                    if ((command.style ?: look.style) !in look.styles || (command.contrast ?: look.contrast) !in look.contrasts) Outcome.INVALID
+                    val contrast = command.contrast ?: look.contrast
+                    if ((command.style ?: look.style) !in look.styles || contrast !in 0..100 || contrast % 10 != 0) Outcome.INVALID
                     else features.setAmbilightLook(command.style, command.contrast)
                 }
                 is ControlCommand.Light -> features.setLight(command.on)
@@ -68,7 +70,7 @@ class ControlDispatcher(private val features: ControlFeatures) {
         val airplay = read({ features.airplay() }) { AirPlayStatus("failed", false, connected = false, keepSession = true) }
         val ambilight = JSONObject().put("state", read({ features.ambilight() }) { "error" })
         read({ features.ambilightLook() }) { null }?.let {
-            ambilight.put("style", it.style).put("styles", JSONArray(it.styles)).put("contrast", it.contrast).put("contrasts", JSONArray(it.contrasts))
+            ambilight.put("style", it.style).put("styles", JSONArray(it.styles)).put("contrast", it.contrast)
         }
         return JSONObject()
             .put("ambient", JSONObject().put("state", ambient.state).put("look", ambient.look ?: JSONObject.NULL).put("looks", JSONArray(ambient.looks)))

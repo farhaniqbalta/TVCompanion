@@ -28,7 +28,6 @@ class AmbilightSettingsActivity : Activity() {
     private lateinit var stripSetup: Button
     private lateinit var styles: List<Button>
     private lateinit var stopMode: TvUi.ValueRow
-    private lateinit var contrasts: List<Button>
     private var needsAddress = false
     private val observer: (AmbilightState) -> Unit = ::render
 
@@ -88,18 +87,13 @@ class AmbilightSettingsActivity : Activity() {
             }
         }
         showOptions(styles, config.profile.ordinal, names, descriptions)
-        ui.text(look, getString(R.string.ambilight_contrast), 19f, true).setPadding(0, ui.dp(18), 0, 0)
-        val contrastNames = resources.getStringArray(R.array.ambilight_contrast_names)
-        val contrastDescriptions = resources.getStringArray(R.array.ambilight_contrast_descriptions)
-        contrasts = contrastNames.indices.map { index ->
-            ui.button(look, "") {
-                save(prefs.load().copy(dramatic = index == 1))
-                showOptions(contrasts, index, contrastNames, contrastDescriptions)
-            }
-        }
-        showOptions(contrasts, if (config.dramatic) 1 else 0, contrastNames, contrastDescriptions)
         ui.stepper(look, getString(R.string.ambilight_brightness), { prefs.load().brightness }, { 5..100 }, 5, { "$it%" }) { value ->
             save(prefs.load().copy(brightness = value))
+            true
+        }
+        ui.stepper(look, getString(R.string.ambilight_contrast), { prefs.load().contrast }, { 0..100 }, 10,
+            { if (it == 0) getString(R.string.ambilight_contrast_normal) else "$it%" }) { value ->
+            save(prefs.load().copy(contrast = value))
             true
         }
         val stopModes = resources.getStringArray(R.array.ambilight_stop_modes)
@@ -140,7 +134,7 @@ class AmbilightSettingsActivity : Activity() {
     /** Style, brightness and contrast also reach a running session immediately; the stop choice is read when sync stops. */
     private fun save(config: AmbilightConfig) {
         prefs.save(config)
-        ambilightSession.look = Look(config.profile, config.brightness, config.dramatic)
+        ambilightSession.look = Look(config.profile, config.brightness, config.contrast)
     }
 
     override fun onStart() {

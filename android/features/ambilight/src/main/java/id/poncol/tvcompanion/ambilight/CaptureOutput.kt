@@ -81,7 +81,7 @@ internal class CaptureOutput(
         attempted = true
         lastOutput = now
         val look = session.look
-        scaleOutput(rgb, scaled, look.brightness, look.dramatic)
+        scaleOutput(rgb, scaled, look.brightness, look.contrast)
         val failed = !transport.send(scaled)
         if (failed) droppedOutput++
         if (failed != sendError) {
