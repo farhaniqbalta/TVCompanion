@@ -2,7 +2,7 @@
 
 ## Build
 
-Install JDK 17, Android SDK platform/build-tools 34, NDK 27.2.12479018 and SDK CMake 3.22.1. Run `python3 scripts/prepare-airplay-native.py` from the repository root before a full APK build. Native sources/notices and static dependencies are checksum-pinned and cached under ignored `android/integrations/uxplay-native/.native/`; they are not committed. Set `JAVA_HOME` and `ANDROID_HOME`, or create an ignored `android/local.properties` with `sdk.dir=/path/to/sdk`. Run from `android/`:
+Install JDK 17, Android SDK platform/build-tools 34, NDK 27.2.12479018 and SDK CMake 3.22.1. Run `python3 scripts/prepare-airplay-native.py` from the repository root before a full APK build. Native sources/notices and static dependencies are checksum-pinned and cached under ignored `android/integrations/uxplay-native/.native/`; they are not committed. `uxplay-native` compiles its C/C++ with `-O2` in every variant, debug included (with `-g` kept), because the TV runs debug builds and `-O0` native code cost several times more CPU. Set `JAVA_HOME` and `ANDROID_HOME`, or create an ignored `android/local.properties` with `sdk.dir=/path/to/sdk`. Run from `android/`:
 
 ```sh
 ./gradlew :app:assembleDebug :core:domain:test :integrations:airplay-runtime:testDebugUnitTest :ipc:airplay-contract:testDebugUnitTest :integrations:tuya-lan:testDebugUnitTest :features:notifications:testDebugUnitTest :app:lintDebug
